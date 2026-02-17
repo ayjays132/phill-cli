@@ -1,6 +1,7 @@
 {
   "name": "phill-cli",
   "version": "1.0.0",
+  "author": "Phillip A. Holland Jr.",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -8,7 +9,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "private": "true",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ayjays132/phill-cli.git"
