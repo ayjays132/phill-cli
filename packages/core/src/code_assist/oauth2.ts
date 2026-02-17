@@ -65,16 +65,17 @@ async function triggerPostAuthCallbacks(tokens: Credentials) {
 
 const userAccountManager = new UserAccountManager();
 
-//  OAuth Client ID used to initiate OAuth2Client class.
-const OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID!;
+// OAuth Client ID used to initiate OAuth2Client class
+const OAUTH_CLIENT_ID = process.env['GOOGLE_OAUTH_CLIENT_ID']!;
 
-// OAuth Secret value used to initiate OAuth2Client class.
+// OAuth Secret value used to initiate OAuth2Client class
 // Note: It's ok to save this in git because this is an installed application
 // as described here: https://developers.google.com/identity/protocols/oauth2#installed
 // "The process results in a client ID and, in some cases, a client secret,
 // which you embed in the source code of your application. (In this context,
 // the client secret is obviously not treated as a secret.)"
-const OAUTH_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET!;
+const OAUTH_CLIENT_SECRET = process.env['GOOGLE_OAUTH_CLIENT_SECRET']!;
+
 
 // OAuth Scopes for Cloud Code authorization.
 const OAUTH_SCOPE = [
