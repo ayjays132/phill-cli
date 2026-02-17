@@ -75,9 +75,9 @@
     }
   },
   "bin": {
-    "gemini": "bundle/phill.js",
     "phill": "bundle/phill.js",
-    "Phill": "bundle/phill.js"
+    "pcli": "bundle/phill.js",
+    "young-philly": "bundle/phill.js"
   },
   "files": [
     "bundle/",
