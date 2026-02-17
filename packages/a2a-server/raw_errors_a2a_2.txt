@@ -1,0 +1,63 @@
+src/agent/executor.ts(15,50): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/executor.ts(19,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/executor.ts(20,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/agent/task.test.ts(25,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/task.test.ts(29,31): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/task.test.ts(35,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/task.ts(32,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/agent/task.ts(43,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/agent/task.ts(132,61): error TS7006: Parameter 'tool' implicitly has an 'any' type.
+src/agent/task.ts(139,60): error TS7006: Parameter 'tool' implicitly has an 'any' type.
+src/agent/task.ts(316,15): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/agent/task.ts(316,34): error TS7006: Parameter 'token' implicitly has an 'any' type.
+src/agent/task.ts(538,32): error TS18046: 'err' is of type 'unknown'.
+src/agent/task.ts(592,27): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/commands/command-registry.test.ts(123,42): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/command-registry.ts(8,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/extensions.test.ts(14,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/extensions.ts(7,32): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/init.test.ts(9,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/init.test.ts(17,50): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/init.test.ts(22,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/init.ts(10,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/init.ts(22,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/commands/memory.test.ts(12,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/memory.test.ts(26,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/memory.test.ts(31,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/memory.ts(12,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/restore.test.ts(10,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/restore.test.ts(23,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/restore.ts(12,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/commands/restore.ts(59,35): error TS18046: 'error' is of type 'unknown'.
+src/commands/types.ts(8,41): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/config.test.ts(14,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/config.test.ts(19,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/config.ts(11,38): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/config.ts(27,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/extension.ts(15,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/settings.test.ts(12,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/settings.test.ts(32,40): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/settings.ts(10,38): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/config/settings.ts(17,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/http/app.test.ts(7,29): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/http/app.test.ts(12,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/http/app.test.ts(39,26): error TS6305: Output file 'E:/Phill-cli-0.0.1/packages/core/dist/test-utils/mock-tool.d.ts' has not been built from source file 'E:/Phill-cli-0.0.1/packages/core/src/test-utils/mock-tool.ts'.
+src/http/app.ts(18,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/http/app.ts(28,52): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/http/app.ts(30,44): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/http/endpoints.test.ts(19,42): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/persistence/gcs.test.ts(11,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/persistence/gcs.ts(12,24): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/persistence/gcs.ts(19,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/types.ts(10,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/utils/executor_utils.ts(9,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/a2a-server/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/utils/testing_utils.ts(20,8): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
+src/utils/testing_utils.ts(21,38): error TS6305: Output file 'E:/Phill-cli-0.0.1/packages/core/dist/test-utils/mock-message-bus.d.ts' has not been built from source file 'E:/Phill-cli-0.0.1/packages/core/src/test-utils/mock-message-bus.ts'.
+src/utils/testing_utils.ts(22,38): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.

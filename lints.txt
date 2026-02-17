@@ -1,0 +1,27 @@
+
+E:\phill-cli-0.0.1\packages\cli\src\ui\AppContainer.tsx
+    19:46  error    Reaching to "./contexts/UIStateContext.js" is not allowed                                                                                                                             import/no-internal-modules
+    80:8   error    'UpdateUIStateMessage' is defined but never used. Allowed unused vars must match /^_/u                                                                                                @typescript-eslint/no-unused-vars
+    85:28  error    Reaching to "./hooks/useHistoryManager.js" is not allowed                                                                                                                             import/no-internal-modules
+   104:31  error    Reaching to "./components/shared/text-buffer.js" is not allowed                                                                                                                       import/no-internal-modules
+   108:57  error    Reaching to "../config/settings.js" is not allowed                                                                                                                                    import/no-internal-modules
+   110:26  error    Reaching to "./hooks/useFocus.js" is not allowed                                                                                                                                      import/no-internal-modules
+   111:39  error    Reaching to "./hooks/useKeypress.js" is not allowed                                                                                                                                   import/no-internal-modules
+   116:37  error    Reaching to "./hooks/useIdeTrustListener.js" is not allowed                                                                                                                           import/no-internal-modules
+   118:37  error    Reaching to "../utils/events.js" is not allowed                                                                                                                                       import/no-internal-modules
+   119:35  error    Reaching to "./utils/updateCheck.js" is not allowed                                                                                                                                   import/no-internal-modules
+   127:34  error    Reaching to "../utils/sessionUtils.js" is not allowed                                                                                                                                 import/no-internal-modules
+   131:33  error    Reaching to "./contexts/SessionContext.js" is not allowed                                                                                                                             import/no-internal-modules
+   143:36  error    Reaching to "../config/trustedFolders.js" is not allowed                                                                                                                              import/no-internal-modules
+   145:29  error    Reaching to "./contexts/SettingsContext.js" is not allowed                                                                                                                            import/no-internal-modules
+   146:43  error    Reaching to "./utils/terminalCapabilityManager.js" is not allowed                                                                                                                     import/no-internal-modules
+   529:44  error    Unexpected any. Specify a different type                                                                                                                                              @typescript-eslint/no-explicit-any
+   681:6   warning  React Hook useEffect has missing dependencies: 'config' and 'settings.merged.ui.voice'. Either include them or remove the dependency array                                            react-hooks/exhaustive-deps
+  1050:5   warning  React Hook useMemo has unnecessary dependencies: 'setCognitiveLineState' and 'setCognitiveLineSuggestion'. Either exclude them or remove the dependency array                         react-hooks/exhaustive-deps
+  1207:63  error    Unexpected any. Specify a different type                                                                                                                                              @typescript-eslint/no-explicit-any
+  1318:5   warning  React Hook useCallback has a missing dependency: 'props.cognitiveEngineProcess'. Either include it or remove the dependency array                                                     react-hooks/exhaustive-deps
+  1739:6   warning  React Hook useEffect has a missing dependency: 'config'. Either include it or remove the dependency array                                                                             react-hooks/exhaustive-deps
+  1886:5   warning  React Hook useCallback has missing dependencies: 'toggleTts', 'toggleVoice', 'voiceState.isEnabled', and 'voiceState.ttsEnabled'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+Γ£û 22 problems (17 errors, 5 warnings)
+

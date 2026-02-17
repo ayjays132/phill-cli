@@ -1,0 +1,16 @@
+# By default, require reviews from the maintainers for all files.
+* @ayjays132/phill-cli-maintainers
+
+# Require reviews from the release approvers for critical files.
+# These patterns override the rule above.
+/package.json @ayjays132/phill-cli-askmode-approvers
+/package-lock.json @ayjays132/phill-cli-askmode-approvers
+/PHILL.md @ayjays132/phill-cli-askmode-approvers
+/SECURITY.md @ayjays132/phill-cli-askmode-approvers
+/LICENSE @ayjays132/phill-cli-askmode-approvers
+/.github/workflows/ @ayjays132/phill-cli-askmode-approvers
+/packages/cli/package.json @ayjays132/phill-cli-askmode-approvers
+/packages/core/package.json @ayjays132/phill-cli-askmode-approvers
+
+# Docs have a dedicated approver group in addition to maintainers
+/docs/ @ayjays132/phill-cli-maintainers @ayjays132/phill-cli-docs

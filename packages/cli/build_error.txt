@@ -1,0 +1,20 @@
+../core/src/utils/filesearch/crawler.test.ts(12,45): error TS6059: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/index.ts' is not under 'rootDir' 'E:/Phill-cli-0.0.1/packages/core'. 'rootDir' is expected to contain all source files.
+  The file is in the program because:
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/crawler.test.ts'
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/fileSearch.test.ts'
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/ignore.test.ts'
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"
+../core/src/utils/filesearch/crawler.test.ts(12,45): error TS6307: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/index.ts' is not listed within the file list of project 'E:/Phill-cli-0.0.1/packages/core/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+  The file is in the program because:
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/crawler.test.ts'
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/fileSearch.test.ts'
+    Imported via 'phill-cli-test-utils' from file 'E:/Phill-cli-0.0.1/packages/core/src/utils/filesearch/ignore.test.ts'
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"
+../test-utils/src/index.ts(7,15): error TS6059: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/file-system-test-helpers.ts' is not under 'rootDir' 'E:/Phill-cli-0.0.1/packages/core'. 'rootDir' is expected to contain all source files.
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"
+../test-utils/src/index.ts(7,15): error TS6307: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/file-system-test-helpers.ts' is not listed within the file list of project 'E:/Phill-cli-0.0.1/packages/core/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"
+../test-utils/src/index.ts(8,15): error TS6059: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/test-rig.ts' is not under 'rootDir' 'E:/Phill-cli-0.0.1/packages/core'. 'rootDir' is expected to contain all source files.
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"
+../test-utils/src/index.ts(8,15): error TS6307: File 'E:/Phill-cli-0.0.1/packages/test-utils/src/test-rig.ts' is not listed within the file list of project 'E:/Phill-cli-0.0.1/packages/core/tsconfig.json'. Projects must list all files or use an 'include' pattern.
+  File is ECMAScript module because 'E:/Phill-cli-0.0.1/packages/test-utils/package.json' has field "type" with value "module"

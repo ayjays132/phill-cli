@@ -1,0 +1,95 @@
+################################
+# 🔐 Secrets & Environment
+################################
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.log
+
+################################
+# 📦 Dependencies
+################################
+node_modules/
+bower_components/
+
+################################
+# 🏗 Build Outputs
+################################
+dist/
+build/
+build_out/
+coverage/
+*.tsbuildinfo
+packages/*/coverage/
+packages/*/dist/
+packages/*/build/
+packages/*/build_out/
+
+################################
+# 🧪 Generated / Temp Files
+################################
+packages/cli/src/generated/
+packages/core/src/generated/
+.integration-tests/
+packages/vscode-ide-companion/*.vsix
+packages/cli/download-ripgrep*/
+bundle/
+junit.xml
+
+################################
+# 🧠 Your Custom Folders
+################################
+Phillbook/
+phillbook-npm-tool/
+
+################################
+# 🖥 OS Files
+################################
+.DS_Store
+Thumbs.db
+
+################################
+# 🛠 Editors / IDE
+################################
+.idea/
+*.iml
+.vscode/
+
+################################
+# 🐳 Docker
+################################
+.docker/
+
+################################
+# ⚙ GitHub Actions
+################################
+gha-creds-*.json
+
+################################
+# 📋 Logs
+################################
+patch_output.log
+phill-debug.log
+evals/logs/
+
+################################
+# 🔍 Scan Artifacts
+################################
+*_matches.txt
+absolute_paths.txt
+all_matches.txt
+final_search.txt
+compliance_report.json
+hardcoded_paths*.txt
+
+################################
+# 🧬 Framework Artifacts
+################################
+.genkit/
+.phill-clipboard/
+.eslintcache
+singularity_nexus/.next/

@@ -1,0 +1,7 @@
+{
+  "timestamp": "1",
+  "task": "VERIFY_HOT_RELOAD_SUCCESS",
+  "last_action": "First Time Start UP (must preserve in memory to track this and change and update!)",
+  "next_step": "User will restart the CLI. I must detect this file, read it, and then DELETE it to show I remembered.",
+  "latches": ["RELOAD_TEST_ACTIVE"]
+}

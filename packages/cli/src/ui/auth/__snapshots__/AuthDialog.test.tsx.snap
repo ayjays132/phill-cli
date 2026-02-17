@@ -1,0 +1,75 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AuthDialog > Snapshots > renders correctly with auth error 1`] = `
+"╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                      │
+│ ?Get started                                                                                                         │
+│                                                                                                                      │
+│  How would you like to authenticate for this project?                                                                │
+│                                                                                                                      │
+│  (selected)(not        (not     (not      (not      (not       (not selected)   (not        (not   (not selected)    │
+│  Login withselected) Usselected)selected) selected) selected)  OpenAI / Codex   selected)   selecteCustom API        │
+│  Google    Gemini API  Vertex AIOllama    HuggingFacOpenAI /   (Browser Sign-In)Anthropic   ) Groq (OpenAI-compatibl │
+│            Key                  (Local)             Codex                       (Claude)           e)                │
+│                                                                                                                      │
+│  Something went wrong                                                                                                │
+│                                                                                                                      │
+│  (Use Enter to select)                                                                                               │
+│                                                                                                                      │
+│  Terms of Service and Privacy Notice for Phill CLI                                                                   │
+│                                                                                                                      │
+│  https://github.com/ayjays132/phill-cli/blob/main/docs/tos-privacy.md                                                │
+│                                                                                                                      │
+│  Warning: Use this software at your own risk.                                                                        │
+│  You are responsible for all commands, changes, and external actions.                                                │
+│  Phillip Holland and contributors are not liable for data loss, damages, or misuse.                                  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;
+
+exports[`AuthDialog > Snapshots > renders correctly with default props 1`] = `
+"╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                      │
+│ ?Get started                                                                                                         │
+│                                                                                                                      │
+│  How would you like to authenticate for this project?                                                                │
+│                                                                                                                      │
+│  (selected)(not        (not     (not      (not      (not       (not selected)   (not        (not   (not selected)    │
+│  Login withselected) Usselected)selected) selected) selected)  OpenAI / Codex   selected)   selecteCustom API        │
+│  Google    Gemini API  Vertex AIOllama    HuggingFacOpenAI /   (Browser Sign-In)Anthropic   ) Groq (OpenAI-compatibl │
+│            Key                  (Local)             Codex                       (Claude)           e)                │
+│                                                                                                                      │
+│  (Use Enter to select)                                                                                               │
+│                                                                                                                      │
+│  Terms of Service and Privacy Notice for Phill CLI                                                                   │
+│                                                                                                                      │
+│  https://github.com/ayjays132/phill-cli/blob/main/docs/tos-privacy.md                                                │
+│                                                                                                                      │
+│  Warning: Use this software at your own risk.                                                                        │
+│  You are responsible for all commands, changes, and external actions.                                                │
+│  Phillip Holland and contributors are not liable for data loss, damages, or misuse.                                  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;
+
+exports[`AuthDialog > Snapshots > renders correctly with enforced auth type 1`] = `
+"╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                      │
+│ ? Get started                                                                                                        │
+│                                                                                                                      │
+│   How would you like to authenticate for this project?                                                               │
+│                                                                                                                      │
+│   (selected) Use Gemini API Key                                                                                      │
+│                                                                                                                      │
+│   (Use Enter to select)                                                                                              │
+│                                                                                                                      │
+│   Terms of Service and Privacy Notice for Phill CLI                                                                  │
+│                                                                                                                      │
+│   https://github.com/ayjays132/phill-cli/blob/main/docs/tos-privacy.md                                               │
+│                                                                                                                      │
+│   Warning: Use this software at your own risk.                                                                       │
+│   You are responsible for all commands, changes, and external actions.                                               │
+│   Phillip Holland and contributors are not liable for data loss, damages, or misuse.                                 │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
+`;

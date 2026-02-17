@@ -1,0 +1,14 @@
+{
+  "phillbook_core": {
+    "style": "futuristic anime, high fidelity",
+    "lighting": "neon mint (#00E676) highlights, deep obsidian shadows",
+    "mood": "synthetic, focused, high-tech",
+    "composition": "isometric, rule of thirds"
+  },
+  "manga_action": {
+    "style": "black and white manga or full vibrant colors, speed lines, ink wash",
+    "lighting": "high contrast, dramatic rim light",
+    "mood": "intense, kinetic",
+    "composition": "dynamic angle, close-up"
+  }
+}

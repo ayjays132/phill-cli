@@ -1,0 +1,18 @@
+{
+  "experimental": {
+    "skills": true
+  },
+  "hooks": {
+    "BeforeTool": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .phill/scripts/stasis_handshake.cjs",
+            "description": "Continuity Stasis Handshake"
+          }
+        ]
+      }
+    ]
+  }
+}

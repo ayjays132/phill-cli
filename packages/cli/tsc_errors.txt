@@ -1,0 +1,1 @@
+src/ui/components/Header.test.tsx(123,7): error TS2739: Type '{ primary: string; secondary: string; link: string; accent: string; response: string; }' is missing the following properties from type '{ primary: string; secondary: string; link: string; accent: string; response: string; hint: string; dim: string; }': hint, dim

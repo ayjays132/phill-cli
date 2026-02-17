@@ -1,0 +1,38 @@
+src/agents/a2a-client-manager.ts(18,30): error TS7016: Could not find a declaration file for module 'uuid'. 'E:/Phill-cli-0.0.1/packages/core/node_modules/uuid/dist-node/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/agents/types.ts(15,15): error TS2305: Module '"ajv"' has no exported member 'AnySchema'.
+src/core/contentGenerator.ts(26,42): error TS2307: Cannot find module '../../index.js' or its corresponding type declarations.
+src/utils/filesearch/crawler.ts(8,22): error TS7016: Could not find a declaration file for module 'fdir'. 'E:/Phill-cli-0.0.1/packages/core/node_modules/fdir/dist/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/fdir` if it exists or add a new declaration (.d.ts) file containing `declare module 'fdir';`
+src/utils/filesearch/crawler.ts(59,16): error TS7006: Parameter 'path' implicitly has an 'any' type.
+src/utils/filesearch/crawler.ts(59,22): error TS7006: Parameter 'isDirectory' implicitly has an 'any' type.
+src/utils/filesearch/crawler.ts(69,17): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/utils/filesearch/crawler.ts(69,20): error TS7006: Parameter 'dirPath' implicitly has an 'any' type.
+src/utils/filesearch/ignore.ts(42,24): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/filesearch/ignore.ts(43,25): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/fileUtils.test.ts(24,18): error TS7016: Could not find a declaration file for module 'mime/lite'. 'E:/Phill-cli-0.0.1/packages/core/node_modules/mime/dist/src/index_lite.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/mime` if it exists or add a new declaration (.d.ts) file containing `declare module 'mime/lite';`
+src/utils/fileUtils.ts(12,18): error TS7016: Could not find a declaration file for module 'mime/lite'. 'E:/Phill-cli-0.0.1/packages/core/node_modules/mime/dist/src/index_lite.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/mime` if it exists or add a new declaration (.d.ts) file containing `declare module 'mime/lite';`
+src/utils/gitIgnoreParser.ts(26,35): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(40,14): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(55,12): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(143,18): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(158,13): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(176,32): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/gitIgnoreParser.ts(201,33): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/ignoreFileParser.ts(25,16): error TS2349: This expression is not callable.
+  Type 'typeof import("E:/Phill-cli-0.0.1/node_modules/ignore/index")' has no call signatures.
+src/utils/schemaValidator.ts(7,23): error TS2305: Module '"ajv"' has no exported member 'AnySchema'.
+src/voice/audioManager.ts(9,20): error TS7016: Could not find a declaration file for module 'ffplay-static'. 'E:/Phill-cli-0.0.1/node_modules/ffplay-static/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/ffplay-static` if it exists or add a new declaration (.d.ts) file containing `declare module 'ffplay-static';`
+../test-utils/src/test-rig.ts(14,49): error TS2307: Cannot find module 'phill-cli-core' or its corresponding type declarations.
