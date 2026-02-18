@@ -1,7 +1,7 @@
 {
   "name": "phill-cli",
-  "version": "1.0.0",
-  "description": "Phill CLI",
+  "version": "1.0.4",
+  "description": "Phillbook Metropolis Command Line Interface",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

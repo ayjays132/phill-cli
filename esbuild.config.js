@@ -57,17 +57,62 @@ function createBuildSignalPlugin(outfile) {
   };
 }
 
-const external = [];
+const external = [
+  'node-pty',
+  '@lydell/node-pty',
+  '@lydell/node-pty-darwin-arm64',
+  '@lydell/node-pty-darwin-x64',
+  '@lydell/node-pty-linux-x64',
+  '@lydell/node-pty-win32-arm64',
+  '@lydell/node-pty-win32-x64',
+  'onnxruntime-node',
+  'keytar',
+  'speaker',
+  'node-audiorecorder',
+  'ws',
+  'playwright',
+  'playwright-core',
+  'fsevents', // Explicitly externalize fsevents to avoid bundling issues
+  'tree-sitter-bash',
+  'web-tree-sitter',
+  '@xenova/transformers',
+];
 
 // Plugin to mark all non-relative imports as external to avoid bundling node_modules.
-// This is necessary because root node_modules is inconsistent.
+// EXCEPT for pure-JS packages we want to bundle for a robust binary.
 function createAutoExternalPlugin() {
   return {
     name: 'auto-external',
     setup(build) {
-      // Mark any import that doesn't start with "." or "/" as external
       build.onResolve({ filter: /^[^./]/ }, (args) => {
-        return { path: args.path, external: true };
+        // 1. Force external for native/binary packages
+        if (
+          external.some(
+            (pkg) => args.path === pkg || args.path.startsWith(pkg + '/'),
+          )
+        ) {
+          return { path: args.path, external: true };
+        }
+
+        // 2. Bundle internal workspace packages
+        if (
+          args.path.startsWith('phill-cli') ||
+          args.path.startsWith('@ayjays132/phill-cli')
+        ) {
+          return undefined; // bundle it
+        }
+
+        // 3. For all other node_modules, we prefer to BUNDLE them unless they are special.
+        // This makes the CLI much more robust as it doesn't depend on the user's environment.
+        // We only externalize known problematic or huge packages that shouldn't be bundled.
+        const dontBundle = ['ffmpeg-static', 'ffplay-static'];
+
+        if (dontBundle.includes(args.path)) {
+          return { path: args.path, external: true };
+        }
+
+        // Default: Bundle everything else for a "batteries-included" JS file.
+        return undefined;
       });
     },
   };
@@ -76,7 +121,15 @@ function createAutoExternalPlugin() {
 // Plugin to handle optional native modules that may not be installed.
 // Instead of failing at bundle time or runtime, resolve them to empty stubs.
 function createOptionalExternalsPlugin() {
-  const optionalPackages = [];
+  const optionalPackages = [
+    'node-pty',
+    '@lydell/node-pty',
+    'onnxruntime-node',
+    'keytar',
+    'speaker',
+    'node-audiorecorder',
+    'fsevents',
+  ];
   return {
     name: 'optional-externals',
     setup(build) {
@@ -87,7 +140,8 @@ function createOptionalExternalsPlugin() {
         namespace: 'optional-external',
       }));
       build.onLoad({ filter: /.*/, namespace: 'optional-external' }, () => ({
-        contents: 'export default {}; export {};',
+        contents:
+          'export default {}; export const spawn = () => { throw new Error("Native module not available"); };',
         loader: 'js',
       }));
     },
@@ -99,8 +153,21 @@ const baseConfig = {
   platform: 'node',
   format: 'esm',
   external,
-  loader: { '.node': 'file' },
+  loader: { '.node': 'file', '.toml': 'text', '.wasm': 'file' },
   write: true,
+};
+
+const commonAliases = {
+  // Use shim for ffmpeg/ffplay to avoid runtime require() failures if not installed,
+  // while relying on local binary discovery in DeviceManager.
+  'ffmpeg-static': path.resolve(
+    __dirname,
+    'packages/cli/src/patches/ffmpeg-static-shim.js',
+  ),
+  'ffplay-static': path.resolve(
+    __dirname,
+    'packages/cli/src/patches/ffplay-static-shim.js',
+  ),
 };
 
 const cliConfig = {
@@ -116,6 +183,7 @@ const cliConfig = {
   plugins: [createOptionalExternalsPlugin(), createAutoExternalPlugin()],
   alias: {
     'is-in-ci': path.resolve(__dirname, 'packages/cli/src/patches/is-in-ci.ts'),
+    ...commonAliases,
   },
   metafile: true,
 };
@@ -132,6 +200,9 @@ const a2aServerConfig = {
     'process.env.CLI_VERSION': JSON.stringify(pkg.version),
   },
   plugins: [createOptionalExternalsPlugin(), createAutoExternalPlugin()],
+  alias: {
+    ...commonAliases,
+  },
 };
 a2aServerConfig.plugins.push(createBuildSignalPlugin(a2aServerConfig.outfile));
 
@@ -146,6 +217,9 @@ const engineConfig = {
     'process.env.CLI_VERSION': JSON.stringify(pkg.version),
   },
   plugins: [createOptionalExternalsPlugin(), createAutoExternalPlugin()],
+  alias: {
+    ...commonAliases,
+  },
 };
 
 async function buildWithWatch(config) {

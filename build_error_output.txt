@@ -1,0 +1,55 @@
+X [ERROR] No loader is configured for ".wasm" files: node_modules/web-tree-sitter/tree-sitter.wasm?binary
+
+    packages/core/dist/utils/shell-utils.js:69:19:
+      69 Γöé ...    import('web-tree-sitter/tree-sitter.wasm?binary'), 'web-tre...
+         Γò╡               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+X [ERROR] No loader is configured for ".wasm" files: node_modules/web-tree-sitter/tree-sitter.wasm?binary
+
+    packages/core/dist/utils/shell-utils.js:69:19:
+      69 Γöé ...    import('web-tree-sitter/tree-sitter.wasm?binary'), 'web-tre...
+         Γò╡               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+X [ERROR] Could not resolve "chromium-bidi/lib/cjs/bidiMapper/BidiMapper"
+
+    node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:34:33:
+      34 Γöé ...= __toESM(require("chromium-bidi/lib/cjs/bidiMapper/BidiMapper"));
+         Γò╡                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "chromium-bidi/lib/cjs/bidiMapper/BidiMapper" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+X [ERROR] Could not resolve "chromium-bidi/lib/cjs/cdp/CdpConnection"
+
+    node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:35:40:
+      35 Γöé ...ion = __toESM(require("chromium-bidi/lib/cjs/cdp/CdpConnection"));
+         Γò╡                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "chromium-bidi/lib/cjs/cdp/CdpConnection" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+X [ERROR] Could not resolve "chromium-bidi/lib/cjs/bidiMapper/BidiMapper"
+
+    node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:34:33:
+      34 Γöé ...= __toESM(require("chromium-bidi/lib/cjs/bidiMapper/BidiMapper"));
+         Γò╡                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "chromium-bidi/lib/cjs/bidiMapper/BidiMapper" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+X [ERROR] Could not resolve "chromium-bidi/lib/cjs/cdp/CdpConnection"
+
+    node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:35:40:
+      35 Γöé ...ion = __toESM(require("chromium-bidi/lib/cjs/cdp/CdpConnection"));
+         Γò╡                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "chromium-bidi/lib/cjs/cdp/CdpConnection" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle. You can also surround this "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+phill.js build failed: Error: Build failed with 3 errors:
+node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:34:33: ERROR: Could not resolve "chromium-bidi/lib/cjs/bidiMapper/BidiMapper"
+node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js:35:40: ERROR: Could not resolve "chromium-bidi/lib/cjs/cdp/CdpConnection"
+packages/core/dist/utils/shell-utils.js:69:19: ERROR: No loader is configured for ".wasm" files: node_modules/web-tree-sitter/tree-sitter.wasm?binary
+    at failureErrorWithLog (E:\phill-cli-0.0.1\node_modules\esbuild\lib\main.js:1467:15)
+    at E:\phill-cli-0.0.1\node_modules\esbuild\lib\main.js:926:25
+    at E:\phill-cli-0.0.1\node_modules\esbuild\lib\main.js:1345:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}

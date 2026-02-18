@@ -42,7 +42,13 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
-  reactHooks.configs['recommended-latest'],
+  {
+    // Fix: Properly map react-hooks for flat config
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: reactHooks.configs.recommended.rules,
+  },
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'], // Add this if you are using React 17+
   {
@@ -73,7 +79,7 @@ export default tseslint.config(
   },
   {
     // General overrides and rules for the project (TS/TSX files)
-    files: ['packages/*/src/**/*.{ts,tsx}'], // Target only TS/TSX in the cli package
+    files: ['packages/*/src/**/*.{ts,tsx}'], // Target only TS/TSX in the packages
     plugins: {
       import: importPlugin,
     },
@@ -213,8 +219,13 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          name: 'phill-cli-core',
-          message: 'Please use relative imports within the phill-cli-core package.',
+          // Fix: Wrap custom overrides inside the 'paths' array
+          paths: [
+            {
+              name: 'phill-cli-core',
+              message: 'Please use relative imports within the phill-cli-core package.',
+            },
+          ],
         },
       ],
     },
@@ -225,8 +236,13 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          name: 'phill-cli',
-          message: 'Please use relative imports within the phill-cli package.',
+          // Fix: Wrap custom overrides inside the 'paths' array
+          paths: [
+            {
+              name: 'phill-cli',
+              message: 'Please use relative imports within the phill-cli package.',
+            },
+          ],
         },
       ],
     },
@@ -329,9 +345,6 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
-  // Prettier config must be last
-  prettierConfig,
-  // extra settings for scripts that we run directly with node
   {
     files: ['./integration-tests/**/*.js'],
     languageOptions: {
@@ -352,4 +365,6 @@ export default tseslint.config(
       ],
     },
   },
+  // Fix: Prettier config MUST be strictly last to override formatting rules
+  prettierConfig
 );

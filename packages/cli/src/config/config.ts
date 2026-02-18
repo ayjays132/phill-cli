@@ -11,6 +11,7 @@ import { mcpCommand } from '../commands/mcp.js';
 import { extensionsCommand } from '../commands/extensions.js';
 import { skillsCommand } from '../commands/skills.js';
 import { hooksCommand } from '../commands/hooks.js';
+import { metropolisCommand } from '../commands/metropolis.js';
 import {
   Config,
   setPhillMdFilename as setServerPhillMdFilename,
@@ -100,7 +101,7 @@ export async function parseArguments(
     .locale('en')
     .scriptName('phill')
     .usage(
-      'Usage: phill [options] [command]\n\nPhill CLI - Defaults to interactive mode. Use -p/--prompt for non-interactive (headless) mode.',
+      'Usage: phill [options] [command]\n\nPhillbook Metropolis Workspace Interface // Protocol v8.04\n\nInteractive mode is active by default. Use -p/--prompt for headless execution.',
     )
     .option('debug', {
       alias: 'd',
@@ -118,7 +119,7 @@ export async function parseArguments(
           alias: 'm',
           type: 'string',
           nargs: 1,
-          description: `Model`,
+          description: `Specify the neural model to use (e.g., 'gemini-2.0-flash', 'ollama/llama3', 'openai/gpt-4o', 'anthropic/claude-3-5-sonnet', or 'huggingface/gpt2')`,
         })
         .option('prompt', {
           alias: 'p',
@@ -312,6 +313,9 @@ export async function parseArguments(
   if (settings.tools?.enableHooks) {
     yargsInstance.command(hooksCommand);
   }
+
+  // Register Metropolis command
+  yargsInstance.command(metropolisCommand);
 
   yargsInstance
     .version(await getVersion()) // This will enable the --version flag based on package.json
