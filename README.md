@@ -681,6 +681,7 @@ See the [Uninstall Guide](docs/cli/uninstall.md) for removal instructions.
 
 Phill CLI is built on the shoulders of giants. Special thanks to:
 
+- The Google Gemini CLI team for the base of this CLI: [https://github.com/google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
 - The Anthropic team for Claude's advanced capabilities
 - The MCP protocol contributors
 - The open-source community
