@@ -1,7 +1,7 @@
-# 🦅 Phill CLI (v1.1.0)
+# 🦅 Phill CLI (v1.1.1)
 
 [![Phill CLI CI](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.1.0--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
+[![Version](https://img.shields.io/badge/version-1.1.1--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
 [![License](https://img.shields.io/github/license/ayjays132/phill-cli?style=for-the-badge&logo=git)](https://github.com/ayjays132/phill-cli/blob/main/LICENSE)
 
 ![Phill CLI Banner](./docs/assets/phill-screenshot.png)
@@ -23,7 +23,7 @@ tracking towards AGI principles.
 
 ---
 
-## 🆕 What's New (v1.1.0 - The Apex Breakthrough)
+## 🆕 What's New (v1.1.1 - The Apex Breakthrough)
 
 ### 🧠 Apex Cognitive Pipeline & Gemini 3.1 Alignment
 - **Native Gemini 3.1 Support**: Full integration with `gemini-3.1-pro`, `gemini-3.1-flash`, and `gemini-3.1-flash-lite`.

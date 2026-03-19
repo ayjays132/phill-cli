@@ -2,7 +2,7 @@
   "name": "phill-cli-vscode-ide-companion",
   "displayName": "Phill CLI Companion",
   "description": "Enable Phill CLI with direct access to your IDE workspace.",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "publisher": "phill",
   "icon": "assets/icon.png",
   "repository": {
