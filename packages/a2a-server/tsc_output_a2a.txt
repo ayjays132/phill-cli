@@ -1,0 +1,2 @@
+../core/src/vision/moondream.ts(160,41): error TS2345: Argument of type 'Uint8Array<ArrayBuffer>' is not assignable to parameter of type 'string | RawImage | URL'.
+  Type 'Uint8Array<ArrayBuffer>' is missing the following properties from type 'URL': hash, host, hostname, href, and 9 more.

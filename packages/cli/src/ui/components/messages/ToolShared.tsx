@@ -22,6 +22,7 @@ import {
   type ToolResultDisplay,
 } from 'phill-cli-core';
 import { useInactivityTimer } from '../../hooks/useInactivityTimer.js';
+import { ThemedGradient } from '../ThemedGradient.js';
 
 export const STATUS_INDICATOR_WIDTH = 5;
 
@@ -135,9 +136,12 @@ export const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = ({
   name,
 }) => {
   const isShell = isShellTool(name);
+  const isSkill = name === 'activate_skill';
   const statusColor = isShell ? theme.ui.symbol : theme.status.warning;
   const emoji =
-    status === ToolCallStatus.Success
+    isSkill && status === ToolCallStatus.Executing
+      ? '🧠 '
+      : status === ToolCallStatus.Success
       ? '✅ '
       : status === ToolCallStatus.Error
         ? '❌ '
@@ -233,12 +237,20 @@ export const ToolInfo: React.FC<ToolInfoProps> = ({
       ToolCallStatus.Canceled,
     ].includes(status);
 
+  const isSkill = name === 'activate_skill';
+
   return (
     <Box overflow="hidden" height={1} flexGrow={1} flexShrink={1}>
       <Text strikethrough={status === ToolCallStatus.Canceled} wrap="truncate">
-        <Text color={nameColor} bold>
-          {name}
-        </Text>
+        {isSkill ? (
+          <ThemedGradient animate={status === ToolCallStatus.Executing} speed={100}>
+            <Text bold>{name.toUpperCase()}</Text>
+          </ThemedGradient>
+        ) : (
+          <Text color={nameColor} bold>
+            {name}
+          </Text>
+        )}
         {!isCompletedAskUser && (
           <>
             {' '}

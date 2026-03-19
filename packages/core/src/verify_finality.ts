@@ -7,9 +7,21 @@
 import { EthicalGuardService } from './services/ethicalGuardService.js';
 import { SuccessTraceService } from './services/successTraceService.js';
 import { LatentContextService } from './services/latentContextService.js';
+import { Config } from './config/config.js';
+import { Storage } from './config/storage.js';
 
 async function verifyFinality() {
   console.log('--- STARTING PROJECT FINALITY VERIFICATION (UTOPIAN STEWARD) ---');
+
+  const storage = new Storage(process.cwd());
+  // @ts-ignore
+  const config = new Config({
+    storage,
+    targetDir: process.cwd(),
+    sessionId: 'test-session',
+    model: 'gemini-1.5-flash',
+    cwd: process.cwd()
+  } as any);
 
   const guard = EthicalGuardService.getInstance();
   const successService = SuccessTraceService.getInstance();
@@ -34,9 +46,9 @@ async function verifyFinality() {
     goal: 'Test Utopian Steward mechanics',
     dlr: 'E:A10R0V0|G:UtopiaPlan|S:Finalized',
     timestamp: new Date().toISOString()
-  });
+  }, config);
 
-  const wisdom = await successService.retrieveLatentWisdom('Utopian Steward');
+  const wisdom = await successService.retrieveLatentWisdom('Utopian Steward', config);
   console.log(`Retrieved Wisdom gems: ${wisdom.length}`);
   
   if (wisdom.length > 0 && wisdom[0].includes('E:A10')) {

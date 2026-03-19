@@ -422,4 +422,23 @@ describe('createContentGeneratorConfig', () => {
     expect(config.apiKey).toBeUndefined();
     expect(config.vertexai).toBeUndefined();
   });
+
+  it('should configure for OpenAI with OPENAI_API_KEY', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'env-openai-key');
+    const config = await createContentGeneratorConfig(mockConfig, AuthType.OPENAI);
+    expect(config.openAi).toEqual({
+      endpoint: 'https://api.openai.com/v1',
+      apiKey: 'env-openai-key',
+      model: 'gpt-4o',
+    });
+  });
+
+  it('should fail for OpenAI auth when no API key is configured', async () => {
+    vi.stubEnv('OPENAI_API_KEY', '');
+    await expect(
+      createContentGeneratorConfig(mockConfig, AuthType.OPENAI),
+    ).rejects.toThrow(
+      'OpenAI API key not found. Set OPENAI_API_KEY or configure openAI.apiKey in settings.',
+    );
+  });
 });

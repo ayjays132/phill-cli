@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { debugLogger } from '../utils/debugLogger.js';
+
 export type ModelId = string;
 
-type TerminalUnavailabilityReason = 'quota' | 'capacity';
+type TerminalUnavailabilityReason = 'quota' | 'capacity' | 'access_denied' | 'not_found';
 export type TurnUnavailabilityReason = 'retry_once_per_turn';
 
 export type UnavailabilityReason =
@@ -14,10 +16,15 @@ export type UnavailabilityReason =
   | TurnUnavailabilityReason
   | 'unknown';
 
-export type ModelHealthStatus = 'terminal' | 'sticky_retry';
+export type ModelHealthStatus = 'healthy' | 'cool_off' | 'sticky_retry';
 
 type HealthState =
-  | { status: 'terminal'; reason: TerminalUnavailabilityReason }
+  | { status: 'healthy' }
+  | { 
+      status: 'cool_off'; 
+      reason: TerminalUnavailabilityReason; 
+      expiry: number; // Timestamp when model becomes healthy again
+    }
   | {
       status: 'sticky_retry';
       reason: TurnUnavailabilityReason;
@@ -40,12 +47,16 @@ export interface ModelSelectionResult {
 
 export class ModelAvailabilityService {
   private readonly health = new Map<ModelId, HealthState>();
+  private readonly DEFAULT_COOL_OFF_MS = 5 * 60 * 1000; // 5 minutes default recovery
 
-  markTerminal(model: ModelId, reason: TerminalUnavailabilityReason) {
+  markTerminal(model: ModelId, reason: TerminalUnavailabilityReason, coolOffMs?: number) {
+    const expiry = Date.now() + (coolOffMs ?? this.DEFAULT_COOL_OFF_MS);
     this.setState(model, {
-      status: 'terminal',
+      status: 'cool_off',
       reason,
+      expiry,
     });
+    debugLogger.debug(`[ModelAvailability] Sidelining ${model} for ${reason}. Recovers at ${new Date(expiry).toLocaleTimeString()}.`);
   }
 
   markHealthy(model: ModelId) {
@@ -54,8 +65,8 @@ export class ModelAvailabilityService {
 
   markRetryOncePerTurn(model: ModelId) {
     const currentState = this.health.get(model);
-    // Do not override a terminal failure with a transient one.
-    if (currentState?.status === 'terminal') {
+    // Do not override a cool-off failure with a transient one.
+    if (currentState?.status === 'cool_off') {
       return;
     }
 
@@ -87,7 +98,11 @@ export class ModelAvailabilityService {
       return { available: true };
     }
 
-    if (state.status === 'terminal') {
+    if (state.status === 'cool_off') {
+      if (Date.now() >= state.expiry) {
+        this.markHealthy(model);
+        return { available: true };
+      }
       return { available: false, reason: state.reason };
     }
 

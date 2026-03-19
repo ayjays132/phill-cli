@@ -563,104 +563,121 @@ class GrepToolInvocation extends BaseToolInvocation<
         ? null
         : new RegExp(pattern, regexFlags || undefined);
       const allMatches: GrepMatch[] = [];
+      const CONCURRENCY_LIMIT = 10;
+      const activeTasks: Promise<void>[] = [];
 
       for await (const filePath of filesStream) {
         if (allMatches.length >= maxMatches) break;
-        const fileAbsolutePath = filePath;
-        // security check
-        const relativePath = path.relative(absolutePath, fileAbsolutePath);
-        if (
-          relativePath === '..' ||
-          relativePath.startsWith(`..${path.sep}`) ||
-          path.isAbsolute(relativePath)
-        )
-          continue;
 
-        try {
-          const content = await fsPromises.readFile(fileAbsolutePath, 'utf8');
-          const lines = content.split(/\r?\n/);
-          const fileMatches: GrepMatch[] = [];
+        const processFile = async (fileAbsolutePath: string) => {
+          // security check
+          const relativePath = path.relative(absolutePath, fileAbsolutePath);
+          if (
+            relativePath === '..' ||
+            relativePath.startsWith(`..${path.sep}`) ||
+            path.isAbsolute(relativePath)
+          )
+            return;
 
-          for (let index = 0; index < lines.length; index++) {
-            const line = lines[index];
-            let isMatch = false;
-            if (fixed_strings) {
-              isMatch = case_sensitive
-                ? line.includes(pattern)
-                : line.toLowerCase().includes(pattern.toLowerCase());
-            } else if (regex) {
-              isMatch = regex.test(line);
-            }
+          try {
+            const content = await fsPromises.readFile(fileAbsolutePath, 'utf8');
+            const lines = content.split(/\r?\n/);
+            const fileMatches: GrepMatch[] = [];
 
-            if (isMatch) {
-              if (files_with_matches) {
-                fileMatches.push({
-                  filePath: relativePath || path.basename(fileAbsolutePath),
-                  lineNumber: 0,
-                  line: '',
-                });
-                break; // Only need one match for files_with_matches
+            for (let index = 0; index < lines.length; index++) {
+              const line = lines[index];
+              let isMatch = false;
+              if (fixed_strings) {
+                isMatch = case_sensitive
+                  ? line.includes(pattern)
+                  : line.toLowerCase().includes(pattern.toLowerCase());
+              } else if (regex) {
+                isMatch = regex.test(line);
               }
 
-              const actualBefore = context !== undefined ? context : before || 0;
-              const actualAfter = context !== undefined ? context : after || 0;
-
-              if (actualBefore > 0 || actualAfter > 0) {
-                const start = Math.max(0, index - actualBefore);
-                const end = Math.min(lines.length - 1, index + actualAfter);
-                for (let i = start; i <= end; i++) {
+              if (isMatch) {
+                if (files_with_matches) {
                   fileMatches.push({
                     filePath: relativePath || path.basename(fileAbsolutePath),
-                    lineNumber: i + 1,
-                    line: lines[i],
-                    isContext: i !== index,
+                    lineNumber: 0,
+                    line: '',
+                  });
+                  break; // Only need one match for files_with_matches
+                }
+
+                const actualBefore = context !== undefined ? context : before || 0;
+                const actualAfter = context !== undefined ? context : after || 0;
+
+                if (actualBefore > 0 || actualAfter > 0) {
+                  const start = Math.max(0, index - actualBefore);
+                  const end = Math.min(lines.length - 1, index + actualAfter);
+                  for (let i = start; i <= end; i++) {
+                    fileMatches.push({
+                      filePath: relativePath || path.basename(fileAbsolutePath),
+                      lineNumber: i + 1,
+                      line: lines[i],
+                      isContext: i !== index,
+                    });
+                  }
+                } else {
+                  fileMatches.push({
+                    filePath: relativePath || path.basename(fileAbsolutePath),
+                    lineNumber: index + 1,
+                    line,
                   });
                 }
-              } else {
-                fileMatches.push({
-                  filePath: relativePath || path.basename(fileAbsolutePath),
-                  lineNumber: index + 1,
-                  line,
-                });
-              }
 
-              if (allMatches.length + fileMatches.length >= maxMatches) break;
-            }
-          }
-
-          // Deduplicate context lines if they overlap
-          if (!files_with_matches && (before || after || context)) {
-            const seen = new Set<number>();
-            const uniqueFileMatches: GrepMatch[] = [];
-            for (const m of fileMatches) {
-              if (!seen.has(m.lineNumber)) {
-                uniqueFileMatches.push(m);
-                seen.add(m.lineNumber);
-              } else if (!m.isContext) {
-                // If we already added this line as context but now it's a match, update it
-                const existing = uniqueFileMatches.find(
-                  (em) => em.lineNumber === m.lineNumber,
-                );
-                if (existing) existing.isContext = false;
+                if (allMatches.length + fileMatches.length >= maxMatches) break;
               }
             }
-            allMatches.push(...uniqueFileMatches);
-          } else {
-            allMatches.push(...fileMatches);
+
+            // Deduplicate context lines if they overlap
+            if (!files_with_matches && (before || after || context)) {
+              const seen = new Set<number>();
+              const uniqueFileMatches: GrepMatch[] = [];
+              for (const m of fileMatches) {
+                if (!seen.has(m.lineNumber)) {
+                  uniqueFileMatches.push(m);
+                  seen.add(m.lineNumber);
+                } else if (!m.isContext) {
+                  const existing = uniqueFileMatches.find(
+                    (em) => em.lineNumber === m.lineNumber,
+                  );
+                  if (existing) existing.isContext = false;
+                }
+              }
+              if (allMatches.length < maxMatches) {
+                allMatches.push(...uniqueFileMatches);
+              }
+            } else if (allMatches.length < maxMatches) {
+              allMatches.push(...fileMatches);
+            }
+          } catch (readError: unknown) {
+            if (!isNodeError(readError) || readError.code !== 'ENOENT') {
+              debugLogger.debug(
+                `GrepLogic: Could not read/process ${fileAbsolutePath}: ${getErrorMessage(
+                  readError,
+                )}`,
+              );
+            }
           }
-        } catch (readError: unknown) {
-          // Ignore errors like permission denied or file gone during read
-          if (!isNodeError(readError) || readError.code !== 'ENOENT') {
-            debugLogger.debug(
-              `GrepLogic: Could not read/process ${fileAbsolutePath}: ${getErrorMessage(
-                readError,
-              )}`,
-            );
-          }
+        };
+
+        const task = processFile(filePath);
+        activeTasks.push(task);
+        task.finally(() => {
+          const index = activeTasks.indexOf(task);
+          if (index > -1) activeTasks.splice(index, 1);
+        });
+
+        if (activeTasks.length >= CONCURRENCY_LIMIT) {
+          await Promise.race(activeTasks);
         }
       }
 
-      return allMatches;
+      await Promise.all(activeTasks);
+      return allMatches.slice(0, maxMatches);
+
     } catch (error: unknown) {
       debugLogger.warn(
         `GrepLogic: Error in performGrepSearch (Strategy: ${strategyUsed}): ${getErrorMessage(

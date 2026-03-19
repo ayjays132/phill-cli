@@ -60,6 +60,9 @@ export interface CustomTheme {
   border?: {
     default?: string;
     focused?: string;
+    subtle?: string;
+    accent?: string;
+    strong?: string;
   };
   ui?: {
     comment?: string;
@@ -148,21 +151,21 @@ export const ansiTheme: ColorsTheme = {
 
 export const sotaPremiumTheme: ColorsTheme = {
   type: 'custom',
-  Background: '#0D0D15',
-  Foreground: '#FFFFFF',
-  LightBlue: '#8BD5FF',
-  AccentBlue: '#00A3FF',
-  AccentPurple: '#BF7AFA',
-  AccentCyan: '#00F0FF',
-  AccentGreen: '#00FF94',
+  Background: '#070913',
+  Foreground: '#F3F7FF',
+  LightBlue: '#3D62B0',
+  AccentBlue: '#183D88',
+  AccentPurple: '#7458B8',
+  AccentCyan: '#31559D',
+  AccentGreen: '#66F2A4',
   AccentYellow: '#FFD700',
   AccentRed: '#FF4D4D',
-  DiffAdded: '#1A3326',
-  DiffRemoved: '#331A1A',
-  Comment: '#6272A4',
-  Gray: '#8080B0',
-  DarkGray: '#303045',
-  GradientColors: ['#00A3FF', '#BF7AFA', '#00F0FF'],
+  DiffAdded: '#133828',
+  DiffRemoved: '#331515',
+  Comment: '#7E84B7',
+  Gray: '#8A8FC3',
+  DarkGray: '#2B2E45',
+  GradientColors: ['#183D88', '#7458B8', '#66F2A4'],
 };
 
 export class Theme {
@@ -218,6 +221,9 @@ export class Theme {
       border: {
         default: this.colors.Gray,
         focused: this.colors.AccentBlue,
+        subtle: this.colors.DarkGray,
+        accent: this.colors.AccentPurple,
+        strong: this.colors.AccentBlue,
       },
       ui: {
         comment: this.colors.Gray,
@@ -496,6 +502,15 @@ export function createCustomTheme(customTheme: CustomTheme): Theme {
     border: {
       default: customTheme.border?.default ?? colors.Gray,
       focused: customTheme.border?.focused ?? colors.AccentBlue,
+      subtle: customTheme.border?.subtle ?? colors.DarkGray,
+      accent:
+        customTheme.border?.accent ??
+        customTheme.border?.focused ??
+        colors.AccentPurple,
+      strong:
+        customTheme.border?.strong ??
+        customTheme.border?.focused ??
+        colors.AccentBlue,
     },
     ui: {
       comment: customTheme.ui?.comment ?? colors.Comment,

@@ -25,7 +25,7 @@ import {
   DEFAULT_GEMINI_MODEL_AUTO,
   PREVIEW_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
 } from '../config/models.js';
 import type { FallbackModelHandler } from './types.js';
 import { openBrowserSecurely } from '../utils/secure-browser-launcher.js';
@@ -246,7 +246,7 @@ describe('handleFallback', () => {
         PREVIEW_GEMINI_MODEL,
       );
       vi.mocked(policyConfig.getModel).mockReturnValue(
-        PREVIEW_GEMINI_MODEL_AUTO,
+        PREVIEW_GEMINI_3_1_MODEL_AUTO,
       );
 
       const result = await handleFallback(

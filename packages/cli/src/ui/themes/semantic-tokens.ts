@@ -34,6 +34,9 @@ export interface SemanticColors {
   border: {
     default: string;
     focused: string;
+    subtle: string;
+    accent: string;
+    strong: string;
   };
   ui: {
     comment: string;
@@ -76,6 +79,9 @@ export const lightSemanticColors: SemanticColors = {
   border: {
     default: lightTheme.Gray,
     focused: lightTheme.AccentBlue,
+    subtle: lightTheme.DarkGray,
+    accent: lightTheme.AccentPurple,
+    strong: lightTheme.AccentBlue,
   },
   ui: {
     comment: lightTheme.Comment,
@@ -118,6 +124,9 @@ export const darkSemanticColors: SemanticColors = {
   border: {
     default: darkTheme.Gray,
     focused: darkTheme.AccentBlue,
+    subtle: darkTheme.DarkGray,
+    accent: darkTheme.AccentPurple,
+    strong: darkTheme.AccentBlue,
   },
   ui: {
     comment: darkTheme.Comment,
@@ -160,6 +169,9 @@ export const ansiSemanticColors: SemanticColors = {
   border: {
     default: ansiTheme.Gray,
     focused: ansiTheme.AccentBlue,
+    subtle: ansiTheme.DarkGray,
+    accent: ansiTheme.AccentPurple,
+    strong: ansiTheme.AccentBlue,
   },
   ui: {
     comment: ansiTheme.Comment,

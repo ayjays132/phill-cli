@@ -10,7 +10,7 @@ import type { Config } from '../config/config.js';
 import {
   PREVIEW_GEMINI_MODEL,
   PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
 } from '../config/models.js';
 import { ModelAvailabilityService } from './modelAvailabilityService.js';
 import { ModelConfigService } from '../services/modelConfigService.js';
@@ -24,8 +24,8 @@ describe('Fallback Integration', () => {
   beforeEach(() => {
     // Mocking Config because it has many dependencies
     config = {
-      getModel: () => PREVIEW_GEMINI_MODEL_AUTO,
-      getActiveModel: () => PREVIEW_GEMINI_MODEL_AUTO,
+      getModel: () => PREVIEW_GEMINI_3_1_MODEL_AUTO,
+      getActiveModel: () => PREVIEW_GEMINI_3_1_MODEL_AUTO,
       setActiveModel: vi.fn(),
       getPreviewFeatures: () => true, // Preview enabled for Phill 3
       getUserTier: () => undefined,
@@ -41,7 +41,7 @@ describe('Fallback Integration', () => {
 
   it('should select fallback model when primary model is terminal and config is in AUTO mode', () => {
     // 1. Simulate "Pro" failing with a terminal quota error
-    // The policy chain for PREVIEW_GEMINI_MODEL_AUTO is [PREVIEW_GEMINI_MODEL, PREVIEW_GEMINI_FLASH_MODEL]
+    // The policy chain for PREVIEW_GEMINI_3_1_MODEL_AUTO is [PREVIEW_GEMINI_MODEL, PREVIEW_GEMINI_FLASH_MODEL]
     availabilityService.markTerminal(PREVIEW_GEMINI_MODEL, 'quota');
 
     // 2. Request "Pro" explicitly (as Agent would)

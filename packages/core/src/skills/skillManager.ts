@@ -188,4 +188,11 @@ export class SkillManager {
   isSkillActive(name: string): boolean {
     return this.activeSkillNames.has(name);
   }
+
+  /**
+   * Returns a list of all currently active skill names.
+   */
+  getActiveSkills(): string[] {
+    return Array.from(this.activeSkillNames);
+  }
 }

@@ -16,8 +16,21 @@ import {
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_ID,
-  PREVIEW_GEMINI_FLASH_MODEL_ID,
+  PREVIEW_GEMINI_3_PRO_MODEL_ID as PREVIEW_GEMINI_MODEL_ID,
+  PREVIEW_GEMINI_3_FLASH_MODEL_ID as PREVIEW_GEMINI_FLASH_MODEL_ID,
+  STABLE_GEMINI_2_5_PRO,
+  STABLE_GEMINI_2_5_FLASH,
+  PREVIEW_GEMINI_3_1_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID,
+  PREVIEW_GEMINI_3_PLUS_3_1_MODEL,
+  PREVIEW_GEMINI_3_PLUS_3_1_FLASH_MODEL,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO,
+  PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO,
+  DEFAULT_GEMINI_MODEL_AUTO,
 } from '../config/models.js';
 import type { UserTierId } from '../code_assist/types.js';
 
@@ -29,6 +42,7 @@ type PolicyConfig = Omit<ModelPolicy, 'actions' | 'stateTransitions'> & {
 
 export interface ModelPolicyOptions {
   previewEnabled: boolean;
+  autoMode?: string;
   userTier?: UserTierId;
 }
 
@@ -47,10 +61,10 @@ const SILENT_ACTIONS: ModelPolicyActionMap = {
 };
 
 const DEFAULT_STATE: ModelPolicyStateMap = {
-  terminal: 'terminal',
-  transient: 'terminal',
-  not_found: 'terminal',
-  unknown: 'terminal',
+  terminal: 'cool_off',
+  transient: 'sticky_retry',
+  not_found: 'cool_off',
+  unknown: 'cool_off',
 };
 
 const DEFAULT_CHAIN: ModelPolicyChain = [
@@ -66,6 +80,40 @@ const PREVIEW_CHAIN: ModelPolicyChain = [
     model: PREVIEW_GEMINI_FLASH_MODEL_ID,
     isLastResort: true,
   }),
+];
+
+const GEMINI_3_1_CHAIN: ModelPolicyChain = [
+  // 1. Primary High-Performance (3.1 Pro)
+  definePolicy({ model: PREVIEW_GEMINI_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
+  
+  // 2. High-Fidelity Multi-modal Fallback (3.1 Flash-Image)
+  definePolicy({ model: PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID, actions: SILENT_ACTIONS }),
+  
+  // 3. Ultra-Fast Agentic Fallback (3.1 Flash)
+  definePolicy({ model: PREVIEW_GEMINI_3_1_FLASH_MODEL_ID, actions: SILENT_ACTIONS }),
+  
+  // 4. Stable Core Fallback (2.5 Pro)
+  definePolicy({ model: STABLE_GEMINI_2_5_PRO, actions: SILENT_ACTIONS }),
+  
+  // 5. Cost-Optimized / High-Availability Fallback (3.1 Flash-Lite)
+  definePolicy({ model: PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID, actions: SILENT_ACTIONS }),
+  
+  // 6. Last Resort (Absolute Stability - 2.5 Flash)
+  definePolicy({ model: STABLE_GEMINI_2_5_FLASH, isLastResort: true }),
+];
+
+const GEMINI_3_PLUS_3_1_CHAIN: ModelPolicyChain = [
+  // 1. Premium Tier (3.1 Pro)
+  definePolicy({ model: PREVIEW_GEMINI_3_PLUS_3_1_MODEL, actions: SILENT_ACTIONS }),
+  
+  // 2. High-Speed Premium Fallback (3.1 Flash)
+  definePolicy({ model: PREVIEW_GEMINI_3_PLUS_3_1_FLASH_MODEL, actions: SILENT_ACTIONS }),
+  
+  // 3. Multimodal Premium Fallback (3.1 Flash-Image)
+  definePolicy({ model: PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID, actions: SILENT_ACTIONS }),
+
+  // 4. Stable Last Resort (2.5 Flash)
+  definePolicy({ model: STABLE_GEMINI_2_5_FLASH, isLastResort: true }),
 ];
 
 const FLASH_LITE_CHAIN: ModelPolicyChain = [
@@ -84,13 +132,39 @@ const FLASH_LITE_CHAIN: ModelPolicyChain = [
   }),
 ];
 
+const GEMINI_3_CHAIN: ModelPolicyChain = [
+  definePolicy({ model: PREVIEW_GEMINI_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: PREVIEW_GEMINI_FLASH_MODEL_ID,
+    isLastResort: true,
+  }),
+];
+
 /**
  * Returns the default ordered model policy chain for the user.
  */
 export function getModelPolicyChain(
   options: ModelPolicyOptions,
 ): ModelPolicyChain {
+  if (options.autoMode === PREVIEW_GEMINI_3_1_MODEL_AUTO) {
+    return cloneChain(GEMINI_3_1_CHAIN);
+  }
+  if (options.autoMode === PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO) {
+    // Deep Think Tier
+    return cloneChain(GEMINI_3_1_CHAIN);
+  }
+  if (options.autoMode === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO) {
+    return cloneChain(GEMINI_3_PLUS_3_1_CHAIN);
+  }
+  if (options.autoMode === PREVIEW_GEMINI_MODEL_AUTO) {
+    return cloneChain(GEMINI_3_CHAIN);
+  }
+  if (options.autoMode === DEFAULT_GEMINI_MODEL_AUTO) {
+    return cloneChain(DEFAULT_CHAIN);
+  }
+
   if (options.previewEnabled) {
+    // Explicit preview mode fallback
     return cloneChain(PREVIEW_CHAIN);
   }
 

@@ -118,7 +118,7 @@ class OSAccessibilityTreeToolInvocation extends BaseToolInvocation<OSAccessibili
       const browserService = BrowserService.getInstance(this.config);
       
       const nativeTree = await osService.getNativeAccessibilityTree();
-      let browserTree = [];
+      let browserTree: any = [];
       try {
         browserTree = await browserService.getAccessibilityTree();
       } catch (e) {}
@@ -308,8 +308,8 @@ class OSGroundToolInvocation extends BaseToolInvocation<OSGroundToolParams, Tool
     const screenshotPath = await screenshotService.captureDesktop();
 
     // 2. Get Accessibility Trees (Native + Browser)
-    let nativeTree = [];
-    let browserTree = [];
+    let nativeTree: any = [];
+    let browserTree: any = [];
     try {
       nativeTree = await osService.getNativeAccessibilityTree();
       browserTree = await browserService.getAccessibilityTree();

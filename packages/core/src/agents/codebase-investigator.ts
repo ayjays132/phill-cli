@@ -12,14 +12,14 @@ import {
   READ_FILE_TOOL_NAME,
 } from '../tools/tool-names.js';
 import {
-  DEFAULT_THINKING_MODE,
+  DEFAULT_THINKING_BUDGET,
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_FLASH_MODEL,
   isPreviewModel,
+  ThinkingLevel,
 } from '../config/models.js';
 import { z } from 'zod';
 import type { Config } from '../config/config.js';
-import { ThinkingLevel } from '@google/genai';
 
 // Define a type that matches the outputConfig schema for type safety.
 const CodebaseInvestigationReportSchema = z.object({
@@ -94,11 +94,11 @@ export const CodebaseInvestigatorAgent = (
         thinkingConfig: isPreviewModel(model)
           ? {
               includeThoughts: true,
-              thinkingLevel: ThinkingLevel.HIGH,
+              thinkingLevel: ThinkingLevel.HIGH as any,
             }
           : {
               includeThoughts: true,
-              thinkingBudget: DEFAULT_THINKING_MODE,
+              thinkingBudget: DEFAULT_THINKING_BUDGET,
             },
       },
     },

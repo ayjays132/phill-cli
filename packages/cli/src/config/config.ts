@@ -7,11 +7,13 @@
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import process from 'node:process';
-import { mcpCommand } from '../commands/mcp.js';
-import { extensionsCommand } from '../commands/extensions.js';
-import { skillsCommand } from '../commands/skills.js';
-import { hooksCommand } from '../commands/hooks.js';
-import { metropolisCommand } from '../commands/metropolis.js';
+import {
+  mcpCommand,
+  extensionsCommand,
+  skillsCommand,
+  hooksCommand,
+  metropolisCommand,
+} from '../commands/index.js';
 import {
   Config,
   setPhillMdFilename as setServerPhillMdFilename,
@@ -33,12 +35,14 @@ import {
   loadServerHierarchicalMemory,
   WEB_FETCH_TOOL_NAME,
   getVersion,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
   type HookDefinition,
   type HookEventName,
   type OutputFormat,
   coreEvents,
   GEMINI_MODEL_ALIAS_AUTO,
+  findProjectRoot,
+  type ExtensionEvents,
 } from 'phill-cli-core';
 import {
   type Settings,
@@ -48,19 +52,19 @@ import {
 } from './settings.js';
 
 import { loadSandboxConfig } from './sandboxConfig.js';
-import { resolvePath } from '../utils/resolvePath.js';
-import { RESUME_LATEST } from '../utils/sessionUtils.js';
+import { resolvePath, RESUME_LATEST, runExitCleanup } from '../utils/index.js';
 
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { createPolicyEngineConfig } from './policy.js';
 import { ExtensionManager } from './extension-manager.js';
-import { McpServerEnablementManager } from './mcp/mcpServerEnablement.js';
-import type { ExtensionEvents } from 'phill-cli-core/src/utils/extensionLoader.js';
-import { requestConsentNonInteractive } from './extensions/consent.js';
-import { promptForSetting } from './extensions/extensionSettings.js';
+// eslint-disable-next-line import/no-internal-modules
+import { McpServerEnablementManager } from './mcp/index.js';
+// eslint-disable-next-line import/no-internal-modules
+import {
+  requestConsentNonInteractive,
+  promptForSetting,
+} from './extensions/index.js';
 import type { EventEmitter } from 'node:stream';
-import { runExitCleanup } from '../utils/cleanup.js';
-import { findProjectRoot } from 'phill-cli-core';
 
 export interface CliArgs {
   query: string | undefined;
@@ -669,7 +673,7 @@ export async function loadCliConfig(
   policyEngineConfig.nonInteractive = !interactive;
 
   const defaultModel = settings.general?.previewFeatures
-    ? PREVIEW_GEMINI_MODEL_AUTO
+    ? PREVIEW_GEMINI_3_1_MODEL_AUTO
     : DEFAULT_GEMINI_MODEL_AUTO;
   const specifiedModel =
     argv.model || process.env['PHILL_MODEL'] || settings.model?.name;
@@ -782,6 +786,7 @@ export async function loadCliConfig(
     disabledSkills: settings.skills?.disabled,
     experimentalJitContext: settings.experimental?.jitContext,
     noBrowser: !!process.env['NO_BROWSER'],
+    browser: settings.browser,
     summarizeToolOutput: settings.model?.summarizeToolOutput,
     ideMode,
     compressionThreshold: settings.model?.compressionThreshold,
@@ -800,6 +805,7 @@ export async function loadCliConfig(
     truncateToolOutputLines: settings.tools?.truncateToolOutputLines,
     enableToolOutputTruncation: settings.tools?.enableToolOutputTruncation,
     eventEmitter: coreEvents,
+    webSearch: settings.webSearch,
     useWriteTodos: argv.useWriteTodos ?? settings.useWriteTodos,
     output: {
       format: (argv.outputFormat ?? settings.output?.format) as OutputFormat,

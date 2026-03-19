@@ -97,38 +97,56 @@ export class VoiceCommandLoader implements ICommandLoader {
                 };
               }
 
+              const tokenStatus = resolvePocketHfTokenLocal(config);
+              if (tokenStatus.source === 'none') {
+                context.ui.addItem({
+                  type: 'info',
+                  text: '⚠️ Pocket TTS requires Hugging Face model access.\nRequest at: https://huggingface.co/kyutai/pocket-tts\nThen run: /voice key set huggingface <token>',
+                });
+              }
+
               context.ui.addItem({
                 type: 'info',
-                text: 'Pocket TTS setup started. Downloading model files...',
+                text: 'Pocket TTS setup started. This may take a few minutes...',
               });
 
               let lastLoggedPct = -10;
-              const result = await ensurePocketModelReady(config, (progress) => {
-                if (typeof progress.progress === 'number') {
-                  const pct = Math.round(progress.progress * 100);
-                  if (pct >= lastLoggedPct + 10) {
-                    lastLoggedPct = pct;
-                    context.ui.addItem({
-                      type: 'info',
-                      text: `Pocket TTS download: ${pct}%`,
-                    });
+              try {
+                const result = await ensurePocketModelReady(config, (progress) => {
+                  if (typeof progress.progress === 'number') {
+                    const pct = Math.round(progress.progress * 100);
+                    if (pct >= lastLoggedPct + 10) {
+                      lastLoggedPct = pct;
+                      context.ui.addItem({
+                        type: 'info',
+                        text: `Pocket TTS download progress: ${pct}%`,
+                      });
+                    }
+                  } else if (progress.status === 'initializing') {
+                    context.ui.addItem({ type: 'info', text: 'Initializing download...' });
                   }
-                }
-              });
+                });
 
-              context.services.settings.setValue(
-                SettingScope.User,
-                'voice.ttsProvider',
-                'pocket',
-              );
-              persistentState.set('hasSeenPocketTtsOnboarding', true);
-              persistentState.set('hasSeenPocketTtsHfAccessOnboarding', true);
+                context.services.settings.setValue(
+                  SettingScope.User,
+                  'voice.ttsProvider',
+                  'pocket',
+                );
+                persistentState.set('hasSeenPocketTtsOnboarding', true);
+                persistentState.set('hasSeenPocketTtsHfAccessOnboarding', true);
 
-              return {
-                type: 'message',
-                messageType: 'info',
-                content: `Pocket TTS setup complete.\nmodel: ${result.modelId}\ndir: ${result.modelDir}`,
-              };
+                return {
+                  type: 'message',
+                  messageType: 'info',
+                  content: `Pocket TTS setup complete and verified.\nmodel: ${result.modelId}\ndir: ${result.modelDir}`,
+                };
+              } catch (error) {
+                return {
+                  type: 'message',
+                  messageType: 'error',
+                  content: `Pocket TTS setup failed: ${error instanceof Error ? error.message : String(error)}`,
+                };
+              }
             },
           },
           {
@@ -554,6 +572,7 @@ export class VoiceCommandLoader implements ICommandLoader {
             autoExecute: true,
             action: async (): Promise<SlashCommandActionReturn> => {
               persistentState.set('hasSeenPocketTtsOnboarding', true);
+              persistentState.set('hasSeenPocketTtsHfAccessOnboarding', true);
               return {
                 type: 'message',
                 messageType: 'info',

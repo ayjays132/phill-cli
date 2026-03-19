@@ -109,12 +109,13 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
   private model: string;
   private apiKey?: string;
   private isLocal: boolean;
+  private config: Config;
 
   constructor(
     endpoint: string | undefined,
     model: string,
     apiKey: string | undefined,
-    _config: Config,
+    config: Config,
   ) {
     // Default to Hugging Face Router API and auto-upgrade legacy API Inference URLs.
     const normalized = normalizeHfEndpoint(endpoint);
@@ -122,6 +123,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     this.isLocal = normalized.isLocal;
     this.model = model;
     this.apiKey = apiKey;
+    this.config = config;
   }
 
   async generateContent(
@@ -130,7 +132,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
   ): Promise<GenerateContentResponse> {
     const messages = this.convertToHuggingFaceMessages(request);
     const model = request.model || this.model;
-    
+
     const hfRequest: HuggingFaceChatRequest = {
       messages,
       stream: false,
@@ -179,7 +181,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
         index: 0,
       },
     ];
-    
+
     if (data.usage) {
       result.usageMetadata = {
         promptTokenCount: data.usage.prompt_tokens,
@@ -187,7 +189,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
         totalTokenCount: data.usage.total_tokens,
       };
     }
-    
+
     return result;
   }
 
@@ -197,7 +199,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const messages = this.convertToHuggingFaceMessages(request);
     const model = request.model || this.model;
-    
+
     const hfRequest: HuggingFaceChatRequest = {
       messages,
       stream: true,
@@ -252,7 +254,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -268,7 +270,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
             try {
               const chunk = JSON.parse(data) as HuggingFaceStreamChunk;
               const delta = chunk.choices[0]?.delta;
-              
+
               if (delta?.content) {
                 const result = new GenerateContentResponse();
                 result.candidates = [
@@ -277,7 +279,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
                       parts: [{ text: delta.content }],
                       role: 'model',
                     },
-                    finishReason: chunk.choices[0].finish_reason 
+                    finishReason: chunk.choices[0].finish_reason
                       ? self.mapFinishReason(chunk.choices[0].finish_reason)
                       : undefined,
                     index: 0,
@@ -295,22 +297,26 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     })();
   }
 
-  async countTokens(request: CountTokensParameters): Promise<CountTokensResponse> {
+  async countTokens(
+    request: CountTokensParameters,
+  ): Promise<CountTokensResponse> {
     // HuggingFace doesn't have a standard token counting API
     // Approximate based on text length (rough estimate: 1 token ≈ 4 characters)
     const text = JSON.stringify(request);
     const approximateTokens = Math.ceil(text.length / 4);
-    
+
     return {
       totalTokens: approximateTokens,
     };
   }
 
-  async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
+  async embedContent(
+    request: EmbedContentParameters,
+  ): Promise<EmbedContentResponse> {
     const contents = toContents(request.contents);
     const text = contents[0]?.parts?.[0]?.text || '';
     const model = request.model || this.model;
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -347,22 +353,50 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     };
   }
 
-  private convertToHuggingFaceMessages(request: GenerateContentParameters): HuggingFaceMessage[] {
+  private convertToHuggingFaceMessages(
+    request: GenerateContentParameters,
+  ): HuggingFaceMessage[] {
     const messages: HuggingFaceMessage[] = [];
 
-    // Add system message if tools are present (tool forcing)
-    if (request.config?.tools && request.config.tools.length > 0) {
-      const toolDescriptions = request.config.tools
-        .map((tool: any) => {
-          const funcDecl = tool.functionDeclarations?.[0];
-          if (!funcDecl) return '';
-          return `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`;
-        })
-        .join('\n');
+    // Add system message if tools or skills are present (tool forcing)
+    const skills = this.config.getSkillManager().getSkills();
+    const hasTools = request.config?.tools && request.config.tools.length > 0;
+    const hasSkills = skills.length > 0;
+
+    if (hasTools || hasSkills) {
+      let toolDescriptions = '';
+      if (hasTools) {
+        toolDescriptions += 'Tools available:\n';
+        toolDescriptions += (request.config!.tools as any[])
+          .map((tool: any) => {
+            const declarations = Array.isArray(tool.functionDeclarations)
+              ? tool.functionDeclarations
+              : [];
+            if (declarations.length === 0) return '';
+            return declarations
+              .map(
+                (funcDecl: any) =>
+                  `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`,
+              )
+              .join('\n');
+          })
+          .join('\n');
+      }
+
+      if (hasSkills) {
+        if (toolDescriptions) toolDescriptions += '\n\n';
+        toolDescriptions += 'Skills available:\n';
+        toolDescriptions += skills
+          .map(
+            (s) =>
+              `- ${s.name}: ${s.description || 'No description available'}`,
+          )
+          .join('\n');
+      }
 
       messages.push({
         role: 'system',
-        content: `You have access to the following tools:\n${toolDescriptions}\n\nTo use a tool, respond with a JSON object in this format:\n{"tool": "tool_name", "parameters": {...}}`,
+        content: `You have access to the following capabilities:\n${toolDescriptions}\n\nTo use a tool, YOU MUST respond with a JSON object in this format:\n{"tool": "tool_name", "parameters": {...}}\n\nExample for listing a directory:\n{"tool": "list_directory", "parameters": {"dir_path": "E:\\\\phill-cli-0.0.1"}}\n\nDo not provide any other text outside the JSON if you are calling a tool. Ensure you see all tools and follow this format exactly.`,
       });
     }
 
@@ -384,7 +418,10 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     // Convert contents to messages
     const contents = toContents(request.contents);
     for (const content of contents) {
-      const text = content.parts?.map((p: any) => p.text).filter(Boolean).join('\n');
+      const text = content.parts
+        ?.map((p: any) => p.text)
+        .filter(Boolean)
+        .join('\n');
       if (text) {
         messages.push({
           role: content.role === 'user' ? 'user' : 'assistant',
@@ -401,10 +438,10 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
       return FinishReason.FINISH_REASON_UNSPECIFIED;
     }
     const mapping: Record<string, FinishReason> = {
-      'stop': FinishReason.STOP,
-      'length': FinishReason.MAX_TOKENS,
-      'content_filter': FinishReason.SAFETY,
-      'tool_calls': FinishReason.STOP,
+      stop: FinishReason.STOP,
+      length: FinishReason.MAX_TOKENS,
+      content_filter: FinishReason.SAFETY,
+      tool_calls: FinishReason.STOP,
     };
     return mapping[reason] || FinishReason.OTHER;
   }
@@ -412,7 +449,8 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
   private formatApiError(statusText: string, errorText: string): string {
     const normalized = errorText.trim();
     const isHtml =
-      normalized.startsWith('<!DOCTYPE html>') || normalized.startsWith('<html');
+      normalized.startsWith('<!DOCTYPE html>') ||
+      normalized.startsWith('<html');
 
     if (isHtml) {
       return `HuggingFace API error: ${statusText} - Received HTML instead of JSON. Check HUGGINGFACE_API_KEY and endpoint (use https://router.huggingface.co).`;
@@ -468,7 +506,10 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     // If user-selected model is unsupported by the enabled HF providers,
     // retry with configured fallback model for this auth profile.
     if (model !== this.model && (await this.isModelUnavailable(response))) {
-      const fallbackRequest: HuggingFaceChatRequest = { ...request, model: this.model };
+      const fallbackRequest: HuggingFaceChatRequest = {
+        ...request,
+        model: this.model,
+      };
       response = await fetch(`${this.endpoint}/v1/chat/completions`, {
         method: 'POST',
         headers,
@@ -512,7 +553,8 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
       return (
         parsed.error?.code === 'model_not_found' ||
         parsed.error?.code === 'model_not_supported' ||
-        parsed.error?.message?.toLowerCase().includes('not supported') === true ||
+        parsed.error?.message?.toLowerCase().includes('not supported') ===
+          true ||
         parsed.error?.message?.toLowerCase().includes('does not exist') === true
       );
     } catch {

@@ -15,9 +15,10 @@ import { useUIState } from '../contexts/UIStateContext.js';
 import { useFlickerDetector } from '../hooks/useFlickerDetector.js';
 import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
 import { CopyModeWarning } from '../components/CopyModeWarning.js';
-
-import { BrowserControl } from '../components/BrowserControl.js';
 import { Forge } from '../components/Forge.js';
+import { BrowserControl } from '../components/BrowserControl.js';
+
+import { PremiumFrame } from '../components/shared/PremiumFrame.js';
 
 export const DefaultAppLayout: React.FC = () => {
   const uiState = useUIState();
@@ -25,45 +26,47 @@ export const DefaultAppLayout: React.FC = () => {
 
   const { rootUiRef, terminalHeight } = uiState;
   useFlickerDetector(rootUiRef, terminalHeight);
-  // If in alternate buffer mode, need to leave room to draw the scrollbar on
-  // the right side of the terminal.
-  return (
-    <Box
-      flexDirection="column"
-      width={uiState.terminalWidth}
-      height={isAlternateBuffer ? terminalHeight : undefined}
-      paddingBottom={isAlternateBuffer ? 1 : undefined}
-      flexShrink={0}
-      flexGrow={0}
-      overflow="hidden"
-      ref={uiState.rootUiRef}
-    >
-      {uiState.isForgeOpen ? <Forge /> : <MainContent />}
 
+  // Use the premium frame for the entire application layout
+  return (
+    <PremiumFrame 
+      width={uiState.terminalWidth} 
+      height={isAlternateBuffer ? terminalHeight : undefined}
+    >
       <Box
         flexDirection="column"
-        ref={uiState.mainControlsRef}
-        flexShrink={0}
-        flexGrow={0}
-        width={uiState.terminalWidth}
+        flexGrow={1}
+        width="100%"
+        overflow="hidden"
+        ref={uiState.rootUiRef}
       >
-        <BrowserControl />
-        <Notifications />
-        <CopyModeWarning />
+        {uiState.isForgeOpen ? <Forge /> : <MainContent />}
 
-        {uiState.customDialog ? (
-          uiState.customDialog
-        ) : uiState.dialogsVisible ? (
-          <DialogManager
-            terminalWidth={uiState.terminalWidth}
-            addItem={uiState.historyManager.addItem}
-          />
-        ) : uiState.isForgeOpen ? null : (
-          <Composer isFocused={true} />
-        )}
+        <Box
+          flexDirection="column"
+          ref={uiState.mainControlsRef}
+          flexShrink={0}
+          flexGrow={0}
+          width="100%"
+        >
+          <BrowserControl />
+          <Notifications />
+          <CopyModeWarning />
 
-        <ExitWarning />
+          {uiState.customDialog ? (
+            uiState.customDialog
+          ) : uiState.dialogsVisible ? (
+            <DialogManager
+              terminalWidth={uiState.terminalWidth - 2} // Account for frame borders
+              addItem={uiState.historyManager.addItem}
+            />
+          ) : uiState.isForgeOpen ? null : (
+            <Composer isFocused={true} />
+          )}
+
+          <ExitWarning />
+        </Box>
       </Box>
-    </Box>
+    </PremiumFrame>
   );
 };

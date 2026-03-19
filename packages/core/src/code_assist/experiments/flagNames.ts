@@ -13,6 +13,7 @@ export const ExperimentFlags = {
   ENABLE_NUMERICAL_ROUTING: 45750526,
   CLASSIFIER_THRESHOLD: 45750527,
   ENABLE_ADMIN_CONTROLS: 45752213,
+  GEMINI_3_1_PRO_LAUNCHED: 45760185,
 } as const;
 
 export type ExperimentFlagName =

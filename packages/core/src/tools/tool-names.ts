@@ -24,13 +24,25 @@ export const MEMORY_TOOL_NAME = 'save_memory';
 export const GET_INTERNAL_DOCS_TOOL_NAME = 'get_internal_docs';
 export const ACTIVATE_SKILL_TOOL_NAME = 'activate_skill';
 export const PROPRIOCEPTION_TOOL_NAME = 'get_proprioception';
-export const PLANNING_LATCH_TOOL_NAME = 'contextual_plan_latch';
+export const PLANNING_LATCH_TOOL_NAME = 'planning_latch';
 export const USER_IDENTITY_TOOL_NAME = 'user_identity';
 export const PHYSICAL_VISION_TOOL_NAME = 'vision_physical_presence';
+export const META_COGNITION_TOOL_NAME = 'metacognition';
 export const RELOAD_SKILLS_TOOL_NAME = 'reload_skills';
+export const PHILLAMENT_TOOL_NAME = 'phillament';
+export const PHOTO_MODE_TOOL_NAME = PHILLAMENT_TOOL_NAME;
+export const DEEP_COGNITION_TOOL_NAME = 'deep_cognition';
+export const EXTREME_DEEP_RESEARCH_TOOL_NAME = 'extreme_deep_research';
+export const NATIVE_CODE_EXECUTION_TOOL_NAME = 'native_code_execution';
+export const PHILM_AUDIO_DIRECTOR_TOOL_NAME = 'philm_audio_director';
+export const PHILM_TOOL_NAME = 'philm';
+export const PHILM_STORYBOARD_TOOL_NAME = 'philm_storyboard';
+export const PHILM_MODE_TOOL_NAME = 'philm_mode';
+
 export const EDIT_TOOL_NAMES = new Set([EDIT_TOOL_NAME, WRITE_FILE_TOOL_NAME]);
 export const ASK_USER_TOOL_NAME = 'ask_user';
 export const ASK_USER_DISPLAY_NAME = 'Ask User';
+export const LYRIA_MUSIC_TOOL_NAME = 'lyria_music';
 
 /** Prefix used for tools discovered via the toolDiscoveryCommand. */
 export const DISCOVERED_TOOL_PREFIX = 'discovered_tool_';

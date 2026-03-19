@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
+import React, { memo } from 'react';
 import { Text, Box } from 'ink';
 import { MarkdownDisplay } from '../../utils/MarkdownDisplay.js';
 import { ShowMoreLines } from '../ShowMoreLines.js';
-import { theme } from '../../semantic-colors.js';
 import { SCREEN_READER_MODEL_PREFIX } from '../../textConstants.js';
 import { useUIState } from '../../contexts/UIStateContext.js';
 import { useAlternateBuffer } from '../../hooks/useAlternateBuffer.js';
+import { ThemedGradient } from '../ThemedGradient.js';
 
 interface PhillMessageProps {
   text: string;
@@ -20,7 +20,7 @@ interface PhillMessageProps {
   terminalWidth: number;
 }
 
-export const PhillMessage: React.FC<PhillMessageProps> = ({
+export const PhillMessage: React.FC<PhillMessageProps> = memo(({
   text,
   isPending,
   availableTerminalHeight,
@@ -34,9 +34,9 @@ export const PhillMessage: React.FC<PhillMessageProps> = ({
   return (
     <Box flexDirection="row">
       <Box width={prefixWidth}>
-        <Text color={theme.text.accent} aria-label={SCREEN_READER_MODEL_PREFIX}>
-          {prefix}
-        </Text>
+        <ThemedGradient animate={isPending} speed={100}>
+          <Text aria-label={SCREEN_READER_MODEL_PREFIX}>{prefix}</Text>
+        </ThemedGradient>
       </Box>
       <Box flexGrow={1} flexDirection="column">
         <MarkdownDisplay
@@ -58,4 +58,6 @@ export const PhillMessage: React.FC<PhillMessageProps> = ({
       </Box>
     </Box>
   );
-};
+});
+
+PhillMessage.displayName = 'PhillMessage';

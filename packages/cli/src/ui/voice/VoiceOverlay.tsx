@@ -39,7 +39,7 @@ export function VoiceOverlay() {
           )}
         </Box>
         <Text color={theme.text.secondary}>
-          CTRL+T /voice | CTRL+G /tts
+          CTRL+T /voice | CTRL+G /tts | CTRL+E /stt
         </Text>
       </Box>
 
@@ -99,7 +99,7 @@ export function VoiceOverlay() {
       {/* Footer */}
       <Box marginTop={0}>
         <Text color={theme.text.secondary} dimColor>
-          SOTA Browser STT (npm) & Local {voiceState.ttsEnabled ? '(TTS On)' : '(TTS Off)'}
+          SOTA Browser STT (npm) [STT {voiceState.sttEnabled ? 'On' : 'Off'}] & Local {voiceState.ttsEnabled ? '(TTS On)' : '(TTS Off)'}
         </Text>
       </Box>
     </Box>

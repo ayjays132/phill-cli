@@ -13,6 +13,7 @@ import { debugLogger } from '../../utils/debugLogger.js';
 export interface Experiments {
   flags: Record<string, Flag>;
   experimentIds: number[];
+  getExperimentValue: (flagId: number) => boolean;
 }
 
 let experimentsPromise: Promise<Experiments> | undefined;
@@ -51,7 +52,7 @@ export async function getExperiments(
     }
 
     if (!server) {
-      return { flags: {}, experimentIds: [] };
+      return { flags: {}, experimentIds: [], getExperimentValue: () => false };
     }
 
     const metadata = await getClientMetadata();
@@ -68,8 +69,10 @@ function parseExperiments(response: ListExperimentsResponse): Experiments {
       flags[flag.flagId] = flag;
     }
   }
+  const experimentIds = response.experimentIds ?? [];
   return {
     flags,
-    experimentIds: response.experimentIds ?? [],
+    experimentIds,
+    getExperimentValue: (flagId: number) => experimentIds.includes(flagId),
   };
 }

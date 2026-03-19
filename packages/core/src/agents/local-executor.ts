@@ -729,11 +729,15 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
         }
 
         // Handle text response (non-thought text)
-        const text =
-          parts
-            ?.filter((p) => !p.thought && p.text)
-            .map((p) => p.text)
-            .join('') || '';
+        let text = '';
+        if (parts) {
+          for (let i = 0; i < parts.length; i++) {
+            const p = parts[i];
+            if (!p.thought && p.text) {
+              text += p.text;
+            }
+          }
+        }
 
         if (text) {
           textResponse += text;

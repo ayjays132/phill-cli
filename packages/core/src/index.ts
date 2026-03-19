@@ -28,6 +28,7 @@ export * from './commands/types.js';
 
 // Export Core Logic
 export * from './core/client.js';
+export * from './core/baseLlmClient.js';
 export * from './core/contentGenerator.js';
 export * from './core/loggingContentGenerator.js';
 export * from './core/phillChat.js';
@@ -97,6 +98,7 @@ export * from './utils/secure-browser-launcher.js';
 export * from './utils/apiConversionUtils.js';
 export * from './utils/channel.js';
 export * from './utils/constants.js';
+export * from './utils/tokenCalculation.js';
 
 // Export services
 export * from './services/fileDiscoveryService.js';
@@ -111,18 +113,32 @@ export * from './services/browserService.js';
 export * from './services/ethicalGuardService.js';
 export * from './services/agentIdentityService.js';
 export * from './services/forgeService.js';
-export { RealTimeActionJournal, type ActionEntry } from './services/actionJournal.js';
+export {
+  RealTimeActionJournal,
+  type ActionEntry,
+} from './services/actionJournal.js';
 export * from './services/economyService.js';
 export * from './services/socialService.js';
 export * from './services/latentContextService.js';
+export * from './services/vectorService.js';
 export * from './services/operatorLatentSync.js';
 export * from './services/visualLatentService.js';
 export * from './services/agentAutonomyService.js';
-export * from './cognitive-engine/engine-process.js';
+export * from './services/modelConfigService.js';
+export * from './cognitive-engine/engine-types.js';
+export { AxiomService } from './services/axiomService.js';
+export { LogosService } from './services/logosService.js';
+export {
+  SuccessTraceService,
+  type SuccessTrace,
+} from './services/successTraceService.js';
+export * from './utils/axiom/types.js';
 
 // Export IDE specific logic
 export * from './ide/ide-client.js';
 export * from './ide/ideContext.js';
+export * from './vision/moondream.js';
+
 export * from './ide/ide-installer.js';
 export { IDE_DEFINITIONS, type IdeInfo } from './ide/detect-ide.js';
 export * from './ide/constants.js';
@@ -140,6 +156,7 @@ export * from './resources/resource-registry.js';
 
 // Export prompt logic
 export * from './prompts/mcp-prompts.js';
+export * from './config/models.js';
 
 // Export agent definitions
 export * from './agents/types.js';
@@ -163,6 +180,9 @@ export * from './tools/mcp-client.js';
 export * from './tools/mcp-tool.js';
 export * from './tools/browserTools.js';
 export * from './tools/write-todos.js';
+export * from './tools/audioTools.js';
+export * from './tools/lyriaMusic.js';
+export * from './services/lyriaService.js';
 
 // MCP OAuth
 export { MCPOAuthProvider } from './mcp/oauth-provider.js';
@@ -200,9 +220,16 @@ export * from './utils/terminal.js';
 // Export voice infrastructure
 export { AudioManager } from './voice/audioManager.js';
 export { GeminiLiveClient } from './voice/geminiLiveClient.js';
-export { VoiceService, type VoiceServiceStatus, type VoiceServiceEvents } from './voice/VoiceService.js';
+export {
+  VoiceService,
+  type VoiceServiceStatus,
+  type VoiceServiceEvents,
+} from './voice/VoiceService.js';
 export type { AudioConfig } from './voice/audioManager.js';
-export type { GeminiLiveConfig, GeminiLiveClientEvents } from './voice/geminiLiveClient.js';
+export type {
+  GeminiLiveConfig,
+  GeminiLiveClientEvents,
+} from './voice/geminiLiveClient.js';
 export { DeviceManager } from './voice/deviceManager.js';
 export type { AudioDevice } from './voice/deviceManager.js';
 export { TTSService } from './voice/ttsService.js';
@@ -224,5 +251,6 @@ export { ClearcutLogger } from './telemetry/clearcut-logger/clearcut-logger.js';
 export { KeychainTokenStorage } from './mcp/token-storage/keychain-token-storage.js';
 export { getCodeAssistServer } from './code_assist/codeAssist.js';
 export { getExperiments } from './code_assist/experiments/experiments.js';
+export * from './utils/extensionLoader.js';
 export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';

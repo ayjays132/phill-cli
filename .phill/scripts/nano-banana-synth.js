@@ -3,14 +3,44 @@ import https from 'https';
 import { execSync } from 'child_process';
 
 const args = process.argv.slice(2);
-const prompt = args[0] || "A cybernetic cat in a futuristic software base";
-const aspectRatio = args[1] || "1:1";
+
+function parseArgs(argv) {
+    const out = {};
+    for (let i = 0; i < argv.length; i++) {
+        const token = argv[i];
+        if (token.startsWith('--')) {
+            const key = token.slice(2);
+            const next = argv[i + 1];
+            if (next && !next.startsWith('--')) {
+                out[key] = next;
+                i += 1;
+            } else {
+                out[key] = true;
+            }
+        }
+    }
+    return out;
+}
+
+function hasCommand(command) {
+    try {
+        const probe = process.platform === 'win32' ? `where ${command}` : `command -v ${command}`;
+        execSync(probe, { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+const cli = parseArgs(args);
+const prompt = cli.prompt || args[0] || "A cybernetic cat in a futuristic software base";
+const aspectRatio = cli.aspectRatio || args[1] || "1:1";
 
 async function run() {
     console.log(`[NanoBananaSynth] Initiating synthesis for: "${prompt.substring(0, 30)}..."`);
 
     // --- STRATEGY 1: GEMINI API (API KEY) ---
-    const apiKey = process.env['GOOGLE_API_KEY'];
+    const apiKey = process.env['GOOGLE_API_KEY'] || process.env['GEMINI_API_KEY'];
     if (apiKey) {
         console.log("> Attempting Strategy 1: Gemini API...");
         const result = await callGeminiAPI(apiKey, prompt, aspectRatio);
@@ -18,16 +48,20 @@ async function run() {
     }
 
     // --- STRATEGY 2: VERTEX AI (GCLOUD AUTH) ---
-    try {
-        console.log("> Attempting Strategy 2: Vertex AI (GCloud)...");
-        const projectId = execSync('gcloud config get-value project', { encoding: 'utf8' }).trim();
-        const token = execSync('gcloud auth print-access-token', { encoding: 'utf8' }).trim();
-        if (projectId && token) {
-            const result = await callVertexAI(projectId, token, prompt, aspectRatio);
-            if (result) return finalize(result, 'vertex-ai');
+    if (hasCommand('gcloud')) {
+        try {
+            console.log("> Attempting Strategy 2: Vertex AI (GCloud)...");
+            const projectId = execSync('gcloud config get-value project', { encoding: 'utf8' }).trim();
+            const token = execSync('gcloud auth print-access-token', { encoding: 'utf8' }).trim();
+            if (projectId && token) {
+                const result = await callVertexAI(projectId, token, prompt, aspectRatio);
+                if (result) return finalize(result, 'vertex-ai');
+            }
+        } catch (e) {
+            console.warn("Strategy 2 Bypassed: GCloud not configured.");
         }
-    } catch (e) {
-        console.warn("Strategy 2 Bypassed: GCloud not configured.");
+    } else {
+        console.warn("Strategy 2 Bypassed: gcloud CLI not installed.");
     }
 
     // --- STRATEGY 3: BANANA.DEV ---
@@ -37,11 +71,13 @@ async function run() {
         // Simulation for now
     }
 
-    console.error("CRITICAL: All synthesis strategies exhausted. Ensure GOOGLE_API_KEY is set.");
+    console.error(
+        "CRITICAL: All synthesis strategies exhausted. Use native CLI tools (`phillament` / `image_generation_imagen`) for OAuth-aware routing, or set GOOGLE_API_KEY / GEMINI_API_KEY."
+    );
 }
 
 async function callGeminiAPI(key, prompt, ratio) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${key}`;
     const payload = JSON.stringify({
         instances: [{ prompt }],
         parameters: { aspectRatio: ratio }

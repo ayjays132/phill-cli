@@ -51,6 +51,9 @@ export class PromptProvider {
     const desiredModel = resolveModel(
       config.getActiveModel(),
       config.getPreviewFeatures(),
+      false,
+      config.getHasAccessToPreviewModel(),
+      config,
     );
     const isPhill3 = isPreviewModel(desiredModel);
 

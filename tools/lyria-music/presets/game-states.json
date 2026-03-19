@@ -1,0 +1,19 @@
+{
+  "exploring":   { "mood": ["Ambient","Curious","Dreamy"], "bpm": 70, "density": 0.3 },
+  "combat":      { "mood": ["Intense","Tight Groove","Fat Beats"], "bpm": 140, "density": 0.9 },
+  "boss_fight":  { "mood": ["Orchestral Score","Huge Drop","Epic"], "bpm": 160, "density": 1.0 },
+  "stealth":     { "mood": ["Tense","Minimal","Subdued"], "density": 0.2, "brightness": 0.2 },
+  "detected":    { "mood": ["Urgent","Unsettling"], "bpm": 110, "density": 0.7 },
+  "safe_zone":   { "mood": ["Calm","Warm","Relief"], "density": 0.3, "brightness": 0.7 },
+  "victory":     { "mood": ["Upbeat","Live Performance","Bright Tones"], "bpm": 100 },
+  "death":       { "mood": ["Somber","Subdued Melody"], "density": 0.2 },
+  "menu":        { "mood": ["Chill","Ambient"], "musicGenerationMode": "QUALITY" },
+  "credits":     { "mood": ["Emotional","Piano Ballad","Cinematic"], "density": 0.4 },
+  "puzzle":      { "mood": ["Thoughtful","Light","Abstract"], "bpm": 85, "density": 0.5 },
+  "cutscene":    { "mood": ["Cinematic","Dramatic","Orchestral Score"], "musicGenerationMode": "QUALITY" },
+  "loading":     { "mood": ["Atmospheric","Waiting","Simple"], "density": 0.1 },
+  "tense":       { "mood": ["Tense","Threatening"], "density": 0.6, "brightness": 0.3 },
+  "relief":      { "mood": ["Comforting","Relaxed"], "density": 0.3, "brightness": 0.6 },
+  "mystery":     { "mood": ["Mysterious","Enigmatic","Curious"], "density": 0.4 },
+  "discovery":   { "mood": ["Wonder","Revelation","Bright Tones"], "density": 0.5 }
+}

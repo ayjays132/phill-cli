@@ -10,6 +10,8 @@ import { Box, Text } from 'ink';
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 import { theme } from '../semantic-colors.js';
 import { CliSpinner } from './CliSpinner.js';
+import { useUIState } from '../contexts/UIStateContext.js';
+import { PremiumFrame } from './shared/PremiumFrame.js';
 import {
   openBrowserSecurely,
   shouldLaunchBrowser,
@@ -32,6 +34,7 @@ export function ValidationDialog({
   learnMoreUrl,
   onChoice,
 }: ValidationDialogProps): React.JSX.Element {
+  const { terminalWidth } = useUIState();
   const [state, setState] = useState<DialogState>('choosing');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -112,7 +115,12 @@ export function ValidationDialog({
 
   if (state === 'error') {
     return (
-      <Box borderStyle="round" flexDirection="column" padding={1}>
+      <PremiumFrame
+        width={Math.max(60, terminalWidth - 2)}
+        title="Verification Required"
+        subtitle="Account verification could not be opened automatically."
+        borderColor={theme.status.error}
+      >
         <Text color={theme.status.error}>
           {errorMessage ||
             'Failed to open verification link. Please try again or change authentication.'}
@@ -123,13 +131,18 @@ export function ValidationDialog({
             onSelect={(choice) => void handleSelect(choice as ValidationIntent)}
           />
         </Box>
-      </Box>
+      </PremiumFrame>
     );
   }
 
   if (state === 'waiting') {
     return (
-      <Box borderStyle="round" flexDirection="column" padding={1}>
+      <PremiumFrame
+        width={Math.max(60, terminalWidth - 2)}
+        title="Verification In Progress"
+        subtitle="Complete browser verification, then return here."
+        borderColor={theme.status.warning}
+      >
         <Box>
           <CliSpinner />
           <Text>
@@ -145,20 +158,29 @@ export function ValidationDialog({
         <Box marginTop={1}>
           <Text dimColor>Press Enter when verification is complete.</Text>
         </Box>
-      </Box>
+      </PremiumFrame>
     );
   }
 
   if (state === 'complete') {
     return (
-      <Box borderStyle="round" flexDirection="column" padding={1}>
+      <PremiumFrame
+        width={Math.max(60, terminalWidth - 2)}
+        title="Verification Complete"
+        borderColor={theme.status.success}
+      >
         <Text color={theme.status.success}>Verification complete</Text>
-      </Box>
+      </PremiumFrame>
     );
   }
 
   return (
-    <Box borderStyle="round" flexDirection="column" padding={1}>
+    <PremiumFrame
+      width={Math.max(60, terminalWidth - 2)}
+      title="Verification Required"
+      subtitle="Further action is needed before requests can continue."
+      borderColor={theme.status.warning}
+    >
       <Box marginBottom={1}>
         <Text>Further action is required to use this service.</Text>
       </Box>
@@ -175,6 +197,6 @@ export function ValidationDialog({
           </Text>
         </Box>
       )}
-    </Box>
+    </PremiumFrame>
   );
 }

@@ -40,11 +40,11 @@ async function verifyDistillation() {
     dlr: testDLR,
     timestamp: new Date().toISOString(),
     latencyMs: 150
-  });
-  console.log('Γ£à Trace indexed.');
+  }, config);
+  console.log('✅ Trace indexed.');
 
   console.log('2. Testing Latent Wisdom Retrieval...');
-  const wisdom = await ttcEngine.getGuidingContext("Help me navigate the browser");
+  const wisdom = await ttcEngine.getGuidingContext("Help me navigate the browser", config);
   if (wisdom && wisdom.includes(testDLR)) {
     console.log('Γ£à SUCCESS: Latent wisdom retrieved and correctly formatted.');
   } else {

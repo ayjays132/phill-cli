@@ -13,19 +13,41 @@ import { OperatorLatentSync } from '../services/operatorLatentSync.js';
 
 // --- Browser Start Tool ---
 
-export interface BrowserStartToolParams {}
+export interface BrowserStartToolParams {
+  headed?: boolean;
+  proxy?: string;
+}
 
-export class BrowserStartTool extends BaseDeclarativeTool<BrowserStartToolParams, ToolResult> {
+export class BrowserStartTool extends BaseDeclarativeTool<
+  BrowserStartToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_start';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserStartTool.Name,
       'Start Browser',
       'Starts the browser for automation.',
       Kind.Execute,
-      { type: 'object', properties: {} },
-      messageBus
+      {
+        type: 'object',
+        properties: {
+          headed: {
+            type: 'boolean',
+            description:
+              'Whether to start the browser in headed mode (visible GUI).',
+          },
+          proxy: {
+            type: 'string',
+            description: 'HTTP proxy server URL to use for the browser.',
+          },
+        },
+      },
+      messageBus,
     );
   }
 
@@ -33,19 +55,28 @@ export class BrowserStartTool extends BaseDeclarativeTool<BrowserStartToolParams
     params: BrowserStartToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserStartToolParams, ToolResult> {
-    return new BrowserStartToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserStartToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserStartToolInvocation extends BaseToolInvocation<BrowserStartToolParams, ToolResult> {
+class BrowserStartToolInvocation extends BaseToolInvocation<
+  BrowserStartToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserStartToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -56,18 +87,23 @@ class BrowserStartToolInvocation extends BaseToolInvocation<BrowserStartToolPara
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const browserService = BrowserService.getInstance(this.config);
-    await browserService.startBrowser();
-    
+    await browserService.startBrowser({
+      headed: this.params.headed,
+      proxy: this.params.proxy,
+    });
+
     // [Autonomy Hook] Start Latent Sync for Browser Grounding
     OperatorLatentSync.getInstance(this.config).startSync();
 
+    const pid = browserService.getBrowserPID();
+    const pidStr = pid ? ` [PID: ${pid}]` : '';
+
     return {
-      llmContent: 'Browser started successfully.',
-      returnDisplay: 'Browser started.',
+      llmContent: `Browser started successfully.${pidStr}`,
+      returnDisplay: `Browser started.${pidStr}`,
     };
   }
 }
-
 
 // --- Browser Navigate Tool ---
 
@@ -75,10 +111,16 @@ export interface BrowserNavigateToolParams {
   url: string;
 }
 
-export class BrowserNavigateTool extends BaseDeclarativeTool<BrowserNavigateToolParams, ToolResult> {
+export class BrowserNavigateTool extends BaseDeclarativeTool<
+  BrowserNavigateToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_navigate';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserNavigateTool.Name,
       'Navigate Browser',
@@ -91,7 +133,7 @@ export class BrowserNavigateTool extends BaseDeclarativeTool<BrowserNavigateTool
         },
         required: ['url'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -99,19 +141,28 @@ export class BrowserNavigateTool extends BaseDeclarativeTool<BrowserNavigateTool
     params: BrowserNavigateToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserNavigateToolParams, ToolResult> {
-    return new BrowserNavigateToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserNavigateToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserNavigateToolInvocation extends BaseToolInvocation<BrowserNavigateToolParams, ToolResult> {
+class BrowserNavigateToolInvocation extends BaseToolInvocation<
+  BrowserNavigateToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserNavigateToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -130,17 +181,22 @@ class BrowserNavigateToolInvocation extends BaseToolInvocation<BrowserNavigateTo
   }
 }
 
-
 // --- Browser Click Tool ---
 
 export interface BrowserClickToolParams {
   selector: string;
 }
 
-export class BrowserClickTool extends BaseDeclarativeTool<BrowserClickToolParams, ToolResult> {
+export class BrowserClickTool extends BaseDeclarativeTool<
+  BrowserClickToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_click';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserClickTool.Name,
       'Click Element',
@@ -149,11 +205,14 @@ export class BrowserClickTool extends BaseDeclarativeTool<BrowserClickToolParams
       {
         type: 'object',
         properties: {
-          selector: { type: 'string', description: 'CSS selector of the element to click.' },
+          selector: {
+            type: 'string',
+            description: 'CSS selector of the element to click.',
+          },
         },
         required: ['selector'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -161,19 +220,28 @@ export class BrowserClickTool extends BaseDeclarativeTool<BrowserClickToolParams
     params: BrowserClickToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserClickToolParams, ToolResult> {
-    return new BrowserClickToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserClickToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserClickToolInvocation extends BaseToolInvocation<BrowserClickToolParams, ToolResult> {
+class BrowserClickToolInvocation extends BaseToolInvocation<
+  BrowserClickToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserClickToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -192,7 +260,6 @@ class BrowserClickToolInvocation extends BaseToolInvocation<BrowserClickToolPara
   }
 }
 
-
 // --- Browser Type Tool ---
 
 export interface BrowserTypeToolParams {
@@ -200,10 +267,16 @@ export interface BrowserTypeToolParams {
   text: string;
 }
 
-export class BrowserTypeTool extends BaseDeclarativeTool<BrowserTypeToolParams, ToolResult> {
+export class BrowserTypeTool extends BaseDeclarativeTool<
+  BrowserTypeToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_type';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserTypeTool.Name,
       'Type Text',
@@ -212,12 +285,15 @@ export class BrowserTypeTool extends BaseDeclarativeTool<BrowserTypeToolParams, 
       {
         type: 'object',
         properties: {
-          selector: { type: 'string', description: 'CSS selector of the element to type into.' },
+          selector: {
+            type: 'string',
+            description: 'CSS selector of the element to type into.',
+          },
           text: { type: 'string', description: 'The text to type.' },
         },
         required: ['selector', 'text'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -225,19 +301,28 @@ export class BrowserTypeTool extends BaseDeclarativeTool<BrowserTypeToolParams, 
     params: BrowserTypeToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserTypeToolParams, ToolResult> {
-    return new BrowserTypeToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserTypeToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserTypeToolInvocation extends BaseToolInvocation<BrowserTypeToolParams, ToolResult> {
+class BrowserTypeToolInvocation extends BaseToolInvocation<
+  BrowserTypeToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserTypeToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -256,22 +341,27 @@ class BrowserTypeToolInvocation extends BaseToolInvocation<BrowserTypeToolParams
   }
 }
 
-
 // --- Browser Screenshot Tool ---
 
 export interface BrowserScreenshotToolParams {}
 
-export class BrowserScreenshotTool extends BaseDeclarativeTool<BrowserScreenshotToolParams, ToolResult> {
+export class BrowserScreenshotTool extends BaseDeclarativeTool<
+  BrowserScreenshotToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_screenshot';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserScreenshotTool.Name,
       'Capture Screenshot',
       'Captures a screenshot of the current page.',
       Kind.Read,
       { type: 'object', properties: {} },
-      messageBus
+      messageBus,
     );
   }
 
@@ -279,19 +369,28 @@ export class BrowserScreenshotTool extends BaseDeclarativeTool<BrowserScreenshot
     params: BrowserScreenshotToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserScreenshotToolParams, ToolResult> {
-    return new BrowserScreenshotToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserScreenshotToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserScreenshotToolInvocation extends BaseToolInvocation<BrowserScreenshotToolParams, ToolResult> {
+class BrowserScreenshotToolInvocation extends BaseToolInvocation<
+  BrowserScreenshotToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserScreenshotToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -303,17 +402,20 @@ class BrowserScreenshotToolInvocation extends BaseToolInvocation<BrowserScreensh
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const browserService = BrowserService.getInstance(this.config);
     const buffer = await browserService.getScreenshot();
-    
+
     if (!buffer) {
-       return {
+      return {
         llmContent: 'Failed to capture screenshot (browser might not be open)',
         returnDisplay: 'Failed to capture screenshot.',
-        error: { message: 'Browser not open' }
+        error: { message: 'Browser not open' },
       };
     }
 
     const tempDir = this.config.storage.getProjectTempDir();
-    const cleanPath = (await import('path')).join(tempDir, `screenshot_${Date.now()}.png`);
+    const cleanPath = (await import('path')).join(
+      tempDir,
+      `screenshot_${Date.now()}.png`,
+    );
     const fs = await import('fs/promises');
     await fs.writeFile(cleanPath, buffer);
 
@@ -345,10 +447,16 @@ export interface BrowserScrollToolParams {
   selector?: string;
 }
 
-export class BrowserScrollTool extends BaseDeclarativeTool<BrowserScrollToolParams, ToolResult> {
+export class BrowserScrollTool extends BaseDeclarativeTool<
+  BrowserScrollToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_scroll';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserScrollTool.Name,
       'Scroll Page',
@@ -357,13 +465,23 @@ export class BrowserScrollTool extends BaseDeclarativeTool<BrowserScrollToolPara
       {
         type: 'object',
         properties: {
-          direction: { type: 'string', enum: ['up', 'down', 'top', 'bottom'], description: 'Direction to scroll.' },
-          amount: { type: 'number', description: 'Amount to scroll in pixels (default 500).' },
-          selector: { type: 'string', description: 'Selector of the element to scroll (optional).' },
+          direction: {
+            type: 'string',
+            enum: ['up', 'down', 'top', 'bottom'],
+            description: 'Direction to scroll.',
+          },
+          amount: {
+            type: 'number',
+            description: 'Amount to scroll in pixels (default 500).',
+          },
+          selector: {
+            type: 'string',
+            description: 'Selector of the element to scroll (optional).',
+          },
         },
         required: ['direction'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -371,19 +489,28 @@ export class BrowserScrollTool extends BaseDeclarativeTool<BrowserScrollToolPara
     params: BrowserScrollToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserScrollToolParams, ToolResult> {
-    return new BrowserScrollToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserScrollToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserScrollToolInvocation extends BaseToolInvocation<BrowserScrollToolParams, ToolResult> {
+class BrowserScrollToolInvocation extends BaseToolInvocation<
+  BrowserScrollToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserScrollToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -394,7 +521,11 @@ class BrowserScrollToolInvocation extends BaseToolInvocation<BrowserScrollToolPa
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const browserService = BrowserService.getInstance(this.config);
-    await browserService.scroll(this.params.selector, this.params.direction, this.params.amount);
+    await browserService.scroll(
+      this.params.selector,
+      this.params.direction,
+      this.params.amount,
+    );
     return {
       llmContent: `Scrolled ${this.params.direction}`,
       returnDisplay: `Scrolled ${this.params.direction}`,
@@ -402,17 +533,22 @@ class BrowserScrollToolInvocation extends BaseToolInvocation<BrowserScrollToolPa
   }
 }
 
-
 // --- Browser Get Content Tool ---
 
 export interface BrowserGetContentToolParams {
   format: 'text' | 'markdown' | 'html';
 }
 
-export class BrowserGetContentTool extends BaseDeclarativeTool<BrowserGetContentToolParams, ToolResult> {
+export class BrowserGetContentTool extends BaseDeclarativeTool<
+  BrowserGetContentToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_get_content';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserGetContentTool.Name,
       'Get Page Content',
@@ -421,11 +557,15 @@ export class BrowserGetContentTool extends BaseDeclarativeTool<BrowserGetContent
       {
         type: 'object',
         properties: {
-          format: { type: 'string', enum: ['text', 'markdown', 'html'], description: 'Format of the content.' },
+          format: {
+            type: 'string',
+            enum: ['text', 'markdown', 'html'],
+            description: 'Format of the content.',
+          },
         },
         required: ['format'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -433,19 +573,28 @@ export class BrowserGetContentTool extends BaseDeclarativeTool<BrowserGetContent
     params: BrowserGetContentToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserGetContentToolParams, ToolResult> {
-    return new BrowserGetContentToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserGetContentToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserGetContentToolInvocation extends BaseToolInvocation<BrowserGetContentToolParams, ToolResult> {
+class BrowserGetContentToolInvocation extends BaseToolInvocation<
+  BrowserGetContentToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserGetContentToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -464,22 +613,27 @@ class BrowserGetContentToolInvocation extends BaseToolInvocation<BrowserGetConte
   }
 }
 
-
 // --- Browser Get Accessibility Tree Tool ---
 
 export interface BrowserGetAccessibilityTreeToolParams {}
 
-export class BrowserGetAccessibilityTreeTool extends BaseDeclarativeTool<BrowserGetAccessibilityTreeToolParams, ToolResult> {
+export class BrowserGetAccessibilityTreeTool extends BaseDeclarativeTool<
+  BrowserGetAccessibilityTreeToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_get_accessibility_tree';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserGetAccessibilityTreeTool.Name,
       'Get Accessibility Tree',
       'Gets the accessibility tree of the current page (semantic structure).',
       Kind.Read,
       { type: 'object', properties: {} },
-      messageBus
+      messageBus,
     );
   }
 
@@ -487,19 +641,28 @@ export class BrowserGetAccessibilityTreeTool extends BaseDeclarativeTool<Browser
     params: BrowserGetAccessibilityTreeToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserGetAccessibilityTreeToolParams, ToolResult> {
-    return new BrowserGetAccessibilityTreeToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserGetAccessibilityTreeToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserGetAccessibilityTreeToolInvocation extends BaseToolInvocation<BrowserGetAccessibilityTreeToolParams, ToolResult> {
+class BrowserGetAccessibilityTreeToolInvocation extends BaseToolInvocation<
+  BrowserGetAccessibilityTreeToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserGetAccessibilityTreeToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -518,17 +681,22 @@ class BrowserGetAccessibilityTreeToolInvocation extends BaseToolInvocation<Brows
   }
 }
 
-
 // --- Browser Evaluate Tool ---
 
 export interface BrowserEvaluateToolParams {
   script: string;
 }
 
-export class BrowserEvaluateTool extends BaseDeclarativeTool<BrowserEvaluateToolParams, ToolResult> {
+export class BrowserEvaluateTool extends BaseDeclarativeTool<
+  BrowserEvaluateToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_evaluate';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserEvaluateTool.Name,
       'Evaluate Script',
@@ -537,11 +705,14 @@ export class BrowserEvaluateTool extends BaseDeclarativeTool<BrowserEvaluateTool
       {
         type: 'object',
         properties: {
-          script: { type: 'string', description: 'JavaScript code to execute.' },
+          script: {
+            type: 'string',
+            description: 'JavaScript code to execute.',
+          },
         },
         required: ['script'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -549,19 +720,28 @@ export class BrowserEvaluateTool extends BaseDeclarativeTool<BrowserEvaluateTool
     params: BrowserEvaluateToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserEvaluateToolParams, ToolResult> {
-    return new BrowserEvaluateToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserEvaluateToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserEvaluateToolInvocation extends BaseToolInvocation<BrowserEvaluateToolParams, ToolResult> {
+class BrowserEvaluateToolInvocation extends BaseToolInvocation<
+  BrowserEvaluateToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserEvaluateToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -587,10 +767,16 @@ export interface BrowserCursorMoveToolParams {
   y: number;
 }
 
-export class BrowserCursorMoveTool extends BaseDeclarativeTool<BrowserCursorMoveToolParams, ToolResult> {
+export class BrowserCursorMoveTool extends BaseDeclarativeTool<
+  BrowserCursorMoveToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_cursor_move';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserCursorMoveTool.Name,
       'Move Cursor',
@@ -604,7 +790,7 @@ export class BrowserCursorMoveTool extends BaseDeclarativeTool<BrowserCursorMove
         },
         required: ['x', 'y'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -612,19 +798,28 @@ export class BrowserCursorMoveTool extends BaseDeclarativeTool<BrowserCursorMove
     params: BrowserCursorMoveToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserCursorMoveToolParams, ToolResult> {
-    return new BrowserCursorMoveToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserCursorMoveToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserCursorMoveToolInvocation extends BaseToolInvocation<BrowserCursorMoveToolParams, ToolResult> {
+class BrowserCursorMoveToolInvocation extends BaseToolInvocation<
+  BrowserCursorMoveToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserCursorMoveToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -647,17 +842,23 @@ class BrowserCursorMoveToolInvocation extends BaseToolInvocation<BrowserCursorMo
 
 export interface BrowserCursorClickToolParams {}
 
-export class BrowserCursorClickTool extends BaseDeclarativeTool<BrowserCursorClickToolParams, ToolResult> {
+export class BrowserCursorClickTool extends BaseDeclarativeTool<
+  BrowserCursorClickToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_cursor_click';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserCursorClickTool.Name,
       'Click at Cursor',
       'Clicks at the current position of the visible cursor.',
       Kind.Execute,
       { type: 'object', properties: {} },
-      messageBus
+      messageBus,
     );
   }
 
@@ -665,19 +866,28 @@ export class BrowserCursorClickTool extends BaseDeclarativeTool<BrowserCursorCli
     params: BrowserCursorClickToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserCursorClickToolParams, ToolResult> {
-    return new BrowserCursorClickToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserCursorClickToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserCursorClickToolInvocation extends BaseToolInvocation<BrowserCursorClickToolParams, ToolResult> {
+class BrowserCursorClickToolInvocation extends BaseToolInvocation<
+  BrowserCursorClickToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserCursorClickToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -703,10 +913,16 @@ export interface BrowserCursorDragToolParams {
   endY: number;
 }
 
-export class BrowserCursorDragTool extends BaseDeclarativeTool<BrowserCursorDragToolParams, ToolResult> {
+export class BrowserCursorDragTool extends BaseDeclarativeTool<
+  BrowserCursorDragToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_cursor_drag';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserCursorDragTool.Name,
       'Drag Cursor',
@@ -720,7 +936,7 @@ export class BrowserCursorDragTool extends BaseDeclarativeTool<BrowserCursorDrag
         },
         required: ['endX', 'endY'],
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -728,19 +944,28 @@ export class BrowserCursorDragTool extends BaseDeclarativeTool<BrowserCursorDrag
     params: BrowserCursorDragToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserCursorDragToolParams, ToolResult> {
-    return new BrowserCursorDragToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserCursorDragToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserCursorDragToolInvocation extends BaseToolInvocation<BrowserCursorDragToolParams, ToolResult> {
+class BrowserCursorDragToolInvocation extends BaseToolInvocation<
+  BrowserCursorDragToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserCursorDragToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -763,10 +988,16 @@ class BrowserCursorDragToolInvocation extends BaseToolInvocation<BrowserCursorDr
 
 export interface BrowserStopToolParams {}
 
-export class BrowserStopTool extends BaseDeclarativeTool<BrowserStopToolParams, ToolResult> {
+export class BrowserStopTool extends BaseDeclarativeTool<
+  BrowserStopToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_stop';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserStopTool.Name,
       'Stop Browser',
@@ -776,7 +1007,7 @@ export class BrowserStopTool extends BaseDeclarativeTool<BrowserStopToolParams, 
         type: 'object',
         properties: {},
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -784,19 +1015,28 @@ export class BrowserStopTool extends BaseDeclarativeTool<BrowserStopToolParams, 
     params: BrowserStopToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserStopToolParams, ToolResult> {
-    return new BrowserStopToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserStopToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserStopToolInvocation extends BaseToolInvocation<BrowserStopToolParams, ToolResult> {
+class BrowserStopToolInvocation extends BaseToolInvocation<
+  BrowserStopToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserStopToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -823,10 +1063,16 @@ class BrowserStopToolInvocation extends BaseToolInvocation<BrowserStopToolParams
 
 export interface BrowserResetToolParams {}
 
-export class BrowserResetTool extends BaseDeclarativeTool<BrowserResetToolParams, ToolResult> {
+export class BrowserResetTool extends BaseDeclarativeTool<
+  BrowserResetToolParams,
+  ToolResult
+> {
   static readonly Name = 'browser_reset';
 
-  constructor(private readonly config: Config, messageBus: MessageBus) {
+  constructor(
+    private readonly config: Config,
+    messageBus: MessageBus,
+  ) {
     super(
       BrowserResetTool.Name,
       'Reset Browser',
@@ -836,7 +1082,7 @@ export class BrowserResetTool extends BaseDeclarativeTool<BrowserResetToolParams
         type: 'object',
         properties: {},
       },
-      messageBus
+      messageBus,
     );
   }
 
@@ -844,19 +1090,28 @@ export class BrowserResetTool extends BaseDeclarativeTool<BrowserResetToolParams
     params: BrowserResetToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ): ToolInvocation<BrowserResetToolParams, ToolResult> {
-    return new BrowserResetToolInvocation(this.config, params, messageBus, _toolName, _toolDisplayName);
+    return new BrowserResetToolInvocation(
+      this.config,
+      params,
+      messageBus,
+      _toolName,
+      _toolDisplayName,
+    );
   }
 }
 
-class BrowserResetToolInvocation extends BaseToolInvocation<BrowserResetToolParams, ToolResult> {
+class BrowserResetToolInvocation extends BaseToolInvocation<
+  BrowserResetToolParams,
+  ToolResult
+> {
   constructor(
     private readonly config: Config,
     params: BrowserResetToolParams,
     messageBus: MessageBus,
     _toolName?: string,
-    _toolDisplayName?: string
+    _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
   }
@@ -867,10 +1122,10 @@ class BrowserResetToolInvocation extends BaseToolInvocation<BrowserResetToolPara
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const browserService = BrowserService.getInstance(this.config);
-    
+
     // Stop sync before reset
     OperatorLatentSync.getInstance(this.config).stopSync();
-    
+
     await browserService.closeBrowser();
     await browserService.startBrowser();
 

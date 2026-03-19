@@ -23,6 +23,9 @@ import { useConfig } from '../contexts/ConfigContext.js';
 import { useSettings } from '../contexts/SettingsContext.js';
 import { useVimMode } from '../contexts/VimModeContext.js';
 import { PremiumStatusHUD } from './PremiumStatusHUD.js';
+import { BORDER_STYLE, AGI_THEME } from '../AppContainer.js';
+
+const HoleifyPath = (path: string) => path.replace(/\\/g, ' • ');
 
 export const Footer: React.FC = () => {
   const uiState = useUIState();
@@ -72,97 +75,116 @@ export const Footer: React.FC = () => {
   const showDebugProfiler = debugMode || isDevelopment;
 
   return (
-    <Box
-      justifyContent={justifyContent}
-      width={terminalWidth}
-      flexDirection="row"
-      alignItems="center"
-      paddingX={2}
-      paddingY={1}
-      borderStyle="round"
-      borderTop
-      borderBottom={false}
-      borderLeft={false}
-      borderRight={false}
-      borderColor={theme.input.border_active}
-    >
-      {(showDebugProfiler || displayVimMode || !hideCWD) && (
-        <Box>
-          {showDebugProfiler && <DebugProfiler />}
-          {displayVimMode && (
-            <Text color={theme.text.secondary}>[{displayVimMode}] </Text>
-          )}
-          {!hideCWD &&
-            (nightly ? (
-              <ThemedGradient>
-                {displayPath}
-                {branchName && <Text> ({branchName}*)</Text>}
-              </ThemedGradient>
-            ) : (
-              <Text color={theme.text.link}>
-                {displayPath}
-                {branchName && (
-                  <Text color={theme.text.secondary}> ({branchName}*)</Text>
-                )}
-              </Text>
-            ))}
-          {debugMode && (
-            <Text color={theme.status.error}>
-              {' ' + (debugMessage || '--debug')}
-            </Text>
-          )}
-        </Box>
-      )}
+    <Box flexDirection="column" width={terminalWidth} marginY={0}>
+      {/* Premium Top Border */}
+      <Box flexDirection="row" width={terminalWidth}>
+        <Text color={AGI_THEME.accent}>{BORDER_STYLE.topLeft}</Text>
+        <Text color={AGI_THEME.muted}>
+          {BORDER_STYLE.horizontal.repeat(Math.max(0, terminalWidth - 2))}
+        </Text>
+        <Text color={AGI_THEME.accent}>{BORDER_STYLE.topRight}</Text>
+      </Box>
 
-      {/* Middle Section: Premium HUD */}
-      {!hideSandboxStatus && (
-        <Box flexGrow={1} alignItems="center" justifyContent="center">
-          <PremiumStatusHUD />
-        </Box>
-      )}
-
-      {/* Right Section: Phill Label and Console Summary */}
-      {!hideModelInfo && (
-        <Box alignItems="center" justifyContent="flex-end">
-          <Box alignItems="center">
-            <Text color={theme.text.accent}>
-              {getDisplayString(model, config.getPreviewFeatures())}
-              <Text color={theme.text.secondary}> /model</Text>
-              {!hideContextPercentage && (
-                <>
-                  {' '}
-                  <ContextUsageDisplay
-                    promptTokenCount={promptTokenCount}
-                    model={model}
-                    terminalWidth={terminalWidth}
-                  />
-                </>
+      <Box
+        justifyContent={justifyContent}
+        width={terminalWidth}
+        flexDirection="row"
+        alignItems="center"
+        paddingX={1}
+      >
+        <Text color={AGI_THEME.muted}>{BORDER_STYLE.vertical}</Text>
+        
+        <Box flexGrow={1} flexDirection="row" alignItems="center" justifyContent={justifyContent} paddingX={1}>
+          {(showDebugProfiler || displayVimMode || !hideCWD) && (
+            <Box>
+              {showDebugProfiler && <DebugProfiler />}
+              {displayVimMode && (
+                <Text color={theme.text.secondary}>[{displayVimMode.toUpperCase()}] </Text>
               )}
-            </Text>
-            {showMemoryUsage && <MemoryUsageDisplay />}
-          </Box>
-          <Box alignItems="center">
-            {corgiMode && (
-              <Box paddingLeft={1} flexDirection="row">
-                <Text>
-                  <Text color={theme.ui.symbol}>| </Text>
-                  <Text color={theme.status.error}>▼</Text>
-                  <Text color={theme.text.primary}>(´</Text>
-                  <Text color={theme.status.error}>ᴥ</Text>
-                  <Text color={theme.text.primary}>`)</Text>
-                  <Text color={theme.status.error}>▼</Text>
+              {!hideCWD &&
+                (nightly ? (
+                  <ThemedGradient>
+                    {HoleifyPath(displayPath)}
+                    {branchName && <Text> ({branchName.toUpperCase()}*)</Text>}
+                  </ThemedGradient>
+                ) : (
+                  <Text color={theme.text.link}>
+                    {HoleifyPath(displayPath)}
+                    {branchName && (
+                      <Text color={theme.text.secondary}> ({branchName.toUpperCase()}*)</Text>
+                    )}
+                  </Text>
+                ))}
+              {debugMode && (
+                <Text color={theme.status.error}>
+                  {' ' + (debugMessage || '--debug').toUpperCase()}
                 </Text>
+              )}
+            </Box>
+          )}
+
+          {/* Middle Section: Premium HUD */}
+          {!hideSandboxStatus && (
+            <Box flexGrow={1} alignItems="center" justifyContent="center">
+              <PremiumStatusHUD />
+            </Box>
+          )}
+
+          {/* Right Section: Phill Label and Console Summary */}
+          {!hideModelInfo && (
+            <Box alignItems="center" justifyContent="flex-end" flexDirection="row">
+              <Box alignItems="center" flexDirection="row">
+                <Text color={theme.text.accent} bold>
+                  {getDisplayString(model, config).toUpperCase()}
+                </Text>
+                <Text color={theme.text.secondary}> /MODE</Text>
+                {!hideContextPercentage && (
+                  <>
+                    {' '}
+                    <ContextUsageDisplay
+                      promptTokenCount={promptTokenCount}
+                      model={model}
+                      terminalWidth={terminalWidth}
+                    />
+                  </>
+                )}
+                {showMemoryUsage && <MemoryUsageDisplay />}
               </Box>
-            )}
-            {!showErrorDetails && errorCount > 0 && (
-              <Box paddingLeft={1} flexDirection="row">
-                <Text color={theme.ui.comment}>| </Text>
-                <ConsoleSummaryDisplay errorCount={errorCount} />
+              <Box alignItems="center">
+                {corgiMode && (
+                  <Box paddingLeft={1} flexDirection="row">
+                    <Text>
+                      <Text color={theme.ui.symbol}>| </Text>
+                      <Text color={theme.status.error}>▼</Text>
+                      <Text color={theme.text.primary}>(´</Text>
+                      <Text color={theme.status.error}>ᴥ</Text>
+                      <Text color={theme.text.primary}>`)</Text>
+                      <Text color={theme.status.error}>▼</Text>
+                    </Text>
+                  </Box>
+                )}
+                {!showErrorDetails && errorCount > 0 && (
+                  <Box paddingLeft={1} flexDirection="row">
+                    <Text color={theme.ui.comment}>| </Text>
+                    <ConsoleSummaryDisplay errorCount={errorCount} />
+                  </Box>
+                )}
               </Box>
-            )}
-          </Box>
+            </Box>
+          )}
         </Box>
-      )}
+
+        <Text color={AGI_THEME.muted}>{BORDER_STYLE.vertical}</Text>
+      </Box>
+
+      {/* Bottom Border */}
+      <Box flexDirection="row" width={terminalWidth}>
+        <Text color={AGI_THEME.accent}>{BORDER_STYLE.bottomLeft}</Text>
+        <Text color={AGI_THEME.muted}>
+          {BORDER_STYLE.horizontal.repeat(Math.max(0, terminalWidth - 2))}
+        </Text>
+        <Text color={AGI_THEME.accent}>{BORDER_STYLE.bottomRight}</Text>
+      </Box>
     </Box>
   );
 };

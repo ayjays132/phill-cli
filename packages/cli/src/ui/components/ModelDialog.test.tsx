@@ -16,7 +16,7 @@ import {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
 } from 'phill-cli-core';
 import type { Config, ModelSlashCommandEvent } from 'phill-cli-core';
 
@@ -125,7 +125,7 @@ describe('<ModelDialog />', () => {
   it('renders "manual" view with preview options when preview features are enabled', async () => {
     mockGetPreviewFeatures.mockReturnValue(true);
     mockGetHasAccessToPreviewModel.mockReturnValue(true); // Must have access
-    mockGetModel.mockReturnValue(PREVIEW_GEMINI_MODEL_AUTO);
+    mockGetModel.mockReturnValue(PREVIEW_GEMINI_3_1_MODEL_AUTO);
     const { lastFrame, stdin } = renderComponent();
 
     // Select "Manual" (index 2 because Preview Auto is first, then Auto (Phill 2.5))

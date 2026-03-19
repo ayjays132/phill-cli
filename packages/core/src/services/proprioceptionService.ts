@@ -6,15 +6,16 @@
 
 import * as os from 'node:os';
 import * as fs from 'node:fs/promises';
-import { 
-  getGlobalMemoryFilePath, 
-  computeNewContent, 
-  VITALS_SECTION_HEADER 
-} from '../tools/memoryTool.js';
+import {
+  getGlobalMemoryFilePath,
+  computeNewContent,
+  VITALS_SECTION_HEADER,
+  debugLogger,
+  type Config,
+} from '../index.js';
 
 import { PhysicalPerceptionService } from './physicalPerceptionService.js';
 import type { PhysicalVisionData } from './physicalPerceptionService.js';
-import { Config } from '../config/config.js';
 
 export interface SystemVitals {
   cpuUsage: number;
@@ -32,13 +33,14 @@ export interface SystemVitals {
 export class ProprioceptionService {
   private static instance: ProprioceptionService;
   private config: Config | null = null;
-  private lastCpuUsage: { user: number, system: number, time: number } | null = null;
+  private lastCpuUsage: { user: number; system: number; time: number } | null =
+    null;
 
   private constructor(config?: Config) {
     this.config = config || null;
   }
 
-  public static getInstance(config?: Config): ProprioceptionService {
+  static getInstance(config?: Config): ProprioceptionService {
     if (!ProprioceptionService.instance) {
       ProprioceptionService.instance = new ProprioceptionService(config);
     }
@@ -51,18 +53,18 @@ export class ProprioceptionService {
    */
   private calculatePulse(cpu: number, mem: number): number {
     // Weight: 60% CPU, 40% Memory pressure
-    const pulse = (cpu * 0.6) + (mem * 0.4);
+    const pulse = cpu * 0.6 + mem * 0.4;
     return Math.min(Math.round(pulse), 100);
   }
 
   /**
    * Gets current system vitals.
    */
-  public async getVitals(): Promise<SystemVitals> {
+  async getVitals(): Promise<SystemVitals> {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const memUsage = ((totalMem - freeMem) / totalMem) * 100;
-    
+
     // CPU usage calculation
     const currentCpu = this.getCpuUsage();
     const cpuUsage = currentCpu;
@@ -74,7 +76,9 @@ export class ProprioceptionService {
 
     let physicalVision: PhysicalVisionData | undefined;
     if (this.config) {
-        physicalVision = await PhysicalPerceptionService.getInstance(this.config).getSnapshot();
+      physicalVision = await PhysicalPerceptionService.getInstance(
+        this.config,
+      ).getSnapshot();
     }
 
     return {
@@ -87,7 +91,7 @@ export class ProprioceptionService {
       platform,
       arch,
       pulse: this.calculatePulse(cpuUsage, memUsage),
-      physicalVision
+      physicalVision,
     };
   }
 
@@ -104,7 +108,7 @@ export class ProprioceptionService {
     }
 
     const total = user + system + idle;
-    
+
     // Simple point-in-time calculation if no history
     if (!this.lastCpuUsage) {
       this.lastCpuUsage = { user, system, time: total };
@@ -124,12 +128,12 @@ export class ProprioceptionService {
   /**
    * Formats vitals for LLM consumption.
    */
-  public formatVitals(vitals: SystemVitals): string {
+  formatVitals(vitals: SystemVitals): string {
     return [
       `System Status: ${vitals.platform} (${vitals.arch})`,
       `CPU: ${vitals.cpuUsage}% | Memory: ${vitals.memoryUsage}%`,
       `Pulse: ${vitals.pulse}/100 [${this.getPulseDescription(vitals.pulse)}]`,
-      `Uptime: ${(vitals.uptime / 3600).toFixed(2)} hours`
+      `Uptime: ${(vitals.uptime / 3600).toFixed(2)} hours`,
     ].join('\n');
   }
 
@@ -143,25 +147,29 @@ export class ProprioceptionService {
   /**
    * Logs current vitals to the PHILL.md memory file.
    */
-  public async logCurrentVitals(): Promise<void> {
+  async logCurrentVitals(): Promise<void> {
     try {
       const vitals = await this.getVitals();
       const statusLine = `[${new Date().toISOString()}] Pulse: ${vitals.pulse}/100 | CPU: ${vitals.cpuUsage}% | MEM: ${vitals.memoryUsage}%`;
-      
+
       const memoryPath = getGlobalMemoryFilePath();
       let currentContent = '';
       try {
         currentContent = await fs.readFile(memoryPath, 'utf-8');
-      } catch (e) {
+      } catch (_e) {
         // File might not exist yet
       }
 
-      const newContent = computeNewContent(currentContent, statusLine, VITALS_SECTION_HEADER);
+      const newContent = computeNewContent(
+        currentContent,
+        statusLine,
+        VITALS_SECTION_HEADER,
+      );
       await fs.writeFile(memoryPath, newContent, 'utf-8');
-      
-      // console.log('Proprioception: System Vitals logged to memory.');
+
+      // debugLogger.debug('Proprioception: System Vitals logged to memory.');
     } catch (error) {
-      console.error('Failed to log vitals to memory:', error);
+      debugLogger.error('Failed to log vitals to memory:', error);
     }
   }
 
@@ -169,17 +177,16 @@ export class ProprioceptionService {
    * Starts a background heartbeat that logs vitals periodically.
    * Default is every 5 minutes.
    */
-  public startHeartbeat(intervalMs: number = 5 * 60 * 1000): NodeJS.Timeout {
+  startHeartbeat(intervalMs: number = 5 * 60 * 1000): NodeJS.Timeout {
     // Initial log
-    this.logCurrentVitals().catch(console.error);
-    
-    // Start physical environment monitoring if config is available
-    if (this.config) {
-      PhysicalPerceptionService.getInstance(this.config).startMonitoring();
-    }
+    this.logCurrentVitals().catch((err) =>
+      debugLogger.error('Failed initial heartbeat:', err),
+    );
 
     return setInterval(() => {
-      this.logCurrentVitals().catch(console.error);
+      this.logCurrentVitals().catch((err) =>
+        debugLogger.error('Failed heartbeat:', err),
+      );
     }, intervalMs);
   }
 }

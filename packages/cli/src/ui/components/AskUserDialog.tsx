@@ -28,6 +28,7 @@ import { UIStateContext } from '../contexts/UIStateContext.js';
 import { getCachedStringWidth } from '../utils/textUtils.js';
 import { useTabbedNavigation } from '../hooks/useTabbedNavigation.js';
 import { DialogFooter } from './shared/DialogFooter.js';
+import { PremiumFrame } from './shared/PremiumFrame.js';
 
 interface AskUserDialogState {
   answers: { [key: string]: string };
@@ -981,14 +982,21 @@ export const AskUserDialog: React.FC<AskUserDialogProps> = ({
 
   if (isOnReviewTab) {
     return (
-      <Box aria-label="Review your answers">
-        <ReviewView
-          questions={questions}
-          answers={answers}
-          onSubmit={handleReviewSubmit}
-          progressHeader={progressHeader}
-        />
-      </Box>
+      <PremiumFrame
+        width={Math.max(60, availableWidth - 2)}
+        title="Action Required"
+        subtitle="Review answers before submitting."
+        borderColor={theme.border.focused}
+      >
+        <Box aria-label="Review your answers">
+          <ReviewView
+            questions={questions}
+            answers={answers}
+            onSubmit={handleReviewSubmit}
+            progressHeader={progressHeader}
+          />
+        </Box>
+      </PremiumFrame>
     );
   }
 
@@ -1041,12 +1049,19 @@ export const AskUserDialog: React.FC<AskUserDialogProps> = ({
     );
 
   return (
-    <Box
-      flexDirection="column"
-      width={availableWidth}
-      aria-label={`Question ${currentQuestionIndex + 1} of ${questions.length}: ${currentQuestion.question}`}
+    <PremiumFrame
+      width={Math.max(60, availableWidth - 2)}
+      title="Action Required"
+      subtitle={`Question ${currentQuestionIndex + 1} of ${questions.length}`}
+      borderColor={theme.border.focused}
     >
-      {questionView}
-    </Box>
+      <Box
+        flexDirection="column"
+        width="100%"
+        aria-label={`Question ${currentQuestionIndex + 1} of ${questions.length}: ${currentQuestion.question}`}
+      >
+        {questionView}
+      </Box>
+    </PremiumFrame>
   );
 };

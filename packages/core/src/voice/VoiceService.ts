@@ -5,19 +5,25 @@
  */
 
 import { EventEmitter } from 'events';
+import {
+  getOauthClient,
+  AuthType,
+  Config,
+  debugLogger,
+  getDirectoryContextString,
+  loadApiKey,
+} from '../index.js';
 import { AudioManager } from './audioManager.js';
 import { GeminiLiveClient } from './geminiLiveClient.js';
-import { getOauthClient } from '../code_assist/oauth2.js';
-import { AuthType } from '../core/contentGenerator.js';
-import type { Config } from '../config/config.js';
-import { debugLogger } from '../utils/debugLogger.js';
 import type { Tool } from '@google/genai';
 import { ideContextStore } from '../ide/ideContext.js';
-import { getDirectoryContextString } from '../utils/environmentContext.js';
 import { TTSService } from './ttsService.js';
-import { loadApiKey } from '../core/apiKeyCredentialStorage.js';
 
-export type VoiceServiceStatus = 'idle' | 'processing' | 'listening' | 'speaking';
+export type VoiceServiceStatus =
+  | 'idle'
+  | 'processing'
+  | 'listening'
+  | 'speaking';
 
 export interface VoiceServiceEvents {
   statusChange: (status: VoiceServiceStatus) => void;
@@ -95,7 +101,9 @@ export class VoiceService extends EventEmitter {
       authType === AuthType.COMPUTE_ADC;
 
     if (!canUseLive) {
-      debugLogger.warn(`VoiceService: skipping Gemini Live for auth type '${authType}'.`);
+      debugLogger.warn(
+        `VoiceService: skipping Gemini Live for auth type '${authType}'.`,
+      );
       return;
     }
 
@@ -135,13 +143,15 @@ export class VoiceService extends EventEmitter {
       }
 
       // 2. Setup Audio
-      this.audioManager = new AudioManager();
-      
+      this.audioManager = AudioManager.getInstance();
+
       // 3. Resolve Context Snapshot for Realism
       const ideContext = ideContextStore.get();
       const workspaceContext = await getDirectoryContextString(config);
-      const activeFile = ideContext?.workspaceState?.openFiles?.find(f => f.isActive);
-      
+      const activeFile = ideContext?.workspaceState?.openFiles?.find(
+        (f) => f.isActive,
+      );
+
       const contextSnapshot = `
 [CONTEXT SNAPSHOT]
 Active File: ${activeFile?.path || 'None'}
@@ -180,9 +190,19 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
       this.setupAudioEvents();
 
       await this.client.connect();
-      
-      this.audioManager.startRecording();
-      this.audioManager.startPlayback();
+
+      // Guard: a concurrent disconnect() may have nulled audioManager while
+      // we were awaiting the Gemini Live handshake above.
+      const manager = this.audioManager;
+      if (!manager || !this.client) {
+        debugLogger.warn(
+          'VoiceService: disconnected during connect handshake, aborting startup.',
+        );
+        return;
+      }
+
+      await manager.startRecording();
+      manager.startPlayback();
       this.setStatus('listening');
 
       debugLogger.log('VoiceService: Successfully connected.');
@@ -198,7 +218,7 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
 
   public disconnect(): void {
     debugLogger.log('VoiceService: Disconnecting...');
-    
+
     if (this.client) {
       this.client.cleanup();
       this.client = null;
@@ -220,7 +240,9 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
     this.client.on('textData', (text: string) => {
       // Parse Emotion if current turn just started
       if (!this.currentTranscript) {
-        const emotionMatch = text.match(/^\[(Neutral|Happy|Confused|Frustrated|Determined)\]/);
+        const emotionMatch = text.match(
+          /^\[(Neutral|Happy|Confused|Frustrated|Determined)\]/,
+        );
         if (emotionMatch) {
           this.emit('emotionChange', emotionMatch[1]);
         }
@@ -235,7 +257,7 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
       if (final && final !== this.lastSubmittedTranscript) {
         this.lastSubmittedTranscript = final;
         this.emit('transcriptFinal', final);
-        
+
         // Cooldown for duplicate prevention
         setTimeout(() => {
           this.lastSubmittedTranscript = '';
@@ -252,7 +274,9 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
           const result = await onToolCall(call.name, call.args);
           this.client.sendToolResponse(call.id, call.name, { result });
         } catch (e) {
-          this.client.sendToolResponse(call.id, call.name, { error: String(e) });
+          this.client.sendToolResponse(call.id, call.name, {
+            error: String(e),
+          });
         }
       }
     });

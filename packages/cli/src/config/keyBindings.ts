@@ -87,6 +87,7 @@ export enum Command {
   RESTART_APP = 'app.restart',
   TOGGLE_VOICE = 'app.toggleVoice',
   TOGGLE_TTS = 'app.toggleTts',
+  TOGGLE_STT = 'app.toggleStt',
 }
 
 /**
@@ -269,6 +270,7 @@ export const defaultKeyBindings: KeyBindingConfig = {
   [Command.RESTART_APP]: [{ key: 'r' }],
   [Command.TOGGLE_VOICE]: [{ key: 't', ctrl: true, alt: false }],
   [Command.TOGGLE_TTS]: [{ key: 'g', ctrl: true }],
+  [Command.TOGGLE_STT]: [{ key: 'e', ctrl: true }],
 };
 
 interface CommandCategory {
@@ -380,6 +382,7 @@ export const commandCategories: readonly CommandCategory[] = [
       Command.RESTART_APP,
       Command.TOGGLE_VOICE,
       Command.TOGGLE_TTS,
+      Command.TOGGLE_STT,
     ],
   },
 ];
@@ -472,4 +475,5 @@ export const commandDescriptions: Readonly<Record<Command, string>> = {
   [Command.RESTART_APP]: 'Restart the application.',
   [Command.TOGGLE_VOICE]: 'Toggle voice input mode.',
   [Command.TOGGLE_TTS]: 'Toggle text-to-speech output.',
+  [Command.TOGGLE_STT]: 'Toggle speech-to-text input.',
 };

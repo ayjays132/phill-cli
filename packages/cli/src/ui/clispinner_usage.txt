@@ -1,0 +1,22 @@
+auth\AuthInProgress.test.tsx:vi.mock('../components/CliSpinner.js', () => ({
+auth\AuthInProgress.test.tsx:  CliSpinner: () => '[Spinner]',
+auth\AuthInProgress.tsx:import { CliSpinner } from '../components/CliSpinner.js';
+auth\AuthInProgress.tsx:            <CliSpinner type="dots" /> Waiting for auth... (Press ESC or CTRL+C
+components\CliSpinner.d.ts:export declare const CliSpinner: (props: SpinnerProps) => import("react/jsx-runtime").JSX.Element | null;
+components\CliSpinner.test.tsx:import { CliSpinner } from './CliSpinner.js';
+components\CliSpinner.test.tsx:describe('<CliSpinner />', () => {
+components\CliSpinner.test.tsx:    const { unmount } = renderWithProviders(<CliSpinner />);
+components\CliSpinner.test.tsx:    const { lastFrame } = renderWithProviders(<CliSpinner />, { settings });
+components\CliSpinner.tsx:export const CliSpinner = (props: SpinnerProps) => {
+components\messages\CompressionMessage.tsx:import { CliSpinner } from '../CliSpinner.js';
+components\messages\CompressionMessage.tsx:          <CliSpinner type="dots" />
+components\PhillRespondingSpinner.test.tsx:vi.mock('./CliSpinner.js', () => ({
+components\PhillRespondingSpinner.test.tsx:  CliSpinner: () => 'Spinner',
+components\PhillRespondingSpinner.tsx:import { CliSpinner } from './CliSpinner.js';
+components\PhillRespondingSpinner.tsx:      <CliSpinner type={spinnerType} />
+components\RewindViewer.tsx:import { CliSpinner } from './CliSpinner.js';
+components\RewindViewer.tsx:            <CliSpinner />
+components\ValidationDialog.test.tsx:vi.mock('./CliSpinner.js', () => ({
+components\ValidationDialog.test.tsx:  CliSpinner: vi.fn(() => null),
+components\ValidationDialog.tsx:import { CliSpinner } from './CliSpinner.js';
+components\ValidationDialog.tsx:          <CliSpinner />

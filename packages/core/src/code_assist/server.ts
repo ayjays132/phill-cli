@@ -136,6 +136,7 @@ export class CodeAssistServer implements ContentGenerator {
         this.sessionId,
       ),
       req.config?.abortSignal,
+      600000, // 10 minute timeout for generation
     );
     const duration = formatProtoJsonDuration(Date.now() - start);
     const streamingLatency: StreamingLatency = {
@@ -213,6 +214,8 @@ export class CodeAssistServer implements ContentGenerator {
     const resp = await this.requestPost<CaCountTokenResponse>(
       'countTokens',
       toCountTokenRequest(req),
+      undefined,
+      30000, // 30s timeout for token counting
     );
     return fromCountTokenResponse(resp);
   }
@@ -289,6 +292,7 @@ export class CodeAssistServer implements ContentGenerator {
     method: string,
     req: object,
     signal?: AbortSignal,
+    timeout?: number,
   ): Promise<T> {
     const res = await this.client.request({
       url: this.getMethodUrl(method),
@@ -300,6 +304,7 @@ export class CodeAssistServer implements ContentGenerator {
       responseType: 'json',
       body: JSON.stringify(req),
       signal,
+      timeout,
     });
     return res.data as T;
   }
@@ -333,6 +338,7 @@ export class CodeAssistServer implements ContentGenerator {
     method: string,
     req: object,
     signal?: AbortSignal,
+    timeout?: number,
   ): Promise<AsyncGenerator<T>> {
     const res = await this.client.request({
       url: this.getMethodUrl(method),
@@ -347,6 +353,7 @@ export class CodeAssistServer implements ContentGenerator {
       responseType: 'stream',
       body: JSON.stringify(req),
       signal,
+      timeout,
     });
 
     return (async function* (): AsyncGenerator<T> {

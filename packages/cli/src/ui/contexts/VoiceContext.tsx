@@ -20,6 +20,7 @@ import type { AudioDevice, Config } from 'phill-cli-core';
 export interface VoiceState {
   isEnabled: boolean;
   ttsEnabled: boolean;
+  sttEnabled: boolean;
   status: 'idle' | 'listening' | 'processing' | 'speaking';
   waiterState: 'off' | 'listening' | 'waiting' | 'ready';
   transcript: string;
@@ -37,8 +38,10 @@ export interface VoiceContextValue {
   voiceState: VoiceState;
   toggleVoice: () => void;
   toggleTts: () => void;
+  toggleStt: () => void;
   setVoiceEnabled: (enabled: boolean) => void;
   setTtsEnabled: (enabled: boolean) => void;
+  setSttEnabled: (enabled: boolean) => void;
   setStatus: (status: VoiceState['status']) => void;
   setWaiterState: (state: VoiceState['waiterState']) => void;
   setTranscript: (transcript: string) => void;
@@ -60,6 +63,7 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
   const {
     mergedVoiceEnabled,
     mergedTtsEnabled,
+    mergedSttEnabled,
     mergedInputDevice,
     mergedOutputDevice,
   } = useMemo(() => {
@@ -74,6 +78,7 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
     return {
       mergedVoiceEnabled: (mergedVoice['enabled'] as boolean | undefined) ?? false,
       mergedTtsEnabled: (mergedVoice['ttsEnabled'] as boolean | undefined) ?? false,
+      mergedSttEnabled: (mergedVoice['sttEnabled'] as boolean | undefined) ?? true,
       mergedInputDevice: (mergedVoice['inputDevice'] as string | undefined) ?? 'default',
       mergedOutputDevice: (mergedVoice['outputDevice'] as string | undefined) ?? 'default',
     };
@@ -82,6 +87,7 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
   const [voiceState, setVoiceState] = useState<VoiceState>(() => ({
     isEnabled: mergedVoiceEnabled,
     ttsEnabled: mergedTtsEnabled,
+    sttEnabled: mergedSttEnabled,
     status: mergedVoiceEnabled ? 'listening' : 'idle',
     waiterState: 'off',
     transcript: '',
@@ -155,6 +161,34 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
       return {
         ...prev,
         ttsEnabled: newState,
+      };
+    });
+  }, [settings]);
+
+  const setSttEnabled = useCallback(
+    (enabled: boolean) => {
+      setVoiceState((prev) => {
+        if (prev.sttEnabled === enabled) return prev;
+        setTimeout(() => {
+          settings.setValue(SettingScope.User, 'voice.sttEnabled', enabled);
+          settings.setValue(SettingScope.User, 'ui.voice.sttEnabled', enabled);
+        }, 0);
+        return { ...prev, sttEnabled: enabled };
+      });
+    },
+    [settings],
+  );
+
+  const toggleStt = useCallback(() => {
+    setVoiceState((prev) => {
+      const newState = !prev.sttEnabled;
+      setTimeout(() => {
+        settings.setValue(SettingScope.User, 'voice.sttEnabled', newState);
+        settings.setValue(SettingScope.User, 'ui.voice.sttEnabled', newState);
+      }, 0);
+      return {
+        ...prev,
+        sttEnabled: newState,
       };
     });
   }, [settings]);
@@ -272,8 +306,10 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
     voiceState,
     toggleVoice,
     toggleTts,
+    toggleStt,
     setVoiceEnabled,
     setTtsEnabled,
+    setSttEnabled,
     setStatus,
     setWaiterState,
     setTranscript,
@@ -289,8 +325,10 @@ export function VoiceProvider({ children, config }: { children: React.ReactNode;
     voiceState,
     toggleVoice,
     toggleTts,
+    toggleStt,
     setVoiceEnabled,
     setTtsEnabled,
+    setSttEnabled,
     setStatus,
     setWaiterState,
     setTranscript,

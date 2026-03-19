@@ -385,6 +385,19 @@ export async function main() {
         cognitiveEngineProcess.on('error', (err) => {
           debugLogger.error('Cognitive Engine process error:', err);
         });
+
+        // Handle on-demand metacognitive actions from core tools
+        coreEvents.on(CoreEvent.MetacognitiveAction, (payload) => {
+          if (!cognitiveEngineProcess || cognitiveEngineProcess.killed) return;
+          
+          if (payload.action === 'dream') {
+            cognitiveEngineProcess.send({ type: EngineMessageType.TRIGGER_DREAM });
+          } else if (payload.action === 'insights') {
+            cognitiveEngineProcess.send({ type: EngineMessageType.GET_INSIGHTS });
+          } else if (payload.action === 'reset') {
+            cognitiveEngineProcess.send({ type: EngineMessageType.RESET_MEMORY });
+          }
+        });
       }
 
     } catch (err) {

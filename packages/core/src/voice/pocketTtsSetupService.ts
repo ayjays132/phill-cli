@@ -73,7 +73,10 @@ function getReadyMarkerPath(modelDir: string, modelId: string): string {
   return path.join(modelDir, `${sanitizeModelId(modelId)}.ready.json`);
 }
 
-async function hasReadyMarker(modelDir: string, modelId: string): Promise<boolean> {
+async function hasReadyMarker(
+  modelDir: string,
+  modelId: string,
+): Promise<boolean> {
   try {
     await fs.access(getReadyMarkerPath(modelDir, modelId));
     return true;
@@ -82,7 +85,10 @@ async function hasReadyMarker(modelDir: string, modelId: string): Promise<boolea
   }
 }
 
-async function writeReadyMarker(modelDir: string, modelId: string): Promise<void> {
+async function writeReadyMarker(
+  modelDir: string,
+  modelId: string,
+): Promise<void> {
   await fs.mkdir(modelDir, { recursive: true });
   await fs.writeFile(
     getReadyMarkerPath(modelDir, modelId),
@@ -104,7 +110,7 @@ export async function ensurePocketModelReady(
 
   await fs.mkdir(modelDir, { recursive: true });
 
-  const transformers = (await import('@xenova/transformers')) as {
+  const transformers = (await import('@huggingface/transformers')) as {
     env: {
       cacheDir?: string;
       localModelPath?: string;
@@ -136,9 +142,16 @@ export async function ensurePocketModelReady(
   const tokenizerJsonPath = path.join(modelDir, 'tokenizer.json');
 
   // Workaround for models that use tokenizer.model instead of tokenizer.json
-  if (await fs.access(tokenizerModelPath).then(() => true).catch(() => false)) {
+  if (
+    await fs
+      .access(tokenizerModelPath)
+      .then(() => true)
+      .catch(() => false)
+  ) {
     await fs.copyFile(tokenizerModelPath, tokenizerJsonPath);
-    debugLogger.log(`Copied ${tokenizerModelPath} to ${tokenizerJsonPath} as a workaround for @xenova/transformers.`);
+    debugLogger.log(
+      `Copied ${tokenizerModelPath} to ${tokenizerJsonPath} as a workaround for @huggingface/transformers.`,
+    );
   }
 
   await transformers.pipeline('text-to-speech', modelId, {

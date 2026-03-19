@@ -68,7 +68,6 @@ import {
   startupProfiler,
   SessionStartSource,
   SessionEndReason,
-  generateSummary,
   MessageBusType,
   type AskUserRequest,
   type AgentsDiscoveredPayload,
@@ -198,26 +197,51 @@ const detectTerminalCapabilities = (): TerminalCapabilities => {
   return { colors, trueColor, unicode, emoji, animations, reducedMotion, termProgram };
 };
 
-const AGI_THEME = {
-  primary: '\x1b[38;2;0;149;255m',
-  accent: '\x1b[38;2;138;43;226m',
-  success: '\x1b[38;2;50;255;100m',
-  warning: '\x1b[38;2;255;200;50m',
-  error: '\x1b[38;2;255;50;50m',
-  glow: '\x1b[38;2;100;200;255m',
-  reset: '\x1b[0m',
-};
-
-const FALLBACK_THEME = {
-  primary: '\x1b[94m',
-  accent: '\x1b[96m',
-  success: '\x1b[92m',
-  warning: '\x1b[93m',
-  error: '\x1b[91m',
+export const AGI_THEME = {
+  primary: '\x1b[38;2;61;119;243m', // Vibrant Azure
+  accent: '\x1b[38;2;147;98;250m',  // Electric Amethyst
+  success: '\x1b[38;2;46;213;115m', // Bioluminescent Green
+  warning: '\x1b[38;2;255;184;108m', // Solar Gold
+  error: '\x1b[38;2;255;85;85m',    // Neon Crimson
+  glow: '\x1b[38;2;81;137;255m',    // Soft Cyan Glow
+  muted: '\x1b[38;2;114;122;140m',  // Titanium Grey
+  background: '\x1b[38;2;14;14;23m', // Deep Void
   reset: '\x1b[0m',
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 🛸 PREMIUM DESIGN CONSTANTS (Rounded & Fluid)
+// ═══════════════════════════════════════════════════════════════════════════
+export const BORDER_STYLE = {
+  topLeft: '╭',
+  topRight: '╮',
+  bottomLeft: '╰',
+  bottomRight: '╯',
+  horizontal: '─',
+  vertical: '│',
+};
+
+export const GLOW_BAR = '▇';
+export const PULSE_DOT = '●';
+
+// ═══════════════════════════════════════════════════════════════════════════
+
+const FALLBACK_THEME = {
+  primary: '\x1b[96m',
+  accent: '\x1b[95m',
+  success: '\x1b[92m',
+  warning: '\x1b[93m',
+  error: '\x1b[91m',
+  muted: '\x1b[90m',
+  reset: '\x1b[0m',
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🛸 PREMIUM UI COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+
 
 function isToolExecuting(pendingHistoryItems: HistoryItemWithoutId[]) {
   return pendingHistoryItems.some((item) => {
@@ -532,6 +556,11 @@ export const AppContainer = (props: AppContainerProps) => {
         setCognitiveLineSuggestion(message.cognitiveLineSuggestion);
       } else if (message.type === EngineMessageType.REQUEST_ENCODE) {
         try {
+          const userMessagesCount = historyManager.history.filter(h => h.type === 'user').length;
+          if (userMessagesCount === 0) {
+            return;
+          }
+
           const latentService = LatentContextService.getInstance();
           // Use current history from historyManager
           const dlr = await latentService.encode(
@@ -566,7 +595,7 @@ export const AppContainer = (props: AppContainerProps) => {
   const branchName = useGitBranchName(config.getTargetDir());
 
   // Voice mode hook
-  const { toggleVoice, toggleTts, voiceState } = useVoice();
+  const { toggleVoice, toggleTts, toggleStt, voiceState } = useVoice();
 
   // Layout measurements
   const mainControlsRef = useRef<DOMElement>(null);
@@ -614,10 +643,6 @@ export const AppContainer = (props: AppContainerProps) => {
         }
       }
 
-      // Fire-and-forget: generate summary for previous session in background
-      generateSummary(config).catch((e) => {
-        debugLogger.warn('Background summary generation failed:', e);
-      });
     })();
     registerCleanup(async () => {
       // Turn off mouse scroll.
@@ -1806,6 +1831,11 @@ Logging in with Google... Restarting Phill CLI to continue.
         return true;
       }
 
+      if (keyMatchers[Command.TOGGLE_STT](key)) {
+        toggleStt();
+        return true;
+      }
+
       if (keyMatchers[Command.QUIT](key)) {
         // Skip when ask_user dialog is open (use Esc to cancel instead)
         if (askUserRequest) {
@@ -2224,6 +2254,9 @@ Logging in with Google... Restarting Phill CLI to continue.
       cognitiveLineState,
       cognitiveLineSuggestion,
       groundingState,
+      nexusPipeline: 'standard',
+      nexusConfidence: 1.0,
+      nexusReason: '',
       // 🚀 Enhanced visual properties
       capabilities,
       theme,
@@ -2517,5 +2550,5 @@ Logging in with Google... Restarting Phill CLI to continue.
 // 🚀 Export enhanced utilities for child components
 // ═══════════════════════════════════════════════════════════════════════════
 
-export { detectTerminalCapabilities, AGI_THEME, FALLBACK_THEME };
+export { detectTerminalCapabilities, FALLBACK_THEME };
 export type { TerminalCapabilities };

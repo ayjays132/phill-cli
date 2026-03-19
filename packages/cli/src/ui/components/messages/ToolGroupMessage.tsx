@@ -18,6 +18,7 @@ import { isShellTool, isThisShellFocused } from './ToolShared.js';
 import { ASK_USER_DISPLAY_NAME } from 'phill-cli-core';
 import { ShowMoreLines } from '../ShowMoreLines.js';
 import { useUIState } from '../../contexts/UIStateContext.js';
+import { ThemedGradient } from '../ThemedGradient.js';
 
 interface ToolGroupMessageProps {
   groupId: number;
@@ -144,6 +145,10 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
       )
     : undefined;
 
+  const isExecuting = visibleToolCalls.some(
+    (t) => t.status === ToolCallStatus.Executing
+  );
+
   return (
     // This box doesn't have a border even though it conceptually does because
     // we need to allow the sticky headers to render the borders themselves so
@@ -159,10 +164,17 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
       width={terminalWidth}
     >
       {visibleToolCalls.length > 0 && (
-        <Box paddingLeft={1} marginBottom={0}>
-          <Text color={theme.text.secondary}>
-            {hasPending ? '🧰 Tools running' : '✅ Tools complete'}
-          </Text>
+        <Box paddingLeft={1} marginBottom={1} flexDirection="row">
+          <ThemedGradient animate={isExecuting} speed={80}>
+            <Text bold>
+              {hasPending ? '⚡ EXECUTING DIRECTIVES' : '✨ OPERATIONS SYNCHRONIZED'}
+            </Text>
+          </ThemedGradient>
+          <Box marginLeft={2}>
+            <Text color={theme.text.secondary} dimColor italic>
+              [{visibleToolCalls.length} {visibleToolCalls.length === 1 ? 'process' : 'processes'}]
+            </Text>
+          </Box>
         </Box>
       )}
       {visibleToolCalls.map((tool, index) => {
@@ -231,9 +243,9 @@ export const ToolGroupMessage: React.FC<ToolGroupMessageProps> = ({
                   />
                 )}
               {tool.outputFile && (
-                <Box>
-                  <Text color={theme.text.primary}>
-                    Output too long and was saved to: {tool.outputFile}
+                <Box marginTop={1}>
+                  <Text color={theme.text.secondary} italic>
+                    ↳ 📦 Data Stream Redirected: Output rendered to {tool.outputFile}
                   </Text>
                 </Box>
               )}

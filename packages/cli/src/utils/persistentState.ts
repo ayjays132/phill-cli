@@ -18,6 +18,7 @@ interface PersistentStateData {
   hasSeenPocketTtsOnboarding?: boolean;
   hasSeenPocketTtsHfAccessOnboarding?: boolean;
   hasSeenGoogleTtsApiKeyOnboarding?: boolean;
+  hasSeenBrowserOnboarding?: boolean;
   // Add other persistent state keys here as needed
 }
 

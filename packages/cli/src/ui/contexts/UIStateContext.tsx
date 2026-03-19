@@ -174,6 +174,9 @@ export interface UIState {
   cognitiveLineState: CognitiveLineState;
   cognitiveLineSuggestion?: string;
   groundingState: GroundingState;
+  nexusPipeline: string;
+  nexusConfidence: number;
+  nexusReason: string;
 }
 
 export type GroundingState = 'syncing' | 'synced' | 'stale' | 'none';

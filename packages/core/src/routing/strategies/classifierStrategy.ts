@@ -144,7 +144,14 @@ export class ClassifierStrategy implements RoutingStrategy {
       // Filter out tool-related turns.
       // TODO - Consider using function req/res if they help accuracy.
       const cleanHistory = historySlice.filter(
-        (content) => !isFunctionCall(content) && !isFunctionResponse(content),
+        (content) =>
+          !isFunctionCall(content) &&
+          !isFunctionResponse(content) &&
+          !content.parts?.some((p) =>
+            p.text?.includes(
+              'This is the Phill CLI. We are setting up the context',
+            ),
+          ),
       );
 
       // Take the last N turns from the *cleaned* history.
@@ -165,8 +172,8 @@ export class ClassifierStrategy implements RoutingStrategy {
       const latencyMs = Date.now() - startTime;
       const selectedModel = resolveClassifierModel(
         context.requestedModel ?? config.getModel(),
-        routerResponse.model_choice,
         config.getPreviewFeatures(),
+        config,
       );
 
       return {

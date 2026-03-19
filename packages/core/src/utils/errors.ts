@@ -167,3 +167,31 @@ export function isAuthenticationError(error: unknown): boolean {
 
   return false;
 }
+
+/**
+ * Checks if an error is an abort/cancellation error.
+ * Handles standard DOM AbortError, Node.js abort errors, and Gaxios abort type.
+ *
+ * @param error The error to check
+ * @returns true if this is an abort/cancellation error
+ */
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof Error) {
+    if (
+      error.name === 'AbortError' ||
+      error.name === 'CanceledError' ||
+      error.message === 'Aborted'
+    ) {
+      return true;
+    }
+  }
+  if (
+    error &&
+    typeof error === 'object' &&
+    'type' in error &&
+    (error as { type: unknown }).type === 'aborted'
+  ) {
+    return true;
+  }
+  return false;
+}

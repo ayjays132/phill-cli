@@ -36,6 +36,13 @@ export class ContextManager {
   private async loadGlobalMemory(): Promise<void> {
     const result = await loadGlobalMemory(this.config.getDebugMode());
     this.markAsLoaded(result.files.map((f) => f.path));
+    
+    // Speculatively preload these files into the FS cache
+    const fsService = this.config.getFileSystemService();
+    if (fsService.preloadTextFile) {
+      result.files.forEach(f => fsService.preloadTextFile!(f.path));
+    }
+
     this.globalMemory = concatenateInstructions(
       result.files.map((f) => ({ filePath: f.path, content: f.content })),
       this.config.getWorkingDir(),
@@ -49,6 +56,13 @@ export class ContextManager {
       this.config.getDebugMode(),
     );
     this.markAsLoaded(result.files.map((f) => f.path));
+
+    // Speculatively preload these files into the FS cache
+    const fsService = this.config.getFileSystemService();
+    if (fsService.preloadTextFile) {
+      result.files.forEach(f => fsService.preloadTextFile!(f.path));
+    }
+
     const envMemory = concatenateInstructions(
       result.files.map((f) => ({ filePath: f.path, content: f.content })),
       this.config.getWorkingDir(),
@@ -80,6 +94,13 @@ export class ContextManager {
     }
 
     this.markAsLoaded(result.files.map((f) => f.path));
+
+    // Speculatively preload these files into the FS cache
+    const fsService = this.config.getFileSystemService();
+    if (fsService.preloadTextFile) {
+      result.files.forEach(f => fsService.preloadTextFile!(f.path));
+    }
+
     return concatenateInstructions(
       result.files.map((f) => ({ filePath: f.path, content: f.content })),
       this.config.getWorkingDir(),

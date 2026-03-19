@@ -159,10 +159,8 @@ export async function createContentGeneratorConfig(
       process.env['OLLAMA_ENDPOINT'] ||
       'http://localhost:11434';
     const ollamaModel =
-      config.ollama?.model ||
-      process.env['OLLAMA_MODEL'] ||
-      'llama2';
-    
+      config.ollama?.model || process.env['OLLAMA_MODEL'] || 'llama2';
+
     contentGeneratorConfig.ollama = {
       endpoint: ollamaEndpoint,
       model: ollamaModel,
@@ -174,14 +172,15 @@ export async function createContentGeneratorConfig(
   if (authType === AuthType.HUGGINGFACE) {
     const hfEndpoint =
       config.huggingFace?.endpoint ||
-      process.env['HUGGINGFACE_ENDPOINT'] || 'https://router.huggingface.co';
+      process.env['HUGGINGFACE_ENDPOINT'] ||
+      'https://router.huggingface.co';
     const hfApiKey =
       config.huggingFace?.apiKey || process.env['HUGGINGFACE_API_KEY'];
     const hfModel =
       config.huggingFace?.model ||
       process.env['HUGGINGFACE_MODEL'] ||
       'meta-llama/Llama-2-7b-chat-hf';
-    
+
     contentGeneratorConfig.huggingFace = {
       endpoint: hfEndpoint,
       apiKey: hfApiKey,
@@ -192,6 +191,7 @@ export async function createContentGeneratorConfig(
   }
 
   if (authType === AuthType.OPENAI || authType === AuthType.OPENAI_BROWSER) {
+    const openAiApiKey = config.openAI?.apiKey || process.env['OPENAI_API_KEY'];
     const openAiToken =
       authType === AuthType.OPENAI_BROWSER
         ? await getOpenAIBrowserAccessToken(
@@ -199,6 +199,11 @@ export async function createContentGeneratorConfig(
             !config.isBrowserLaunchSuppressed(),
           )
         : undefined;
+    if (authType === AuthType.OPENAI && !openAiApiKey) {
+      throw new Error(
+        'OpenAI API key not found. Set OPENAI_API_KEY or configure openAI.apiKey in settings.',
+      );
+    }
     if (authType === AuthType.OPENAI_BROWSER && !openAiToken) {
       throw new Error(
         'OpenAI browser auth token not found. Re-authenticate with OpenAI browser sign-in and try again.',
@@ -212,11 +217,8 @@ export async function createContentGeneratorConfig(
       apiKey:
         authType === AuthType.OPENAI_BROWSER
           ? openAiToken
-          : config.openAI?.apiKey || process.env['OPENAI_API_KEY'],
-      model:
-        config.openAI?.model ||
-        process.env['OPENAI_MODEL'] ||
-        'gpt-4o',
+          : openAiApiKey,
+      model: config.openAI?.model || process.env['OPENAI_MODEL'] || 'gpt-4o',
     };
     return contentGeneratorConfig;
   }
@@ -227,12 +229,11 @@ export async function createContentGeneratorConfig(
         config.anthropic?.endpoint ||
         process.env['ANTHROPIC_ENDPOINT'] ||
         'https://api.anthropic.com/v1',
-      apiKey:
-        config.anthropic?.apiKey || process.env['ANTHROPIC_API_KEY'],
+      apiKey: config.anthropic?.apiKey || process.env['ANTHROPIC_API_KEY'],
       model:
         config.anthropic?.model ||
         process.env['ANTHROPIC_MODEL'] ||
-        'claude-3-5-sonnet-latest',
+        'claude-sonnet-4-6',
     };
     return contentGeneratorConfig;
   }
@@ -263,8 +264,7 @@ export async function createContentGeneratorConfig(
         config.customApi?.endpoint ||
         process.env['CUSTOM_API_ENDPOINT'] ||
         'http://localhost:8000/v1',
-      apiKey:
-        config.customApi?.apiKey || process.env['CUSTOM_API_KEY'],
+      apiKey: config.customApi?.apiKey || process.env['CUSTOM_API_KEY'],
       model:
         config.customApi?.model ||
         process.env['CUSTOM_API_MODEL'] ||
@@ -292,6 +292,9 @@ export async function createContentGenerator(
     const model = resolveModel(
       gcConfig.getModel(),
       gcConfig.getPreviewFeatures(),
+      false,
+      gcConfig.getHasAccessToPreviewModel(),
+      gcConfig,
     );
     const customHeadersEnv =
       process.env['PHILL_CLI_CUSTOM_HEADERS'] || undefined;
@@ -407,7 +410,10 @@ export async function createContentGenerator(
           config.openAi.model,
           config.openAi.apiKey,
           async () =>
-            getOpenAIBrowserAccessToken(false, !gcConfig.isBrowserLaunchSuppressed()),
+            getOpenAIBrowserAccessToken(
+              false,
+              !gcConfig.isBrowserLaunchSuppressed(),
+            ),
           gcConfig,
         ),
         gcConfig,

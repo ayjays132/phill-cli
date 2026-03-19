@@ -4,6 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { chromium } from 'playwright';
+import * as fs from 'node:fs';
+
+/**
+ * Checks if the browser executable is available.
+ */
+export function isBrowserInstalled(): boolean {
+  try {
+    const executablePath = chromium.executablePath();
+    return fs.existsSync(executablePath);
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Determines if we should attempt to launch a browser for authentication
  * based on the user's environment.

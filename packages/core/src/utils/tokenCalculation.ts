@@ -33,37 +33,31 @@ export function estimateTokenCountSync(parts: Part[]): number {
   let totalTokens = 0;
   for (const part of parts) {
     if (typeof part.text === 'string') {
-      if (part.text.length > MAX_CHARS_FOR_FULL_HEURISTIC) {
-        totalTokens += part.text.length / 4;
+      const text = part.text;
+      if (text.length > MAX_CHARS_FOR_FULL_HEURISTIC) {
+        totalTokens += text.length / 4;
       } else {
-        for (const char of part.text) {
-          if (char.codePointAt(0)! <= 127) {
-            totalTokens += ASCII_TOKENS_PER_CHAR;
-          } else {
-            totalTokens += NON_ASCII_TOKENS_PER_CHAR;
-          }
-        }
+        // Bulk processing using regex for much faster execution
+        const nonAsciiCount = (text.match(/[^\x00-\x7F]/g) || []).length;
+        const asciiCount = text.length - nonAsciiCount;
+        totalTokens += (asciiCount * ASCII_TOKENS_PER_CHAR) + (nonAsciiCount * NON_ASCII_TOKENS_PER_CHAR);
       }
-    } else {
-      // For images and PDFs, we use fixed safe estimates:
-      // - Images: 3,000 tokens (covers up to 4K resolution on Phill 3)
-      // - PDFs: 25,800 tokens (~100 pages at 258 tokens/page)
-      // See: https://ai.google.dev/gemini-api/docs/vision#token_counting
-      // See: https://ai.google.dev/gemini-api/docs/document-processing
-      const inlineData = 'inlineData' in part ? part.inlineData : undefined;
-      const fileData = 'fileData' in part ? part.fileData : undefined;
-      const mimeType = inlineData?.mimeType || fileData?.mimeType;
+      continue;
+    }
 
-      if (mimeType?.startsWith('image/')) {
-        totalTokens += IMAGE_TOKEN_ESTIMATE;
-      } else if (mimeType?.startsWith('application/pdf')) {
-        totalTokens += PDF_TOKEN_ESTIMATE;
-      } else {
-        // For other non-text parts (functionCall, functionResponse, etc.),
-        // we fallback to the JSON string length heuristic.
-        // Note: This is an approximation.
-        totalTokens += JSON.stringify(part).length / 4;
-      }
+    // For images and PDFs, we use fixed safe estimates:
+    const inlineData = 'inlineData' in part ? part.inlineData : undefined;
+    const fileData = 'fileData' in part ? part.fileData : undefined;
+    const mimeType = inlineData?.mimeType || fileData?.mimeType;
+
+    if (mimeType?.startsWith('image/')) {
+      totalTokens += IMAGE_TOKEN_ESTIMATE;
+    } else if (mimeType?.startsWith('application/pdf')) {
+      totalTokens += PDF_TOKEN_ESTIMATE;
+    } else {
+      // For other non-text parts (functionCall, functionResponse, etc.),
+      // we fallback to the JSON string length heuristic.
+      totalTokens += JSON.stringify(part).length / 4;
     }
   }
   return Math.floor(totalTokens);

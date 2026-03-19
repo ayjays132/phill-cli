@@ -173,7 +173,7 @@ const commonAliases = {
 const cliConfig = {
   ...baseConfig,
   banner: {
-    js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
+    js: `const require = (await import('module')).createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
   },
   entryPoints: ['packages/cli/index.ts'],
   outfile: 'bundle/phill.js',
@@ -209,7 +209,7 @@ a2aServerConfig.plugins.push(createBuildSignalPlugin(a2aServerConfig.outfile));
 const engineConfig = {
   ...baseConfig,
   banner: {
-    js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
+    js: `const require = (await import('module')).createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
   },
   entryPoints: ['packages/core/src/cognitive-engine/engine-process.ts'],
   outfile: 'bundle/engine-process.js',

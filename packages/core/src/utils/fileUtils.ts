@@ -530,32 +530,43 @@ export function formatTruncatedToolOutput(
   const physicalLines = contentStr.split('\n');
   const totalPhysicalLines = physicalLines.length;
 
-  if (totalPhysicalLines > 1) {
-    // Multi-line case: show last N lines, but protect against "elephant" lines.
-    const lastLines = physicalLines.slice(-truncateLines);
-    let someLinesTruncatedInWidth = false;
-    const processedLines = lastLines.map((line) => {
-      if (line.length > MAX_TRUNCATED_LINE_WIDTH) {
-        someLinesTruncatedInWidth = true;
-        return (
-          line.substring(0, MAX_TRUNCATED_LINE_WIDTH) +
-          '... [LINE WIDTH TRUNCATED]'
-        );
-      }
-      return line;
-    });
+  if (totalPhysicalLines > truncateLines) {
+    // Surgical DLR Truncation: Keep top context, summarize middle, keep bottom.
+    const TOP_KEEP = 10;
+    const BOTTOM_KEEP = truncateLines - TOP_KEEP;
+    
+    const topLines = physicalLines.slice(0, TOP_KEEP);
+    const bottomLines = physicalLines.slice(-BOTTOM_KEEP);
+    
+    const processLines = (lines: string[]) => lines.map(l => 
+      l.length > MAX_TRUNCATED_LINE_WIDTH 
+        ? l.substring(0, MAX_TRUNCATED_LINE_WIDTH) + '... [WIDTH TRUNCATED]' 
+        : l
+    );
 
-    const widthWarning = someLinesTruncatedInWidth
-      ? ' (some long lines truncated)'
-      : '';
-    return `Output too large. Showing the last ${processedLines.length} of ${totalPhysicalLines} lines${widthWarning}. For full output see: ${outputFile}
-...
-${processedLines.join('\n')}`;
+    const formattedTop = processLines(topLines).join('\n');
+    const formattedBottom = processLines(bottomLines).join('\n');
+    const skippedCount = totalPhysicalLines - truncateLines;
+
+    return `Output too large (${totalPhysicalLines} lines). For full output see: ${outputFile}
+
+--- [START OF OUTPUT] ---
+${formattedTop}
+... [TRUNCATED ${skippedCount} LINES] ...
+${formattedBottom}
+--- [END OF OUTPUT] ---`.trim();
   } else {
-    // Single massive line case: use character-based truncation description.
-    const snippet = contentStr.slice(-MAX_TRUNCATED_CHARS);
-    return `Output too large. Showing the last ${MAX_TRUNCATED_CHARS.toLocaleString()} characters of the output. For full output see: ${outputFile}
-...${snippet}`;
+    // Character-based fallback for single massive lines
+    if (contentStr.length > MAX_TRUNCATED_CHARS) {
+      const start = contentStr.slice(0, 500);
+      const end = contentStr.slice(-1500);
+      return `Output too large (${contentStr.length.toLocaleString()} chars). For full output see: ${outputFile}
+
+[START]: ${start}...
+... [TRUNCATED] ...
+...${end}`.trim();
+    }
+    return contentStr;
   }
 }
 

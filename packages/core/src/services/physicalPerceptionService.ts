@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Config } from '../config/config.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { type Config, debugLogger } from '../index.js';
 import * as path from 'node:path';
 import { spawn } from 'node:child_process';
 import { Buffer } from 'node:buffer';
@@ -39,6 +38,7 @@ export class PhysicalPerceptionService {
   private monitorInterval: NodeJS.Timeout | null = null;
   private lastUpdateTimestamp = Date.now();
   private lastSignificantMotionTimestamp = Date.now();
+  private isUpdating = false;
 
   private constructor(config: Config) {
     this.config = config;
@@ -49,19 +49,23 @@ export class PhysicalPerceptionService {
     };
   }
 
-  public static getInstance(config: Config): PhysicalPerceptionService {
+  static getInstance(config: Config): PhysicalPerceptionService {
     if (!PhysicalPerceptionService.instance) {
-      PhysicalPerceptionService.instance = new PhysicalPerceptionService(config);
+      PhysicalPerceptionService.instance = new PhysicalPerceptionService(
+        config,
+      );
     }
     return PhysicalPerceptionService.instance;
   }
 
-  public async startMonitoring(intervalMs: number = 30000) {
+  async startMonitoring(intervalMs: number = 30000) {
     if (this.isMonitoring) return;
     this.isMonitoring = true;
-    
-    debugLogger.log(`[PhysicalPerception] Starting physical environment monitoring (${intervalMs}ms interval)`);
-    
+
+    debugLogger.log(
+      `[PhysicalPerception] Starting physical environment monitoring (${intervalMs}ms interval)`,
+    );
+
     // Initial probe
     await this.updateSceneInfo();
 
@@ -70,7 +74,7 @@ export class PhysicalPerceptionService {
     }, intervalMs);
   }
 
-  public stopMonitoring() {
+  stopMonitoring() {
     if (this.monitorInterval) {
       clearInterval(this.monitorInterval);
       this.monitorInterval = null;
@@ -78,7 +82,7 @@ export class PhysicalPerceptionService {
     this.isMonitoring = false;
   }
 
-  public async getSnapshot(): Promise<PhysicalVisionData> {
+  async getSnapshot(): Promise<PhysicalVisionData> {
     const age = Date.now() - this.lastUpdateTimestamp;
     return {
       ...this.currentData,
@@ -89,7 +93,10 @@ export class PhysicalPerceptionService {
   /**
    * Captures a frame and updates the internal state.
    */
-  public async updateSceneInfo(): Promise<void> {
+  async updateSceneInfo(): Promise<void> {
+    if (this.isUpdating) return;
+    this.isUpdating = true;
+
     try {
       let frame = await this.captureFrame();
       let source: 'camera' | 'desktop' = 'camera';
@@ -107,56 +114,70 @@ export class PhysicalPerceptionService {
             await fs.unlink(screenshotPath).catch(() => {});
           }
         } catch (vlaErr) {
-          debugLogger.warn(`[PhysicalPerception] VLA fallback failed: ${vlaErr}`);
+          debugLogger.warn(
+            `[PhysicalPerception] VLA fallback failed: ${vlaErr}`,
+          );
         }
       }
 
       if (!frame) {
         this.currentData.cameraStatus = 'disconnected';
         this.currentData.visionAvailable = false;
-        this.currentData.sceneDescription = 'Environment monitoring is offline (No Camera/VLA detected).';
+        this.currentData.sceneDescription =
+          'Environment monitoring is offline (No Camera/VLA detected).';
         return;
       }
 
       const motion = this.detectMotion(this.lastFrame, frame);
       this.lastFrame = frame;
 
-      if (motion > 15 || source === 'desktop') { // 15% threshold for "significant change", or always for desktop fallback
+      if (motion > 15 || source === 'desktop') {
+        // 15% threshold for "significant change", or always for desktop fallback
         this.lastSignificantMotionTimestamp = Date.now();
         this.currentData.lastChange = this.lastSignificantMotionTimestamp;
         this.currentData.motionIntensity = Math.round(motion);
-        
+
         // Update the Visual Latent (VLA System) with the fresh frame
         const visualLatentService = VisualLatentService.getInstance();
         await visualLatentService.encode(frame);
 
         // If movement is high, use VisionService to freshen the description
         const vision = VisionService.getInstance(this.config);
-        const prompt = source === 'camera' 
-          ? 'A person is interacting with an AI agent. Describe the physical room, any people visible, and their activities.' 
-          : 'Describe the current computer screen, focusing on active windows, content being viewed, and any visible people or avatars.';
-        
+        const prompt =
+          source === 'camera'
+            ? 'A person is interacting with an AI agent. Describe the physical room, any people visible, and their activities.'
+            : 'Describe the current computer screen, focusing on active windows, content being viewed, and any visible people or avatars.';
+
         const description = await vision.describeImage(frame, prompt);
-        
+
         if (description !== 'GEMINI_NATIVE') {
           this.currentData.sceneDescription = description;
           // Heuristic counts from description if possible
-          this.currentData.peopleCount = (description.match(/person|man|woman|child|avatar|face/gi) || []).length;
-          this.currentData.objectCount = (description.match(/monitor|laptop|desk|phone|keyboard|window|button|icon/gi) || []).length;
+          this.currentData.peopleCount = (
+            description.match(/person|man|woman|child|avatar|face/gi) || []
+          ).length;
+          this.currentData.objectCount = (
+            description.match(
+              /monitor|laptop|desk|phone|keyboard|window|button|icon/gi,
+            ) || []
+          ).length;
         } else {
-            this.currentData.sceneDescription = source === 'camera' 
+          this.currentData.sceneDescription =
+            source === 'camera'
               ? 'Physical environment captured and ready for multimodal analysis.'
               : 'Desktop environment (VLA) captured and ready for multimodal analysis.';
         }
       }
 
-      this.currentData.cameraStatus = source === 'camera' ? 'connected' : 'disconnected';
+      this.currentData.cameraStatus =
+        source === 'camera' ? 'connected' : 'disconnected';
       this.currentData.visionAvailable = true;
       this.lastUpdateTimestamp = Date.now();
-
     } catch (err) {
       debugLogger.warn(`[PhysicalPerception] Update failed: ${err}`);
       this.currentData.cameraStatus = 'error';
+    } finally {
+      this.isUpdating = false;
     }
   }
 
@@ -167,18 +188,28 @@ export class PhysicalPerceptionService {
     return new Promise((resolve) => {
       // For Windows, using dshow. For macOS/Linux, would use avfoundation/v4l2.
       // Default to video0 or typical webcam names.
-      const ffmpegPath = path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe');
-      
+      const ffmpegPath = path.join(
+        process.cwd(),
+        'node_modules',
+        'ffmpeg-static',
+        'ffmpeg.exe',
+      );
+
       // Attempting to capture 1 frame from the first video device
       // Note: Device names on Windows vary. 'video=integrated camera' or similar.
       // We'll try the common video capture interface.
       const args = [
-        '-f', 'dshow',
-        '-i', 'video=USB Video Device', // Common placeholder, a real impl would probe first
-        '-frames:v', '1',
-        '-f', 'image2pipe',
-        '-vcodec', 'png',
-        '-'
+        '-f',
+        'dshow',
+        '-i',
+        'video=USB Video Device', // Common placeholder, a real impl would probe first
+        '-frames:v',
+        '1',
+        '-f',
+        'image2pipe',
+        '-vcodec',
+        'png',
+        '-',
       ];
 
       // Fallback for different OS or if specific device fails
@@ -194,9 +225,9 @@ export class PhysicalPerceptionService {
           resolve(null);
         }
       });
-      
+
       child.on('error', () => resolve(null));
-      
+
       // Auto-kill if hung
       setTimeout(() => child.kill(), 5000);
     });
@@ -217,7 +248,7 @@ export class PhysicalPerceptionService {
         diff++;
       }
     }
-    
+
     const sampleSize = curr.length / step;
     return (diff / sampleSize) * 100;
   }

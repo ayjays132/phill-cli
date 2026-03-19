@@ -26,20 +26,21 @@ import {
 } from '../utils/messageInspectors.js';
 import { debugLogger } from '../utils/debugLogger.js';
 
-const TOOL_CALL_LOOP_THRESHOLD = 5;
-const CONTENT_LOOP_THRESHOLD = 10;
+const TOOL_CALL_LOOP_THRESHOLD = 4;
+const CONTENT_LOOP_THRESHOLD = 8;
 const CONTENT_CHUNK_SIZE = 50;
 const MAX_HISTORY_LENGTH = 5000;
 
 /**
  * The number of recent conversation turns to include in the history when asking the LLM to check for a loop.
  */
-const LLM_LOOP_CHECK_HISTORY_COUNT = 20;
+const LLM_LOOP_CHECK_HISTORY_COUNT = 15;
 
 /**
  * The number of turns that must pass in a single prompt before the LLM-based loop check is activated.
+ * Lowered from 30 to 10 to catch complex cognitive loops before burning massive tokens.
  */
-const LLM_CHECK_AFTER_TURNS = 30;
+const LLM_CHECK_AFTER_TURNS = 10;
 
 /**
  * The default interval, in number of turns, at which the LLM-based loop check is performed.
@@ -103,7 +104,9 @@ export class LoopDetectionService {
 
   // Tool call tracking
   private lastToolCallKey: string | null = null;
+  private prevToolCallKey: string | null = null; // Used for alternating A -> B -> A -> B loops
   private toolCallRepetitionCount: number = 0;
+  private alternatingLoopCount: number = 0;
 
   // Content streaming tracking
   private streamContentHistory = '';
@@ -200,13 +203,25 @@ export class LoopDetectionService {
 
   private checkToolCallLoop(toolCall: { name: string; args: object }): boolean {
     const key = this.getToolCallKey(toolCall);
+    
+    // Check for A -> A -> A
     if (this.lastToolCallKey === key) {
       this.toolCallRepetitionCount++;
     } else {
-      this.lastToolCallKey = key;
       this.toolCallRepetitionCount = 1;
     }
-    if (this.toolCallRepetitionCount >= TOOL_CALL_LOOP_THRESHOLD) {
+
+    // Check for A -> B -> A -> B
+    if (this.prevToolCallKey === key) {
+      this.alternatingLoopCount++;
+    } else {
+      this.alternatingLoopCount = 1;
+    }
+
+    this.prevToolCallKey = this.lastToolCallKey;
+    this.lastToolCallKey = key;
+
+    if (this.toolCallRepetitionCount >= TOOL_CALL_LOOP_THRESHOLD || this.alternatingLoopCount >= TOOL_CALL_LOOP_THRESHOLD) {
       logLoopDetected(
         this.config,
         new LoopDetectedEvent(
@@ -585,7 +600,9 @@ export class LoopDetectionService {
 
   private resetToolCallCount(): void {
     this.lastToolCallKey = null;
+    this.prevToolCallKey = null;
     this.toolCallRepetitionCount = 0;
+    this.alternatingLoopCount = 0;
   }
 
   private resetContentTracking(resetHistory = true): void {

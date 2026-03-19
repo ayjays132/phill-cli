@@ -28,12 +28,13 @@ export default tseslint.config(
   {
     // Global ignores
     ignores: [
-      'node_modules/*',
+      '**/node_modules/**',
       'eslint.config.js',
+      'phill-cli-site/**',
       'packages/**/dist/**',
       'bundle/**',
-      'package/bundle/**',
-      '.integration-tests/**',
+      '**/package/bundle/**',
+      '**/.integration-tests/**',
       'dist/**',
       'evals/**',
       'packages/test-utils/**',
@@ -100,6 +101,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      'react/prop-types': 'off',
       // General Best Practice Rules (subset adapted for flat config)
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       'arrow-body-style': ['error', 'as-needed'],
@@ -141,6 +143,51 @@ export default tseslint.config(
             'memfs/lib/volume.js',
             'yargs/**',
             'msw/node',
+            // Allow any relative cross-folder imports within the UI layer.
+            // The rule tests import source strings, so '../hooks/foo.js'
+            // must match one of these patterns.
+            '../hooks/**',
+            '../contexts/**',
+            '../utils/**',
+            '../themes/**',
+            '../components/shared/**',
+            './hooks/**',
+            './contexts/**',
+            './utils/**',
+            './themes/**',
+            './components/shared/**',
+            './shared/**',
+            '../semantic-colors.js',
+            './semantic-colors.js',
+            '../voice/**',
+            '../privacy/**',
+            '../layouts/**',
+            '../../contexts/**',
+            '../../hooks/**',
+            '../../utils/**',
+            // Allow package index files to reach into their own subdirectories for exporting
+            './services/**',
+            './config/**',
+            './core/**',
+            './utils/**',
+            './tools/**',
+            './hooks/**',
+            './contexts/**',
+            './mcp/**',
+            './voice/**',
+            './telemetry/**',
+            './agents/**',
+            './prompts/**',
+            './ide/**',
+            './vision/**',
+            './scheduler/**',
+            './commands/**',
+            './skills/**',
+            './output/**',
+            './policy/**',
+            './confirmation-bus/**',
+            './cognitive-engine/**',
+            './fallback/**',
           ],
         },
       ],
@@ -293,6 +340,7 @@ export default tseslint.config(
         ...globals.node,
         process: 'readonly',
         console: 'readonly',
+        Buffer: 'readonly',
       },
     },
     rules: {
@@ -313,6 +361,7 @@ export default tseslint.config(
         ...globals.node,
         process: 'readonly',
         console: 'readonly',
+        Buffer: 'readonly',
       },
     },
     rules: {
@@ -327,6 +376,8 @@ export default tseslint.config(
       globals: {
         ...globals.node,
         fetch: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
       },
     },
   },
@@ -338,6 +389,7 @@ export default tseslint.config(
         ...globals.node,
         process: 'readonly',
         console: 'readonly',
+        Buffer: 'readonly',
       },
     },
     rules: {
@@ -350,8 +402,6 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.node,
-        process: 'readonly',
-        console: 'readonly',
       },
     },
     rules: {
@@ -363,6 +413,28 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  {
+    // Node-style tooling scripts for the Lyria music tool
+    files: ['tools/lyria-music/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
+  },
+  {
+    // Browser-based media devices test script
+    files: ['test_mediadevices_6.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        console: 'readonly',
+      },
     },
   },
   // Fix: Prettier config MUST be strictly last to override formatting rules

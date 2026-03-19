@@ -8,7 +8,6 @@
 // where function responses are not treated as "valid" responses: https://b.corp.google.com/issues/420354090
 
 import type {
-  GenerateContentResponse,
   Content,
   Part,
   Tool,
@@ -18,7 +17,12 @@ import type {
   GenerateContentParameters,
 } from '@google/genai';
 import { toParts } from '../code_assist/converter.js';
-import { createUserContent, FinishReason } from '@google/genai';
+import {
+  createUserContent,
+  FinishReason,
+  GenerateContentResponse,
+} from '@google/genai';
+import { getErrorStatus } from '../utils/httpErrors.js';
 import {
   retryWithBackoff,
   isRetryableError,
@@ -61,6 +65,9 @@ import {
 import { coreEvents } from '../utils/events.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import { TTCEngine } from './ttcEngine.js';
+import { SystemPromptBuilder } from './systemPromptBuilder.js';
+import { VisualLatentService } from '../services/visualLatentService.js';
+import { HierarchicalConceptMapper } from '../services/hierarchicalConceptMapper.js';
 
 export enum StreamEventType {
   /** A regular content chunk from the API. */
@@ -95,7 +102,8 @@ const INVALID_CONTENT_RETRY_OPTIONS: ContentRetryOptions = {
   initialDelayMs: 500,
 };
 
-export const SYNTHETIC_THOUGHT_SIGNATURE = 'skip_thought_signature_validator';
+export const SYNTHETIC_THOUGHT_SIGNATURE =
+  'context_engineering_is_the_way_to_go';
 
 /**
  * Returns true if the response is valid, false otherwise.
@@ -306,33 +314,50 @@ export class PhillChat {
     this.sendPromise = streamDonePromise;
 
     const guard = EthicalGuardService.getInstance();
-    
+    const sanitizeInput =
+      typeof (guard as { sanitizeInput?: unknown }).sanitizeInput ===
+      'function'
+        ? (guard as { sanitizeInput: (s: string) => string }).sanitizeInput
+        : (value: string) => value;
+
     // Sanitize user message parts
-    let messagesToSanitize = Array.isArray(message) ? message : [message];
-    const sanitizedMessages = messagesToSanitize.map(m => {
-      if (typeof m === 'string') return guard.sanitizeInput(m);
-      if (typeof m === 'object' && m !== null && 'text' in m && typeof m.text === 'string') {
-        return { ...m, text: guard.sanitizeInput(m.text) };
+    const messagesToSanitize = Array.isArray(message) ? message : [message];
+    const sanitizedMessages = messagesToSanitize.map((m) => {
+      if (typeof m === 'string') return sanitizeInput(m);
+      if (
+        typeof m === 'object' &&
+        m !== null &&
+        'text' in m &&
+        typeof m.text === 'string'
+      ) {
+        return { ...m, text: sanitizeInput(m.text) };
       }
       return m;
     });
-    const finalMessage = Array.isArray(message) ? sanitizedMessages : sanitizedMessages[0];
+    const finalMessage = Array.isArray(message)
+      ? sanitizedMessages
+      : sanitizedMessages[0];
 
     const ttcEngine = TTCEngine.getInstance();
-    const finalMessagesArray = Array.isArray(finalMessage) ? finalMessage : [finalMessage];
-    const userMessageStr = partListUnionToString(toParts(finalMessagesArray as PartUnion[]));
+    const conceptMapper = HierarchicalConceptMapper.getInstance(this.config.getContentGenerator());
+    const finalMessagesArray = Array.isArray(finalMessage)
+      ? finalMessage
+      : [finalMessage];
+    const userMessageStr = partListUnionToString(
+      toParts(finalMessagesArray as PartUnion[]),
+    );
 
-    // Inject Latent Wisdom (Experience Layer)
-    const wisdom = await ttcEngine.getGuidingContext(userMessageStr);
-    const ethicalScaffolding = guard.getEthicalScaffolding();
-    let tempSystemInstruction = this.systemInstruction;
-    
-    if (wisdom) {
-      tempSystemInstruction = tempSystemInstruction ? `${tempSystemInstruction}\n${wisdom}` : wisdom;
-    }
-    tempSystemInstruction = tempSystemInstruction ? `${tempSystemInstruction}\n${ethicalScaffolding}` : ethicalScaffolding;
+    // Build System Prompt using specialized builder
+    const promptBuilder = new SystemPromptBuilder()
+      .setBasePrompt(this.systemInstruction || '')
+      .setConcepts(await conceptMapper.retrieveFoundationalConcepts(userMessageStr))
+      .setWisdom(await ttcEngine.getGuidingContext(userMessageStr, this.config))
+      .setEthics(guard.getEthicalScaffolding())
+      .setVisualTrace(VisualLatentService.getInstance().getVisualTrace());
 
-    if (wisdom) {
+    const tempSystemInstruction = promptBuilder.build();
+
+    if (tempSystemInstruction.includes('<latent_wisdom>')) {
       debugLogger.debug('[TTC] Injecting latent wisdom into context...');
     }
 
@@ -343,8 +368,12 @@ export class PhillChat {
     // Record user input - capture complete message with all parts (text, files, images, etc.)
     // but skip recording function responses (tool call results) as they should be stored in tool call records
     if (!isFunctionResponse(userContent)) {
-      const userMessage = Array.isArray(finalMessage) ? finalMessage : [finalMessage];
-      const userMessageContent = partListUnionToString(toParts(userMessage as PartUnion[]));
+      const userMessage = Array.isArray(finalMessage)
+        ? finalMessage
+        : [finalMessage];
+      const userMessageContent = partListUnionToString(
+        toParts(userMessage as PartUnion[]),
+      );
       this.chatRecordingService.recordMessage({
         model,
         type: 'user',
@@ -419,9 +448,13 @@ export class PhillChat {
             }
 
             if (isConnectionPhase) {
+              const status = getErrorStatus(error);
+              if (status === 404 || status === 403) {
+                const reason = status === 404 ? 'not_found' : 'access_denied';
+                this.config.getModelAvailabilityService().markTerminal(model, reason);
+              }
               throw error;
             }
-            lastError = error;
             const isContentError = error instanceof InvalidStreamError;
             const isRetryable = isRetryableError(
               error,
@@ -513,6 +546,9 @@ export class PhillChat {
       let modelToUse = resolveModel(
         lastModelToUse,
         this.config.getPreviewFeatures(),
+        false,
+        this.config.getHasAccessToPreviewModel(),
+        this.config,
       );
 
       // If the active model has changed (e.g. due to a fallback updating the config),
@@ -521,6 +557,9 @@ export class PhillChat {
         modelToUse = resolveModel(
           this.config.getActiveModel(),
           this.config.getPreviewFeatures(),
+          false,
+          this.config.getHasAccessToPreviewModel(),
+          this.config,
         );
       }
 
@@ -543,9 +582,12 @@ export class PhillChat {
         abortSignal,
       };
 
-      let contentsToUse = (isPreviewModel(modelToUse) || isGemini2Model(modelToUse) || isGemini3Model(modelToUse))
-        ? contentsForPreviewModel
-        : requestContents;
+      let contentsToUse =
+        isPreviewModel(modelToUse) ||
+        isGemini2Model(modelToUse) ||
+        isGemini3Model(modelToUse)
+          ? contentsForPreviewModel
+          : requestContents;
 
       const hookSystem = this.config.getHookSystem();
       if (hookSystem) {
@@ -611,7 +653,9 @@ export class PhillChat {
 
       // Strip thinkingConfig if the model does not support it.
       if (config.thinkingConfig && !supportsThinking(modelToUse)) {
-        debugLogger.debug(`[PhillChat] Stripping thinkingConfig for model ${modelToUse} as it is not supported.`);
+        debugLogger.debug(
+          `[PhillChat] Stripping thinkingConfig for model ${modelToUse} as it is not supported.`,
+        );
         delete config.thinkingConfig;
       }
 
@@ -931,7 +975,9 @@ export class PhillChat {
       const guard = EthicalGuardService.getInstance();
       const hCheck = await guard.hallucinationCheck(responseText);
       if (hCheck.isHallucination) {
-        debugLogger.warn(`[Molt-Guard] Potential Hallucination detected in Phill response. Alignment: ${guard.getConfidence().alignment}, Risk: ${guard.getConfidence().risk}`);
+        debugLogger.warn(
+          `[Molt-Guard] Potential Hallucination detected in Phill response. Alignment: ${guard.getConfidence().alignment}, Risk: ${guard.getConfidence().risk}`,
+        );
       }
     }
 
@@ -943,6 +989,42 @@ export class PhillChat {
     // - No finish reason, OR
     // - MALFORMED_FUNCTION_CALL finish reason OR
     // - Empty response text (e.g., only thoughts with no actual content)
+    // If no native tool call was detected, check the response text for a JSON tool call (for manual models like Ollama)
+    if (!hasToolCall && responseText) {
+      const toolCall = this.extractJsonToolCall(responseText);
+      if (toolCall) {
+        debugLogger.debug(
+          `[PhillChat] Detected manual JSON tool call: ${toolCall.name}`,
+        );
+        hasToolCall = true;
+
+        const toolCallPart: Part = {
+          functionCall: {
+            name: toolCall.name,
+            args: toolCall.args,
+          },
+        };
+
+        // Add to consolidated parts for history
+        consolidatedParts.push(toolCallPart);
+
+        // Yield a synthetic chunk to trigger Turn's tool call handling
+        const syntheticResponse = new GenerateContentResponse();
+        syntheticResponse.candidates = [
+          {
+            content: {
+              parts: [toolCallPart],
+              role: 'model',
+            },
+            finishReason: finishReason || FinishReason.STOP,
+            index: 0,
+          },
+        ];
+        syntheticResponse.responseId = `synthetic-${Date.now()}`;
+        yield syntheticResponse;
+      }
+    }
+
     if (!hasToolCall) {
       if (!finishReason) {
         throw new InvalidStreamError(
@@ -1008,16 +1090,13 @@ export class PhillChat {
     this.chatRecordingService.recordToolCalls(model, toolCallRecords);
 
     // Latent Distillation: Learn from successful passes
-    const successfulCalls = toolCalls.filter(c => c.status === 'success');
+    const successfulCalls = toolCalls.filter((c) => c.status === 'success');
     if (successfulCalls.length > 0) {
       const ttcEngine = TTCEngine.getInstance();
-      const goal = toolCallRecords.map(r => r.name).join(', '); // Simple goal representation
-      ttcEngine.distillSuccess(
-        `trace-${Date.now()}`,
-        goal,
-        this.history,
-        this.config
-      ).catch(e => console.error('[TTC] Distillation failed:', e));
+      const goal = toolCallRecords.map((r) => r.name).join(', '); // Simple goal representation
+      ttcEngine
+        .distillSuccess(`trace-${Date.now()}`, goal, this.history, this.config)
+        .catch((e) => console.error('[TTC] Distillation failed:', e));
     }
   }
 
@@ -1044,6 +1123,172 @@ export class PhillChat {
         description,
       });
     }
+  }
+
+  /**
+   * Scans text for a JSON tool call pattern used by models without native tool support.
+   */
+  private extractJsonToolCall(
+    text: string,
+  ): { name: string; args: any } | null {
+    // Accept common non-native tool-call formats emitted by local/open models:
+    // 1) {"tool":"name","parameters":{...}}
+    // 2) {"name":"name","arguments":{...}} or arguments as JSON string
+    // 3) {"function_call":{"name":"name","arguments":...}}
+    // Also accepts these objects wrapped in ```json code fences.
+    const candidates: string[] = [];
+    const sourceText = text.length > 12000 ? text.slice(-12000) : text;
+    const codeFenceRegex = /```(?:json)?\s*([\s\S]*?)```/gi;
+    let fenceMatch: RegExpExecArray | null;
+    while ((fenceMatch = codeFenceRegex.exec(sourceText)) !== null) {
+      if (fenceMatch[1]) {
+        candidates.push(fenceMatch[1]);
+      }
+    }
+    candidates.push(sourceText);
+
+    for (const candidate of candidates) {
+      const objects = this.extractJsonObjects(candidate);
+      for (let i = objects.length - 1; i >= 0; i--) {
+        const parsed = objects[i] as Record<string, unknown>;
+        const mapped = this.mapObjectToToolCall(parsed);
+        if (mapped) {
+          return mapped;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private extractJsonObjects(text: string): unknown[] {
+    const objects: unknown[] = [];
+    let depth = 0;
+    let start = -1;
+    let inString = false;
+    let escaped = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (ch === '\\') {
+          escaped = true;
+          continue;
+        }
+        if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+
+      if (ch === '{') {
+        if (depth === 0) {
+          start = i;
+        }
+        depth++;
+        continue;
+      }
+
+      if (ch === '}') {
+        if (depth > 0) {
+          depth--;
+          if (depth === 0 && start >= 0) {
+            const jsonSlice = text.slice(start, i + 1);
+            try {
+              objects.push(JSON.parse(jsonSlice));
+            } catch {
+              // Ignore non-JSON object-shaped text.
+            }
+            start = -1;
+          }
+        }
+      }
+    }
+
+    return objects;
+  }
+
+  private mapObjectToToolCall(
+    parsed: Record<string, unknown>,
+  ): { name: string; args: any } | null {
+    if (
+      typeof parsed['tool'] === 'string' ||
+      typeof parsed['tool_name'] === 'string'
+    ) {
+      const name =
+        (typeof parsed['tool'] === 'string' ? parsed['tool'] : undefined) ??
+        (parsed['tool_name'] as string);
+      return {
+        name,
+        args: this.normalizeToolArgs(
+          parsed['parameters'] ??
+            parsed['args'] ??
+            parsed['arguments'] ??
+            parsed['input'],
+        ),
+      };
+    }
+
+    const fnCall = parsed['function_call'] as
+      | { name?: unknown; arguments?: unknown }
+      | undefined;
+    if (fnCall && typeof fnCall.name === 'string') {
+      return {
+        name: fnCall.name,
+        args: this.normalizeToolArgs(fnCall.arguments),
+      };
+    }
+
+    if (typeof parsed['name'] === 'string' && 'arguments' in parsed) {
+      return {
+        name: parsed['name'],
+        args: this.normalizeToolArgs(parsed['arguments']),
+      };
+    }
+
+    const camelFnCall = parsed['functionCall'] as
+      | { name?: unknown; args?: unknown; arguments?: unknown }
+      | undefined;
+    if (camelFnCall && typeof camelFnCall.name === 'string') {
+      return {
+        name: camelFnCall.name,
+        args: this.normalizeToolArgs(
+          camelFnCall.args ?? camelFnCall.arguments,
+        ),
+      };
+    }
+
+    return null;
+  }
+
+  private normalizeToolArgs(raw: unknown): Record<string, unknown> {
+    if (raw == null) {
+      return {};
+    }
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        return {};
+      }
+      return {};
+    }
+    if (typeof raw === 'object') {
+      return raw as Record<string, unknown>;
+    }
+    return {};
   }
 }
 

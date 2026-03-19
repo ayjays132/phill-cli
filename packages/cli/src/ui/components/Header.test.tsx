@@ -144,6 +144,9 @@ describe('<Header />', () => {
       border: {
         default: '',
         focused: '',
+        subtle: '',
+        accent: '',
+        strong: '',
       },
       ui: {
         comment: '',

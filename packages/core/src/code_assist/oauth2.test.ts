@@ -442,11 +442,7 @@ describe('oauth2', () => {
 
       it('should attempt to load cached credentials first', async () => {
         const cachedCreds = { refresh_token: 'cached-token' };
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
         await fs.promises.writeFile(credsPath, JSON.stringify(cachedCreds));
 
@@ -484,11 +480,7 @@ describe('oauth2', () => {
 
         await getOauthClient(AuthType.COMPUTE_ADC, mockConfig);
 
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         expect(fs.existsSync(credsPath)).toBe(false);
       });
 
@@ -694,11 +686,7 @@ describe('oauth2', () => {
 
         // Make it fall through to cached credentials path
         const cachedCreds = { refresh_token: 'cached-token' };
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
         await fs.promises.writeFile(credsPath, JSON.stringify(cachedCreds));
 
@@ -727,11 +715,7 @@ describe('oauth2', () => {
 
         // Make it fall through to cached credentials path
         const cachedCreds = { refresh_token: 'cached-token' };
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
         await fs.promises.writeFile(credsPath, JSON.stringify(cachedCreds));
 
@@ -1221,7 +1205,7 @@ describe('oauth2', () => {
         let dataHandler: ((data: Buffer) => void) | undefined;
         await vi.waitFor(() => {
           const dataCall = stdinOnSpy.mock.calls.find(
-            (call: [string, ...unknown[]]) => call[0] === 'data',
+            (call: [string | symbol, ...unknown[]]) => call[0] === 'data',
           );
           dataHandler = dataCall?.[1] as ((data: Buffer) => void) | undefined;
           if (!dataHandler) throw new Error('stdin handler not registered yet');
@@ -1248,11 +1232,7 @@ describe('oauth2', () => {
     describe('clearCachedCredentialFile', () => {
       it('should clear cached credentials and Google account', async () => {
         const cachedCreds = { refresh_token: 'test-token' };
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
         await fs.promises.writeFile(credsPath, JSON.stringify(cachedCreds));
 
@@ -1299,11 +1279,7 @@ describe('oauth2', () => {
         vi.mocked(OAuth2Client).mockImplementation(() => mockOAuth2Client);
 
         // Pre-populate credentials to make getOauthClient resolve quickly
-        const credsPath = path.join(
-          tempHomeDir,
-          PHILL_DIR,
-          'oauth_creds.json',
-        );
+        const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');
         await fs.promises.mkdir(path.dirname(credsPath), { recursive: true });
         await fs.promises.writeFile(
           credsPath,
@@ -1346,9 +1322,8 @@ describe('oauth2', () => {
     });
 
     it('should save credentials using OAuthCredentialStorage during web login', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
       const mockAuthUrl = 'https://example.com/auth';
       const mockCode = 'test-code';
       const mockState = 'test-state';
@@ -1448,9 +1423,8 @@ describe('oauth2', () => {
     });
 
     it('should load credentials using OAuthCredentialStorage and not from file', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
       const cachedCreds = { refresh_token: 'cached-encrypted-token' };
       vi.mocked(OAuthCredentialStorage.loadCredentials).mockResolvedValue(
         cachedCreds,
@@ -1486,9 +1460,8 @@ describe('oauth2', () => {
     });
 
     it('should clear credentials using OAuthCredentialStorage', async () => {
-      const { OAuthCredentialStorage } = await import(
-        './oauth-credential-storage.js'
-      );
+      const { OAuthCredentialStorage } =
+        await import('./oauth-credential-storage.js');
 
       // Create a dummy unencrypted credential file. It should not be deleted.
       const credsPath = path.join(tempHomeDir, PHILL_DIR, 'oauth_creds.json');

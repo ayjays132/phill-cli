@@ -523,7 +523,13 @@ export class PhillClient {
 
     // Availability logic: The configured model is the source of truth,
     // including any permanent fallbacks (config.setModel) or manual overrides.
-    return resolveModel(this.config.getActiveModel());
+    return resolveModel(
+      this.config.getActiveModel(),
+      this.config.getPreviewFeatures(),
+      false,
+      this.config.getHasAccessToPreviewModel(),
+      this.config,
+    );
   }
 
   private async *processTurn(
@@ -569,12 +575,22 @@ export class PhillClient {
       modelForLimitCheck,
     );
 
-    if (estimatedRequestTokenCount > remainingTokenCount) {
+    // Predictive Velocity Buffer: If we are within 5% of the limit after this request, proactively compress.
+    const VELOCITY_BUFFER = Math.floor(tokenLimit(modelForLimitCheck) * 0.05);
+
+    if (estimatedRequestTokenCount + VELOCITY_BUFFER > remainingTokenCount) {
       yield {
         type: PhillEventType.ContextWindowWillOverflow,
         value: { estimatedRequestTokenCount, remainingTokenCount },
       };
-      return turn;
+      
+      // Proactively compress for the NEXT turn to avoid a hard stop
+      if (estimatedRequestTokenCount <= remainingTokenCount) {
+        // Run compression in the background without blocking the current stream
+        this.tryCompressChat(prompt_id, true).catch(() => {});
+      } else {
+        return turn;
+      }
     }
 
     // Prevent context updates from being sent while a tool call is

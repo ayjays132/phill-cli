@@ -19,6 +19,7 @@ import {
   Storage,
   homedir,
   loadApiKey,
+  isBrowserInstalled,
 } from 'phill-cli-core';
 
 import * as fs from 'node:fs/promises';
@@ -74,6 +75,17 @@ export const Notifications = () => {
     useState(false);
   const [showGoogleTtsApiKeyOnboarding, setShowGoogleTtsApiKeyOnboarding] =
     useState(false);
+  const [showBrowserOnboarding, setShowBrowserOnboarding] = useState(false);
+
+  useEffect(() => {
+    const seen = persistentState.get('hasSeenBrowserOnboarding');
+    if (seen) {
+      return;
+    }
+    if (!isBrowserInstalled()) {
+      setShowBrowserOnboarding(true);
+    }
+  }, []);
 
   useEffect(() => {
     const checkLegacyScreenReaderNudge = async () => {
@@ -236,6 +248,25 @@ export const Notifications = () => {
         </Text>
       )}
       {updateInfo && <UpdateNotification message={updateInfo.message} />}
+      {showBrowserOnboarding && (
+        <Box
+          borderStyle="round"
+          borderColor={theme.text.link}
+          paddingX={1}
+          marginY={1}
+          flexDirection="column"
+        >
+          <Text color={theme.text.primary}>
+            🌐 One-time setup: install browser dependencies.
+          </Text>
+          <Text color={theme.text.secondary}>
+            Run: /browser setup
+          </Text>
+          <Text color={theme.text.secondary}>
+            Required for browser automation and VLA features.
+          </Text>
+        </Box>
+      )}
       {showIdentityOnboarding && (
         <Box
           borderStyle="round"

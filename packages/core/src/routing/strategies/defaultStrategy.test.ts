@@ -11,7 +11,7 @@ import type { BaseLlmClient } from '../../core/baseLlmClient.js';
 import {
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
   DEFAULT_GEMINI_MODEL_AUTO,
   GEMINI_MODEL_ALIAS_AUTO,
   PREVIEW_GEMINI_FLASH_MODEL,
@@ -44,7 +44,7 @@ describe('DefaultStrategy', () => {
     const strategy = new DefaultStrategy();
     const mockContext = {} as RoutingContext;
     const mockConfig = {
-      getModel: vi.fn().mockReturnValue(PREVIEW_GEMINI_MODEL_AUTO),
+      getModel: vi.fn().mockReturnValue(PREVIEW_GEMINI_3_1_MODEL_AUTO),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;

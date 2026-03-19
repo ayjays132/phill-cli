@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type React from 'react';
+import React from 'react';
 import { Box, Text } from 'ink';
 import { theme } from '../semantic-colors.js';
 import { type IdeContext, type MCPServerConfig } from 'phill-cli-core';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { isNarrowWidth } from '../utils/isNarrowWidth.js';
+import { useConfig } from '../contexts/ConfigContext.js';
+import { useBrowserStatus } from '../hooks/useBrowserStatus.js';
 
 interface ContextSummaryDisplayProps {
   phillMdFileCount: number;
@@ -29,6 +31,9 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
   skillCount,
 }) => {
   const { columns: terminalWidth } = useTerminalSize();
+  const config = useConfig();
+  const { isOpen: browserOpen, url: browserUrl, isHeaded, browserPID } = useBrowserStatus(config);
+  
   const isNarrow = isNarrowWidth(terminalWidth);
   const mcpServerCount = Object.keys(mcpServers || {}).length;
   const blockedMcpServerCount = blockedMcpServers?.length || 0;
@@ -39,79 +44,98 @@ export const ContextSummaryDisplay: React.FC<ContextSummaryDisplayProps> = ({
     mcpServerCount === 0 &&
     blockedMcpServerCount === 0 &&
     openFileCount === 0 &&
-    skillCount === 0
+    skillCount === 0 &&
+    !browserOpen
   ) {
     return <Text> </Text>; // Render an empty space to reserve height
   }
 
-  const openFilesText = (() => {
-    if (openFileCount === 0) {
-      return '';
-    }
-    return `${openFileCount} open file${
-      openFileCount > 1 ? 's' : ''
-    } (alt+g to view)`;
-  })();
+  const items: React.ReactNode[] = [];
 
-  const phillMdText = (() => {
-    if (phillMdFileCount === 0) {
-      return '';
-    }
+  if (openFileCount > 0) {
+    items.push(
+      <Box key="open-files">
+        <Text color={theme.text.accent}>📂 {openFileCount} </Text>
+        <Text color={theme.text.secondary}>File{openFileCount > 1 ? 's' : ''}</Text>
+      </Box>
+    );
+  }
+
+  if (phillMdFileCount > 0) {
     const allNamesTheSame = new Set(contextFileNames).size < 2;
-    const name = allNamesTheSame ? contextFileNames[0] : 'context';
-    return `${phillMdFileCount} ${name} file${
-      phillMdFileCount > 1 ? 's' : ''
-    }`;
-  })();
+    const name = (allNamesTheSame ? contextFileNames[0] : 'context').toUpperCase();
+    items.push(
+      <Box key="phill-md">
+        <Text color={theme.text.accent}>📄 {phillMdFileCount} </Text>
+        <Text color={theme.text.secondary}>{name}</Text>
+      </Box>
+    );
+  }
 
-  const mcpText = (() => {
-    if (mcpServerCount === 0 && blockedMcpServerCount === 0) {
-      return '';
-    }
+  if (skillCount > 0) {
+    items.push(
+      <Box key="skills">
+        <Text color={theme.text.accent}>🧠 {skillCount} </Text>
+        <Text color={theme.text.secondary}>Skill{skillCount > 1 ? 's' : ''}</Text>
+      </Box>
+    );
+  }
 
-    const parts = [];
-    if (mcpServerCount > 0) {
-      parts.push(
-        `${mcpServerCount} MCP server${mcpServerCount > 1 ? 's' : ''}`,
-      );
-    }
+  if (mcpServerCount > 0) {
+    items.push(
+      <Box key="mcp">
+        <Text color={theme.status.success}>🌐 {mcpServerCount} </Text>
+        <Text color={theme.text.secondary}>MCP</Text>
+      </Box>
+    );
+  }
 
-    if (blockedMcpServerCount > 0) {
-      let blockedText = `${blockedMcpServerCount} Blocked`;
-      if (mcpServerCount === 0) {
-        blockedText += ` MCP server${blockedMcpServerCount > 1 ? 's' : ''}`;
-      }
-      parts.push(blockedText);
-    }
-    return parts.join(', ');
-  })();
+  if (blockedMcpServerCount > 0) {
+    items.push(
+      <Box key="blocked">
+        <Text color={theme.status.error}>🚫 {blockedMcpServerCount} </Text>
+        <Text color={theme.text.secondary}>Blocked</Text>
+      </Box>
+    );
+  }
 
-  const skillText = (() => {
-    if (skillCount === 0) {
-      return '';
-    }
-    return `${skillCount} skill${skillCount > 1 ? 's' : ''}`;
-  })();
+  if (browserOpen) {
+    items.push(
+      <Box key="browser">
+        <Text color={theme.status.success}>🌐 Browser </Text>
+        <Text color={theme.text.secondary}>({isHeaded ? 'Headed' : 'Headless'}): </Text>
+        <Text color={theme.text.accent} wrap="truncate-end">{browserUrl || 'Open'}</Text>
+        {browserPID && <Text color={theme.text.dim} dimColor> [PID: {browserPID}]</Text>}
+      </Box>
+    );
+  }
 
-  const summaryParts = [openFilesText, phillMdText, mcpText, skillText].filter(
-    Boolean,
+  // Latent Density Indicator (VAE focus)
+  items.push(
+    <Box key="latent">
+      <Text color={theme.text.accent}>🧬 DLR </Text>
+      <Text color={theme.text.secondary}>Active</Text>
+    </Box>
   );
 
   if (isNarrow) {
     return (
-      <Box flexDirection="column" paddingX={1}>
-        {summaryParts.map((part, index) => (
-          <Text key={index} color={theme.text.secondary}>
-            - {part}
-          </Text>
+      <Box flexDirection="column" paddingX={1} marginBottom={1}>
+        {items.map((item, idx) => (
+          <Box key={idx}>{item}</Box>
         ))}
       </Box>
     );
   }
 
   return (
-    <Box paddingX={1}>
-      <Text color={theme.text.secondary}>{summaryParts.join(' | ')}</Text>
+    <Box paddingX={1} flexDirection="row">
+      {items.map((item, idx) => (
+        <React.Fragment key={idx}>
+          {idx > 0 && <Text color={theme.text.dim}>  •  </Text>}
+          {item}
+        </React.Fragment>
+      ))}
     </Box>
   );
 };

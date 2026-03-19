@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { Config } from '../config/config.js';
+import type { Config } from '../config/config.js';
 import { BrowserService } from './browserService.js';
 
 const execPromise = promisify(exec);
@@ -22,7 +22,7 @@ export class ScreenshotService {
     this.config = config;
   }
 
-  public static getInstance(config: Config): ScreenshotService {
+  static getInstance(config: Config): ScreenshotService {
     if (!ScreenshotService.instance) {
       ScreenshotService.instance = new ScreenshotService(config);
     }
@@ -33,15 +33,19 @@ export class ScreenshotService {
    * Captures a screenshot of the entire desktop.
    * Returns the absolute path to the saved image.
    */
-  public async captureDesktop(): Promise<string> {
+  async captureDesktop(): Promise<string> {
     const platform = os.platform();
     const tempDir = this.config.storage.getProjectTempDir();
+
+    // Cleanup old screenshots before capturing a new one
+    await this.cleanup();
+
     const screenshotPath = path.join(tempDir, `desktop_${Date.now()}.png`);
 
     try {
       const browserService = BrowserService.getInstance(this.config);
       const vlaBuffer = await browserService.captureDesktopScreenshot();
-      
+
       if (vlaBuffer) {
         await fs.writeFile(screenshotPath, vlaBuffer);
       } else {
@@ -53,7 +57,9 @@ export class ScreenshotService {
         } else if (platform === 'linux') {
           await this.captureLinux(screenshotPath);
         } else {
-          throw new Error(`Unsupported platform for desktop capture: ${platform}`);
+          throw new Error(
+            `Unsupported platform for desktop capture: ${platform}`,
+          );
         }
       }
 
@@ -65,21 +71,55 @@ export class ScreenshotService {
 
       return screenshotPath;
     } catch (error) {
-      throw new Error(`Failed to capture desktop: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to capture desktop: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Cleans up all temporary screenshot files in the project temp directory.
+   */
+  async cleanup(): Promise<void> {
+    const tempDir = this.config.storage.getProjectTempDir();
+    try {
+      const files = await fs.readdir(tempDir);
+      for (const file of files) {
+        if (
+          file.startsWith('desktop_') ||
+          (file.startsWith('screenshot_') &&
+            (file.endsWith('.png') || file.endsWith('.ps1')))
+        ) {
+          try {
+            await fs.unlink(path.join(tempDir, file));
+          } catch (_e) {
+            // Ignore individual file deletion errors
+          }
+        }
+      }
+    } catch (_e) {
+      // Ignore directory read errors
     }
   }
 
   private async runPowerShell(script: string): Promise<void> {
     const tempDir = this.config.storage.getProjectTempDir();
-    const scriptPath = path.join(tempDir, `screenshot_${Date.now()}_${Math.floor(Math.random() * 1000)}.ps1`);
-    
+    const scriptPath = path.join(
+      tempDir,
+      `screenshot_${Date.now()}_${Math.floor(Math.random() * 1000)}.ps1`,
+    );
+
     try {
       await fs.writeFile(scriptPath, script, 'utf8');
-      await execPromise(`powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${scriptPath}"`);
+      await execPromise(
+        `powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${scriptPath}"`,
+      );
     } catch (error) {
       throw new Error(`PowerShell screenshot failed: ${error}`);
     } finally {
-      try { await fs.unlink(scriptPath); } catch (e) {}
+      try {
+        await fs.unlink(scriptPath);
+      } catch (_e) {}
     }
   }
 
@@ -100,7 +140,7 @@ export class ScreenshotService {
       $Graphics.Dispose();
       $Bitmap.Dispose();
     `.trim();
-    
+
     await this.runPowerShell(psScript);
   }
 
@@ -114,7 +154,7 @@ export class ScreenshotService {
     const commands = [
       `gnome-screenshot -f "${targetPath}"`,
       `import -window root "${targetPath}"`,
-      `scrot "${targetPath}"`
+      `scrot "${targetPath}"`,
     ];
 
     for (const cmd of commands) {
@@ -125,6 +165,8 @@ export class ScreenshotService {
         // Continue to next command
       }
     }
-    throw new Error('No supported screenshot tool found on Linux (gnome-screenshot, import, scrot).');
+    throw new Error(
+      'No supported screenshot tool found on Linux (gnome-screenshot, import, scrot).',
+    );
   }
 }

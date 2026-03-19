@@ -52,25 +52,42 @@ function hasApiKeyConfigured(
   authType: AuthType,
   settings: LoadedSettings,
 ): boolean {
+  const hasNonEmpty = (value: string | undefined): boolean =>
+    typeof value === 'string' && value.trim().length > 0;
   switch (authType) {
     case AuthType.USE_GEMINI:
       return (
-        process.env['PHILL_API_KEY'] !== undefined ||
-        process.env['GEMINI_API_KEY'] !== undefined ||
-        process.env['GOOGLE_API_KEY'] !== undefined
+        hasNonEmpty(process.env['PHILL_API_KEY']) ||
+        hasNonEmpty(process.env['GEMINI_API_KEY']) ||
+        hasNonEmpty(process.env['GOOGLE_API_KEY'])
       );
     case AuthType.HUGGINGFACE:
-      return !!(process.env['HUGGINGFACE_API_KEY'] || settings.merged.huggingFace?.apiKey);
+      return !!(
+        hasNonEmpty(process.env['HUGGINGFACE_API_KEY']) ||
+        hasNonEmpty(settings.merged.huggingFace?.apiKey)
+      );
     case AuthType.OPENAI:
-      return !!(process.env['OPENAI_API_KEY'] || settings.merged.openAI?.apiKey);
+      return !!(
+        hasNonEmpty(process.env['OPENAI_API_KEY']) ||
+        hasNonEmpty(settings.merged.openAI?.apiKey)
+      );
     case AuthType.OPENAI_BROWSER:
       return true;
     case AuthType.ANTHROPIC:
-      return !!(process.env['ANTHROPIC_API_KEY'] || settings.merged.anthropic?.apiKey);
+      return !!(
+        hasNonEmpty(process.env['ANTHROPIC_API_KEY']) ||
+        hasNonEmpty(settings.merged.anthropic?.apiKey)
+      );
     case AuthType.GROQ:
-      return !!(process.env['GROQ_API_KEY'] || settings.merged.groq?.apiKey);
+      return !!(
+        hasNonEmpty(process.env['GROQ_API_KEY']) ||
+        hasNonEmpty(settings.merged.groq?.apiKey)
+      );
     case AuthType.CUSTOM_API:
-      return !!(process.env['CUSTOM_API_KEY'] || settings.merged.customApi?.apiKey);
+      return !!(
+        hasNonEmpty(process.env['CUSTOM_API_KEY']) ||
+        hasNonEmpty(settings.merged.customApi?.apiKey)
+      );
     default:
       return true;
   }

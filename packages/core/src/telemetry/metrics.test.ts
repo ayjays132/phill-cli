@@ -22,6 +22,7 @@ import {
 import { makeFakeConfig } from '../test-utils/config.js';
 import { ModelRoutingEvent, AgentFinishEvent } from './types.js';
 import { AgentTerminateMode } from '../agents/types.js';
+import { ApprovalMode } from '../policy/types.js';
 
 const mockCounterAddFn: Mock<
   (value: number, attributes?: Attributes, context?: Context) => void
@@ -454,6 +455,7 @@ describe('Telemetry Metrics', () => {
         'test-reason',
         false,
         undefined,
+        ApprovalMode.DEFAULT,
       );
       recordModelRoutingMetricsModule(mockConfig, event);
       expect(mockHistogramRecordFn).not.toHaveBeenCalled();
@@ -469,6 +471,7 @@ describe('Telemetry Metrics', () => {
         'test-reason',
         false,
         undefined,
+        ApprovalMode.DEFAULT,
       );
       recordModelRoutingMetricsModule(mockConfig, event);
 
@@ -494,6 +497,7 @@ describe('Telemetry Metrics', () => {
         'test-reason',
         true,
         'test-error',
+        ApprovalMode.DEFAULT,
       );
       recordModelRoutingMetricsModule(mockConfig, event);
 

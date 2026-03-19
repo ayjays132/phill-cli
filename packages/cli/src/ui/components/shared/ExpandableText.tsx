@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Text } from 'ink';
-import { theme } from '../../semantic-colors.js';
+import { AGI_THEME } from '../../AppContainer.js';
 
 export const MAX_WIDTH = 150;
 
@@ -24,7 +24,7 @@ const _ExpandableText: React.FC<ExpandableTextProps> = ({
   label,
   matchedIndex,
   userInput = '',
-  textColor = theme.text.primary,
+  textColor = AGI_THEME.primary,
   isExpanded = false,
   maxWidth = MAX_WIDTH,
   maxLines,
@@ -121,8 +121,8 @@ const _ExpandableText: React.FC<ExpandableTextProps> = ({
         ? match.split(/(\s+)/).map((part, index) => (
             <Text
               key={`match-${index}`}
-              color={theme.background.primary}
-              backgroundColor={theme.text.primary}
+              color={AGI_THEME.background}
+              backgroundColor={AGI_THEME.glow}
             >
               {part}
             </Text>

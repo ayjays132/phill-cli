@@ -6,8 +6,19 @@
 
 import type { HookRegistry, HookRegistryEntry } from './hookRegistry.js';
 import type { HookExecutionPlan } from './types.js';
-import { getHookKey, type HookEventName } from './types.js';
+import { getHookKey, HookEventName, type HookEventName as HookEventNameType } from './types.js';
 import { debugLogger } from '../utils/debugLogger.js';
+
+/**
+ * List of hook events that should ALWAYS be parallelized because they are
+ * non-modifying/read-only and don't need to chain state.
+ */
+const ALWAYS_PARALLEL_EVENTS = new Set<HookEventNameType>([
+  HookEventName.AfterAgent,
+  HookEventName.AfterTool,
+  HookEventName.Notification,
+  HookEventName.SessionEnd,
+]);
 
 /**
  * Hook planner that selects matching hooks and creates execution plans
@@ -23,7 +34,7 @@ export class HookPlanner {
    * Create execution plan for a hook event
    */
   createExecutionPlan(
-    eventName: HookEventName,
+    eventName: HookEventNameType,
     context?: HookEventContext,
   ): HookExecutionPlan | null {
     const hookEntries = this.hookRegistry.getHooksForEvent(eventName);
@@ -47,10 +58,11 @@ export class HookPlanner {
     // Extract hook configs
     const hookConfigs = deduplicatedEntries.map((entry) => entry.config);
 
-    // Determine execution strategy - if ANY hook definition has sequential=true, run all sequentially
-    const sequential = deduplicatedEntries.some(
-      (entry) => entry.sequential === true,
-    );
+    // Determine execution strategy
+    // 1. If it's a "read-only" event, always parallelize for performance.
+    // 2. Otherwise, if ANY hook definition has sequential=true, run all sequentially to allow state chaining.
+    const sequential = !ALWAYS_PARALLEL_EVENTS.has(eventName) && 
+                       deduplicatedEntries.some((entry) => entry.sequential === true);
 
     const plan: HookExecutionPlan = {
       eventName,

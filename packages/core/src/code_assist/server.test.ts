@@ -81,6 +81,7 @@ describe('CodeAssistServer', () => {
       responseType: 'json',
       body: expect.any(String),
       signal: undefined,
+      timeout: expect.any(Number),
     });
 
     const requestBody = JSON.parse(mockRequest.mock.calls[0][0].body);
@@ -379,6 +380,7 @@ describe('CodeAssistServer', () => {
         'Content-Type': 'application/json',
       },
       signal: undefined,
+      timeout: undefined,
     });
 
     expect(results).toHaveLength(2);

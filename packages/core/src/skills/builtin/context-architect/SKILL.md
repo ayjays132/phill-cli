@@ -24,27 +24,24 @@ When encountering a DLR string in history or prompt:
 2.  **Expand Context:** Mentally expand the shorthand into full sentences (e.g., "G:BuildRocket" -> "The primary goal is to build a rocket system.").
 3.  **Prioritize:** Treat `L` (LatchedPlan) items as inviolable constraints unless explicitly overridden by the user.
 
-### 2. Planning Latches (`contextual_plan_latch`)
-Latches are persistent anchors in the RAG memory (`PHILL.md`). They represent decisions that define the architecture of the current task.
+### 2. Planning Latches (`planning_latch`)
+Latches are persistent anchors in the RAG memory (`PHILL.md`) that act as active policy engines. They prevent goal drift and enforce architectural constraints across ephemeral sub-tasks.
 
-**When to Latch:**
-- **Key Decisions:** Architecture approved, major refactor agreed upon.
-- **Milestones:** Phase 1 complete, moving to Phase 2.
-- **Constraints:** "Do not use React," "Must be Python 3.11+."
+**When to Latch (`action: 'create_latch'`):**
+- **Global Scope:** Architecture approved, critical tech stack decisions. These are permanent.
+- **Ephemeral Scope:** Task-specific constraints, "Do not use React for this sub-step." These lock behavior for a session.
+- **Constraints:** Explicitly bind the goal to hard technical restrictions.
 
-**How to Use:**
-- Call `contextual_plan_latch(goal, plan, constraints)`.
-- **Reasoning:** Before latching, `<thinking>`: "Is this decision critical? Will forgetting this break the project later?"
+**How to Review (`action: 'review_latches'`):**
+- **Goal Drift Check:** Actively call the latch tool with the review action to fetch current latches and evaluate them against your recent trajectory.
+- **Reasoning:** Before latching or reviewing, `<thinking>`: "Is this decision critical? Am I straying from the Global Latch?"
 
-### 3. Coherency Layer
-The system prompt now includes a dynamic layer that alerts you to active latches.
+### 3. Coherency & Reflexion Layer
+The system prompt dynamically weaves in latches, but it also features an active Reflexion loop.
 
 **Behavior:**
-- **Check:** Always check for `[LATCH]` entries in the context.
-- **Align:** Ensure your current actions align with these latches.
-- **Conflict:** If a user request conflicts with a latch, **pause and ask for clarification** (or explain the conflict).
-
-## Advanced Compression Strategy
+- **Drift Analysis:** Routinely `review_latches` to guarantee alignment.
+- **Reflexion Lessons:** The Intent Summarizer now actively checks your execution outcomes against the original goal. Pay attention to `[REFLEXION]` blocks in `PHILL.md`—these are specific errors you or a past agent made. Do not repeat them.
 When manually compressing context (or designing a summarization strategy):
 1.  **Identify Latches:** Extract all `[LATCH]` items.
 2.  **Summarize Deltas:** Summarize only the *changes* since the last latch.

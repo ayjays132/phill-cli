@@ -8,7 +8,14 @@ import type { ContentGenerator } from '../core/contentGenerator.js';
 import { Storage } from '../config/storage.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { DEFAULT_GEMINI_EMBEDDING_MODEL } from '../config/models.js';
+import { 
+  PREVIEW_GEMINI_EMBEDDING_MODEL, 
+  STABLE_GEMINI_EMBEDDING_MODEL 
+} from '../config/models.js';
+
+import * as crypto from 'node:crypto';
+import { cosineSimilarity } from '../utils/math.js';
+import { debugLogger } from '../utils/debugLogger.js';
 
 interface VectorDocument {
   id: string;
@@ -22,10 +29,23 @@ const VECTOR_STORE_FILE = 'vectors.json';
 const SIMILARITY_THRESHOLD = 0.7; // Adjust as needed
 
 export class VectorService {
+  private static instance: VectorService | null = null;
   private documents: VectorDocument[] = [];
   private initialized = false;
+  private initializing: Promise<void> | null = null;
+  private saveTimeout: NodeJS.Timeout | null = null;
+  private isSaving = false;
+  private pendingSave: Promise<void> | null = null;
+  private activeEmbeddingModel: string = PREVIEW_GEMINI_EMBEDDING_MODEL;
 
-  constructor(private contentGenerator: ContentGenerator) {}
+  private constructor(private contentGenerator: ContentGenerator) {}
+
+  public static getInstance(contentGenerator: ContentGenerator): VectorService {
+    if (!VectorService.instance) {
+      VectorService.instance = new VectorService(contentGenerator);
+    }
+    return VectorService.instance;
+  }
 
   private get storagePath(): string {
     return path.join(Storage.getGlobalPhillDir(), VECTOR_STORE_FILE);
@@ -33,46 +53,102 @@ export class VectorService {
 
   async initialize() {
     if (this.initialized) return;
-    try {
-      const data = await fs.readFile(this.storagePath, 'utf-8');
-      this.documents = JSON.parse(data);
-    } catch (e: any) {
-      if (e.code !== 'ENOENT') {
-        console.error('Failed to load vector store:', e);
+    if (this.initializing) return this.initializing;
+
+    this.initializing = (async () => {
+      try {
+        const data = await fs.readFile(this.storagePath, 'utf-8');
+        this.documents = JSON.parse(data);
+      } catch (e: any) {
+        if (e.code !== 'ENOENT') {
+          console.error('Failed to load vector store:', e);
+        }
+        this.documents = [];
+      } finally {
+        this.initialized = true;
+        this.initializing = null;
       }
-      this.documents = [];
+    })();
+
+    return this.initializing;
+  }
+
+  /**
+   * Schedules a background save. Debounced by 500ms to batch multiple additions.
+   */
+  private scheduleSave() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
     }
-    this.initialized = true;
+
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null;
+      this.performSave();
+    }, 500);
+  }
+
+  private async performSave() {
+    if (this.isSaving) {
+      // If already saving, queue another one after it finishes
+      this.pendingSave = (this.pendingSave || Promise.resolve()).then(() => this.performSave());
+      return;
+    }
+
+    this.isSaving = true;
+    try {
+      await fs.mkdir(path.dirname(this.storagePath), { recursive: true });
+      await fs.writeFile(this.storagePath, JSON.stringify(this.documents, null, 2));
+    } catch (e) {
+      console.error('Failed to save vector store:', e);
+    } finally {
+      this.isSaving = false;
+      this.pendingSave = null;
+    }
   }
 
   private async save() {
+    // initialize() already handles idempotent initialization
     await this.initialize();
-    await fs.writeFile(this.storagePath, JSON.stringify(this.documents, null, 2));
+    await this.performSave();
   }
 
-  private cosineSimilarity(vecA: number[], vecB: number[]): number {
-    if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-    const dotProduct = vecA.reduce((acc, val, i) => acc + val * vecB[i], 0);
-    const magA = Math.sqrt(vecA.reduce((acc, val) => acc + val * val, 0));
-    const magB = Math.sqrt(vecB.reduce((acc, val) => acc + val * val, 0));
-    return dotProduct / (magA * magB);
-  }
-
-  async addDocument(content: string, metadata?: Record<string, any>): Promise<string> {
+  async addDocument(content: string, metadata?: Record<string, any>): Promise<string | null> {
     await this.initialize();
 
-    // Generate embedding
-    const response = await this.contentGenerator.embedContent({
-      model: DEFAULT_GEMINI_EMBEDDING_MODEL,
-      contents: [{ role: 'user', parts: [{ text: content }] }],
-    });
+    // Generate embedding with dual-tier fallback logic
+    let response;
+    try {
+      response = await this.contentGenerator.embedContent({
+        model: this.activeEmbeddingModel,
+        contents: [{ role: 'user', parts: [{ text: content }] }],
+      });
+    } catch (error) {
+      // If preview fails, pivot to stable for this session
+      if (this.activeEmbeddingModel === PREVIEW_GEMINI_EMBEDDING_MODEL) {
+        debugLogger.debug(`[VectorService] Preview embedding failed, pivoting to stable: ${STABLE_GEMINI_EMBEDDING_MODEL}`);
+        this.activeEmbeddingModel = STABLE_GEMINI_EMBEDDING_MODEL;
+        try {
+          response = await this.contentGenerator.embedContent({
+            model: this.activeEmbeddingModel,
+            contents: [{ role: 'user', parts: [{ text: content }] }],
+          });
+        } catch (stableError) {
+          debugLogger.warn(`[VectorService] Stable embedding also failed. Skipping indexing for this content. ${stableError instanceof Error ? stableError.message : String(stableError)}`);
+          return null;
+        }
+      } else {
+        debugLogger.warn(`[VectorService] Embedding failed. Skipping indexing for this content. ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      }
+    }
 
-    if (!response.embeddings || response.embeddings.length === 0 || !response.embeddings[0].values) {
-        throw new Error('Failed to generate embedding');
+    if (!response || !response.embeddings || response.embeddings.length === 0 || !response.embeddings[0].values) {
+        debugLogger.warn('[VectorService] Received empty embedding from provider.');
+        return null;
     }
 
     const embedding = response.embeddings[0].values;
-    const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    const id = crypto.randomUUID();
 
     const doc: VectorDocument = {
       id,
@@ -83,7 +159,7 @@ export class VectorService {
     };
 
     this.documents.push(doc);
-    await this.save();
+    this.scheduleSave();
 
     return id;
   }
@@ -91,18 +167,38 @@ export class VectorService {
   async search(query: string, limit: number = 5): Promise<VectorDocument[]> {
     await this.initialize();
 
-    // Generate query embedding
-    const response = await this.contentGenerator.embedContent({
-        model: DEFAULT_GEMINI_EMBEDDING_MODEL,
+    // Generate embedding for query with fallback
+    let response;
+    try {
+      response = await this.contentGenerator.embedContent({
+        model: this.activeEmbeddingModel,
         contents: [{ role: 'user', parts: [{ text: query }] }],
-    });
-    const queryEmbedding = response.embeddings?.[0]?.values;
+      });
+    } catch (error) {
+      if (this.activeEmbeddingModel === PREVIEW_GEMINI_EMBEDDING_MODEL) {
+        this.activeEmbeddingModel = STABLE_GEMINI_EMBEDDING_MODEL;
+        try {
+          response = await this.contentGenerator.embedContent({
+            model: this.activeEmbeddingModel,
+            contents: [{ role: 'user', parts: [{ text: query }] }],
+          });
+        } catch (stableError) {
+          debugLogger.debug('[VectorService] Search embedding failed. Returning empty results.');
+          return [];
+        }
+      } else {
+        debugLogger.debug('[VectorService] Search embedding failed. Returning empty results.');
+        return [];
+      }
+    }
+
+    const queryEmbedding = response?.embeddings?.[0]?.values;
     if (!queryEmbedding) return [];
 
     // Calculate similarities
     const results = this.documents.map(doc => ({
       doc,
-      similarity: this.cosineSimilarity(queryEmbedding, doc.embedding),
+      similarity: cosineSimilarity(queryEmbedding, doc.embedding),
     }));
 
     // Filter and sort

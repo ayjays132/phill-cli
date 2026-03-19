@@ -25,7 +25,7 @@ async function getVectorService(config: Config): Promise<VectorService> {
             await config.getContentGeneratorConfig(),
             config
         );
-        sharedVectorService = new VectorService(contentGenerator);
+        sharedVectorService = VectorService.getInstance(contentGenerator);
     }
     return sharedVectorService;
 }

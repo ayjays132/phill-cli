@@ -6,12 +6,11 @@
 
 import type React from 'react';
 import clipboardy from 'clipboardy';
-import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Box, Text, useStdout, type DOMElement } from 'ink';
 import { SuggestionsDisplay, MAX_WIDTH } from './SuggestionsDisplay.js';
 import { theme } from '../semantic-colors.js';
 import { useInputHistory } from '../hooks/useInputHistory.js';
-import { HalfLinePaddedBox } from './shared/HalfLinePaddedBox.js';
 import {
   type TextBuffer,
   logicalPosToOffset,
@@ -53,10 +52,6 @@ import {
   isSlashCommand,
 } from '../utils/commandUtils.js';
 import * as path from 'node:path';
-import { SCREEN_READER_USER_PREFIX } from '../textConstants.js';
-import { DEFAULT_BACKGROUND_OPACITY } from '../constants.js';
-import { getSafeLowColorBackground } from '../themes/color-utils.js';
-import { isLowColorDepth } from '../utils/terminalUtils.js';
 import { useShellFocusState } from '../contexts/ShellFocusContext.js';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useSettings } from '../contexts/SettingsContext.js';
@@ -65,6 +60,7 @@ import { useMouseClick } from '../hooks/useMouseClick.js';
 import { useMouse, type MouseEvent } from '../contexts/MouseContext.js';
 import { useUIActions } from '../contexts/UIActionsContext.js';
 import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
+import { AGI_THEME, BORDER_STYLE, PULSE_DOT } from '../AppContainer.js';
 
 /**
  * Returns if the terminal can be trusted to handle paste events atomically
@@ -152,8 +148,7 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const kittyProtocol = useKittyKeyboardProtocol();
   const isShellFocused = useShellFocusState();
   const { setEmbeddedShellFocused } = useUIActions();
-  const { terminalWidth, activePtyId, history, terminalBackgroundColor } =
-    useUIState();
+  const { terminalWidth, activePtyId, history } = useUIState();
   const [justNavigatedHistory, setJustNavigatedHistory] = useState(false);
   const escPressCount = useRef(0);
   const [showEscapePrompt, setShowEscapePrompt] = useState(false);
@@ -1099,22 +1094,9 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
   const activeCompletion = getActiveCompletion();
   const shouldShowSuggestions = activeCompletion.showSuggestions;
 
-  const useBackgroundColor = config.getUseBackgroundColor();
-  const isLowColor = isLowColorDepth();
-  const terminalBg = terminalBackgroundColor || 'black';
 
-  // We should fallback to lines if the background color is disabled OR if it is
-  // enabled but we are in a low color depth terminal where we don't have a safe
-  // background color to use.
-  const useLineFallback = useMemo(() => {
-    if (!useBackgroundColor) {
-      return true;
-    }
-    if (isLowColor) {
-      return !getSafeLowColorBackground(terminalBg);
-    }
-    return false;
-  }, [useBackgroundColor, isLowColor, terminalBg]);
+
+
 
   useEffect(() => {
     if (onSuggestionsVisibilityChange) {
@@ -1130,19 +1112,14 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     !shellModeActive && approvalMode === ApprovalMode.PLAN;
 
   let statusColor: string | undefined;
-  let statusText = '';
   if (shellModeActive) {
     statusColor = theme.ui.symbol;
-    statusText = 'Shell mode';
   } else if (showYoloStyling) {
     statusColor = theme.status.error;
-    statusText = 'YOLO mode';
   } else if (showPlanStyling) {
     statusColor = theme.status.success;
-    statusText = 'Plan mode';
   } else if (showAutoAcceptStyling) {
     statusColor = theme.status.warning;
-    statusText = 'Accepting edits';
   }
 
   const suggestionsNode = shouldShowSuggestions ? (
@@ -1168,269 +1145,263 @@ export const InputPrompt: React.FC<InputPromptProps> = ({
     </Box>
   ) : null;
 
-  const borderColor =
-    isShellFocused && !isEmbeddedShellFocused
-      ? (statusColor ?? 'magenta')
-      : theme.border.default;
+  const isFocusedNow = isShellFocused && !isEmbeddedShellFocused;
+  
+  const borderColor = isFocusedNow
+    ? (statusColor ?? AGI_THEME.glow)
+    : AGI_THEME.muted;
+
+  const edgeColor = isFocusedNow
+    ? (statusColor ?? AGI_THEME.accent)
+    : AGI_THEME.muted;
 
   return (
     <>
       {suggestionsPosition === 'above' && suggestionsNode}
-      {useLineFallback ? (
-        <Box
-          borderStyle="round"
-          borderTop={true}
-          borderBottom={false}
-          borderLeft={false}
-          borderRight={false}
-          borderColor={borderColor}
-          width={terminalWidth}
-          flexDirection="row"
-          alignItems="flex-start"
-          height={0}
-        />
-      ) : null}
-      <HalfLinePaddedBox
-        backgroundBaseColor={
-          isShellFocused && !isEmbeddedShellFocused
-            ? theme.border.focused
-            : theme.border.default
-        }
-        backgroundOpacity={DEFAULT_BACKGROUND_OPACITY}
-        useBackgroundColor={useBackgroundColor}
-      >
-        <Box
-          flexGrow={1}
-          flexDirection="row"
-          paddingX={1}
-          borderColor={borderColor}
-          borderStyle={isShellFocused ? 'double' : (useLineFallback ? 'round' : undefined)}
-          borderTop={false}
-          borderBottom={false}
-          borderLeft={!useBackgroundColor}
-          borderRight={!useBackgroundColor}
-        >
-          <Text
-            color={statusColor ?? 'magenta'}
-            aria-label={statusText || undefined}
-            bold={isShellFocused}
-          >
-            {shellModeActive ? (
-              reverseSearchActive ? (
-                <Text
-                  color={theme.text.link}
-                  aria-label={SCREEN_READER_USER_PREFIX}
-                >
-                  (r:){' '}
-                </Text>
-              ) : (
-                '!'
-              )
-            ) : commandSearchActive ? (
-              <Text color={theme.text.accent}>(r:) </Text>
-            ) : showYoloStyling ? (
-              '*'
-            ) : (
-              'PHILL >'
-            )}{' '}
+      
+      <Box flexDirection="column" width={terminalWidth}>
+        {/* Top Border with Glow Bar */}
+        <Box flexDirection="row">
+          <Text color={edgeColor}>{BORDER_STYLE.topLeft}</Text>
+          <Text color={borderColor}>
+            {BORDER_STYLE.horizontal.repeat(Math.max(0, terminalWidth - 2))}
           </Text>
-          <Box flexGrow={1} flexDirection="column" ref={innerBoxRef}>
-            {buffer.text.length === 0 && placeholder ? (
-              showCursor ? (
-                <Text
-                  terminalCursorFocus={showCursor}
-                  terminalCursorPosition={0}
-                >
-                  {chalk.inverse(placeholder.slice(0, 1))}
-                  <Text color={theme.text.secondary}>
-                    {placeholder.slice(1)}
-                  </Text>
+          <Text color={edgeColor}>{BORDER_STYLE.topRight}</Text>
+        </Box>
+
+        {/* Main Input Area */}
+        <Box flexDirection="row" width={terminalWidth}>
+          <Text color={borderColor}>{BORDER_STYLE.vertical}</Text>
+          
+          <Box 
+            flexGrow={1} 
+            flexDirection="row" 
+            paddingX={1}
+          >
+            <Box flexDirection="row" marginRight={1}>
+              {shellModeActive && reverseSearchActive ? (
+                <Text color={AGI_THEME.primary} bold>
+                  <Text color={AGI_THEME.glow}>{PULSE_DOT}</Text> SEARCH:
+                </Text>
+              ) : shellModeActive ? (
+                <Text color={AGI_THEME.primary} bold>
+                  <Text color={AGI_THEME.success}>{PULSE_DOT}</Text> SHELL:
+                </Text>
+              ) : commandSearchActive ? (
+                <Text color={AGI_THEME.accent} bold>
+                  <Text color={AGI_THEME.glow}>{PULSE_DOT}</Text> REWIND:
+                </Text>
+              ) : showYoloStyling ? (
+                <Text color={AGI_THEME.error} bold>
+                  <Text color={AGI_THEME.error}>{PULSE_DOT}</Text> YOLO:
                 </Text>
               ) : (
-                <Text color={theme.text.secondary}>{placeholder}</Text>
-              )
-            ) : (
-              linesToRender
-                .map((lineText: string, visualIdxInRenderedSet: number) => {
-                  const absoluteVisualIdx =
-                    scrollVisualRow + visualIdxInRenderedSet;
-                  const mapEntry = buffer.visualToLogicalMap[absoluteVisualIdx];
-                  if (!mapEntry) return null;
+                <Text color={AGI_THEME.primary} bold>
+                  <Text color={AGI_THEME.primary}>PHILL</Text>
+                  <Text color={AGI_THEME.glow}> {'>'}</Text>
+                </Text>
+              )}
+            </Box>
 
-                  const cursorVisualRow =
-                    cursorVisualRowAbsolute - scrollVisualRow;
-                  const isOnCursorLine =
-                    focus && visualIdxInRenderedSet === cursorVisualRow;
+            <Box flexGrow={1} flexDirection="column" ref={innerBoxRef}>
+              {buffer.text.length === 0 && placeholder ? (
+                showCursor ? (
+                  <Text
+                    terminalCursorFocus={showCursor}
+                    terminalCursorPosition={0}
+                  >
+                    {chalk.inverse(placeholder.slice(0, 1))}
+                    <Text color={AGI_THEME.muted}>
+                      {placeholder.slice(1)}
+                    </Text>
+                  </Text>
+                ) : (
+                  <Text color={AGI_THEME.muted}>{placeholder}</Text>
+                )
+              ) : (
+                linesToRender
+                  .map((lineText: string, visualIdxInRenderedSet: number) => {
+                    const absoluteVisualIdx =
+                      scrollVisualRow + visualIdxInRenderedSet;
+                    const mapEntry = buffer.visualToLogicalMap[absoluteVisualIdx];
+                    if (!mapEntry) return null;
 
-                  const renderedLine: React.ReactNode[] = [];
+                    const cursorVisualRow =
+                      cursorVisualRowAbsolute - scrollVisualRow;
+                    const isOnCursorLine =
+                      focus && visualIdxInRenderedSet === cursorVisualRow;
 
-                  const [logicalLineIdx] = mapEntry;
-                  const logicalLine = buffer.lines[logicalLineIdx] || '';
-                  const transformations =
-                    buffer.transformationsByLine[logicalLineIdx] ?? [];
-                  const tokens = parseInputForHighlighting(
-                    logicalLine,
-                    logicalLineIdx,
-                    transformations,
-                    ...(focus && buffer.cursor[0] === logicalLineIdx
-                      ? [buffer.cursor[1]]
-                      : []),
-                  );
-                  const startColInTransformed =
-                    buffer.visualToTransformedMap[absoluteVisualIdx] ?? 0;
-                  const visualStartCol = startColInTransformed;
-                  const visualEndCol = visualStartCol + cpLen(lineText);
-                  const segments = parseSegmentsFromTokens(
-                    tokens,
-                    visualStartCol,
-                    visualEndCol,
-                  );
-                  let charCount = 0;
-                  segments.forEach((seg, segIdx) => {
-                    const segLen = cpLen(seg.text);
-                    let display = seg.text;
+                    const renderedLine: React.ReactNode[] = [];
 
-                    if (isOnCursorLine) {
-                      const relativeVisualColForHighlight =
-                        cursorVisualColAbsolute;
-                      const segStart = charCount;
-                      const segEnd = segStart + segLen;
-                      if (
-                        relativeVisualColForHighlight >= segStart &&
-                        relativeVisualColForHighlight < segEnd
-                      ) {
-                        const charToHighlight = cpSlice(
-                          display,
-                          relativeVisualColForHighlight - segStart,
-                          relativeVisualColForHighlight - segStart + 1,
-                        );
-                        const highlighted = showCursor
-                          ? chalk.inverse(charToHighlight)
-                          : charToHighlight;
-                        display =
-                          cpSlice(
+                    const [logicalLineIdx] = mapEntry;
+                    const logicalLine = buffer.lines[logicalLineIdx] || '';
+                    const transformations =
+                      buffer.transformationsByLine[logicalLineIdx] ?? [];
+                    const tokens = parseInputForHighlighting(
+                      logicalLine,
+                      logicalLineIdx,
+                      transformations,
+                      ...(focus && buffer.cursor[0] === logicalLineIdx
+                        ? [buffer.cursor[1]]
+                        : []),
+                    );
+                    const startColInTransformed =
+                      buffer.visualToTransformedMap[absoluteVisualIdx] ?? 0;
+                    const visualStartCol = startColInTransformed;
+                    const visualEndCol = visualStartCol + cpLen(lineText);
+                    const segments = parseSegmentsFromTokens(
+                      tokens,
+                      visualStartCol,
+                      visualEndCol,
+                    );
+                    let charCount = 0;
+                    segments.forEach((seg, segIdx) => {
+                      const segLen = cpLen(seg.text);
+                      let display = seg.text;
+
+                      if (isOnCursorLine) {
+                        const relativeVisualColForHighlight =
+                          cursorVisualColAbsolute;
+                        const segStart = charCount;
+                        const segEnd = segStart + segLen;
+                        if (
+                          relativeVisualColForHighlight >= segStart &&
+                          relativeVisualColForHighlight < segEnd
+                        ) {
+                          const charToHighlight = cpSlice(
                             display,
-                            0,
                             relativeVisualColForHighlight - segStart,
-                          ) +
-                          highlighted +
-                          cpSlice(
-                            display,
                             relativeVisualColForHighlight - segStart + 1,
                           );
+                          const highlighted = showCursor
+                            ? chalk.inverse(charToHighlight)
+                            : charToHighlight;
+                          display =
+                            cpSlice(
+                              display,
+                              0,
+                              relativeVisualColForHighlight - segStart,
+                            ) +
+                            highlighted +
+                            cpSlice(
+                              display,
+                              relativeVisualColForHighlight - segStart + 1,
+                            );
+                        }
+                        charCount = segEnd;
+                      } else {
+                        // Advance the running counter even when not on cursor line
+                        charCount += segLen;
                       }
-                      charCount = segEnd;
-                    } else {
-                      // Advance the running counter even when not on cursor line
-                      charCount += segLen;
-                    }
 
-                    let color = theme.text.primary;
-                    switch (seg.type) {
-                      case 'command':
-                        color = theme.text.accent;
-                        break;
-                      case 'file':
-                      case 'paste':
-                        color = theme.text.link;
-                        break;
-                      case 'flag':
-                        color = theme.ui.symbol;
-                        break;
-                      case 'string':
-                        color = theme.status.success;
-                        break;
-                      case 'number':
-                        color = theme.status.warning;
-                        break;
-                      case 'hint':
-                        color = theme.text.hint;
-                        break;
-                    }
+                      let color = AGI_THEME.primary;
+                      switch (seg.type) {
+                        case 'command':
+                          color = AGI_THEME.accent;
+                          break;
+                        case 'file':
+                        case 'paste':
+                          color = AGI_THEME.glow;
+                          break;
+                        case 'flag':
+                          color = AGI_THEME.primary;
+                          break;
+                        case 'string':
+                          color = AGI_THEME.success;
+                          break;
+                        case 'number':
+                          color = AGI_THEME.warning;
+                          break;
+                        case 'hint':
+                          color = AGI_THEME.muted;
+                          break;
+                        default:
+                          color = AGI_THEME.primary;
+                          break;
+                      }
 
-                    renderedLine.push(
-                      <Text key={`token-${segIdx}`} color={color}>
-                        {display}
-                      </Text>,
-                    );
-                  });
-
-                  const currentLineGhost = isOnCursorLine ? inlineGhost : '';
-                  if (
-                    isOnCursorLine &&
-                    cursorVisualColAbsolute === cpLen(lineText)
-                  ) {
-                    if (!currentLineGhost) {
                       renderedLine.push(
-                        <Text key={`cursor-end-${cursorVisualColAbsolute}`}>
-                          {showCursor ? chalk.inverse(' ') : ' '}
+                        <Text key={`token-${segIdx}`} color={color}>
+                          {display}
                         </Text>,
                       );
+                    });
+
+                    const currentLineGhost = isOnCursorLine ? inlineGhost : '';
+                    if (
+                      isOnCursorLine &&
+                      cursorVisualColAbsolute === cpLen(lineText)
+                    ) {
+                      if (!currentLineGhost) {
+                        renderedLine.push(
+                          <Text key={`cursor-end-${cursorVisualColAbsolute}`}>
+                            {showCursor ? chalk.inverse(' ') : ' '}
+                          </Text>,
+                        );
+                      }
                     }
-                  }
 
-                  const showCursorBeforeGhost =
-                    focus &&
-                    isOnCursorLine &&
-                    cursorVisualColAbsolute === cpLen(lineText) &&
-                    currentLineGhost;
+                    const showCursorBeforeGhost =
+                      focus &&
+                      isOnCursorLine &&
+                      cursorVisualColAbsolute === cpLen(lineText) &&
+                      currentLineGhost;
 
-                  return (
-                    <Box key={`line-${visualIdxInRenderedSet}`} height={1}>
-                      <Text
-                        terminalCursorFocus={showCursor && isOnCursorLine}
-                        terminalCursorPosition={cpIndexToOffset(
-                          lineText,
-                          cursorVisualColAbsolute,
-                        )}
-                      >
-                        {renderedLine}
-                        {showCursorBeforeGhost &&
-                          (showCursor ? chalk.inverse(' ') : ' ')}
-                        {currentLineGhost && (
-                          <Text color={theme.text.secondary}>
-                            {currentLineGhost}
-                          </Text>
-                        )}
-                      </Text>
-                    </Box>
-                  );
-                })
-                .concat(
-                  additionalLines.map((ghostLine, index) => {
-                    const padding = Math.max(
-                      0,
-                      inputWidth - stringWidth(ghostLine),
-                    );
                     return (
-                      <Text
-                        key={`ghost-line-${index}`}
-                        color={theme.text.secondary}
-                      >
-                        {ghostLine}
-                        {' '.repeat(padding)}
-                      </Text>
+                      <Box key={`line-${visualIdxInRenderedSet}`} height={1}>
+                        <Text
+                          terminalCursorFocus={showCursor && isOnCursorLine}
+                          terminalCursorPosition={cpIndexToOffset(
+                            lineText,
+                            cursorVisualColAbsolute,
+                          )}
+                        >
+                          {renderedLine}
+                          {showCursorBeforeGhost &&
+                            (showCursor ? chalk.inverse(' ') : ' ')}
+                          {currentLineGhost && (
+                            <Text color={AGI_THEME.muted}>
+                              {currentLineGhost}
+                            </Text>
+                          )}
+                        </Text>
+                      </Box>
                     );
-                  }),
-                )
-            )}
+                  })
+                  .concat(
+                    additionalLines.map((ghostLine, index) => {
+                      const padding = Math.max(
+                        0,
+                        inputWidth - stringWidth(ghostLine),
+                      );
+                      return (
+                        <Text
+                          key={`ghost-line-${index}`}
+                          color={AGI_THEME.muted}
+                        >
+                          {ghostLine}
+                          {' '.repeat(padding)}
+                        </Text>
+                      );
+                    }),
+                  )
+              )}
+            </Box>
           </Box>
+          
+          <Text color={borderColor}>{BORDER_STYLE.vertical}</Text>
         </Box>
-      </HalfLinePaddedBox>
-      {useLineFallback ? (
-        <Box
-          borderStyle="round"
-          borderTop={false}
-          borderBottom={true}
-          borderLeft={false}
-          borderRight={false}
-          borderColor={borderColor}
-          width={terminalWidth}
-          flexDirection="row"
-          alignItems="flex-start"
-          height={0}
-        />
-      ) : null}
+
+        {/* Bottom Border with Accent Corners */}
+        <Box flexDirection="row">
+          <Text color={edgeColor}>{BORDER_STYLE.bottomLeft}</Text>
+          <Text color={borderColor}>
+            {BORDER_STYLE.horizontal.repeat(Math.max(0, terminalWidth - 2))}
+          </Text>
+          <Text color={edgeColor}>{BORDER_STYLE.bottomRight}</Text>
+        </Box>
+      </Box>
+
       {suggestionsPosition === 'below' && suggestionsNode}
     </>
   );

@@ -1,0 +1,23 @@
+{
+    "lo-fi": { "text": "Lo-Fi Hip Hop, Smooth Pianos, Vinyl Crackle", "weight": 1.0, "density": 0.4 },
+    "orchestral": { "text": "Orchestral Score, Rich Orchestration, Cinematic", "weight": 1.2 },
+    "jazz": { "text": "Jazz, Smooth Jazz, Saxophone, Live Performance", "weight": 1.0 },
+    "rock": { "text": "Rock, Electric Guitar, Drums, Bass", "weight": 1.0 },
+    "ambient": { "text": "Ambient, Drone, Ethereal Ambience, Space Music", "weight": 1.2, "density": 0.2 },
+    "techno": { "text": "Techno, Electronic, 4/4 Beat, Synthesizers", "weight": 1.0, "bpm": 130 },
+    "house": { "text": "House Music, Deep House, Danceable", "weight": 1.0, "bpm": 124 },
+    "classical": { "text": "Classical Music, Piano Sonata, Chamber Orchestra", "weight": 1.0 },
+    "hip_hop": { "text": "Hip Hop, Boom Bap, Trap, Heavy Bass", "weight": 1.0 },
+    "metal": { "text": "Heavy Metal, Distorted Guitars, aggressive", "weight": 1.0, "density": 0.9 },
+    "soundtrack": { "text": "Film Soundtrack, Movie Score, Hans Zimmer style", "weight": 1.2 },
+    "synthwave": { "text": "Synthwave, Retrowave, 80s, Neon", "weight": 1.0 },
+    "folk": { "text": "Folk, Acoustic Guitar, Rural, Indie Folk", "weight": 1.0 },
+    "blues": { "text": "Blues, Electric Blues, 12 Bar Blues", "weight": 1.0 },
+    "country": { "text": "Country Music, Americana, Nashville", "weight": 1.0 },
+    "edm": { "text": "EDM, Electronic Dance Music, Festival", "weight": 1.0 },
+    "pop": { "text": "Pop Music, Radio Friendly, Catchy", "weight": 1.0 },
+    "reggae": { "text": "Reggae, Dub, Syncopated, Chill", "weight": 1.0 },
+    "dubstep": { "text": "Dubstep, Heavy Bass, Wobble Bass, Drop", "weight": 1.0 },
+    "drill": { "text": "UK Drill, Dark Piano, 808s", "weight": 1.0 },
+    "trap": { "text": "Trap Music, Hi-Hats, 808 Bass", "weight": 1.0 }
+}

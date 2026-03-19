@@ -105,6 +105,7 @@ export class ModelRouterService {
         decision!.metadata.reasoning,
         failed,
         error_message,
+        this.config.getApprovalMode(),
         enableNumericalRouting,
         classifierThreshold,
       );

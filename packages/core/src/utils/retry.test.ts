@@ -582,7 +582,7 @@ describe('retryWithBackoff', () => {
         model: 'model-1',
         actions: {},
         stateTransitions: {
-          terminal: 'terminal',
+          terminal: 'cool_off',
           transient: 'sticky_retry',
         },
       };
@@ -591,7 +591,7 @@ describe('retryWithBackoff', () => {
         model: 'model-2',
         actions: {},
         stateTransitions: {
-          terminal: 'terminal',
+          terminal: 'cool_off',
         },
       };
     });
@@ -666,7 +666,7 @@ describe('retryWithBackoff', () => {
       expect(mockService.markTerminal).not.toHaveBeenCalled();
     });
 
-    it('maps different failure kinds to correct terminal reasons', async () => {
+    it('maps different failure kinds to correct cool_off reasons', async () => {
       const quotaError = new TerminalQuotaError(
         'quota',
         { code: 429, message: 'q', details: [] },
@@ -685,9 +685,9 @@ describe('retryWithBackoff', () => {
         model: 'model-1',
         actions: {},
         stateTransitions: {
-          terminal: 'terminal', // from quotaError
-          not_found: 'terminal', // from notFoundError
-          unknown: 'terminal', // from genericError
+          terminal: 'cool_off', // from quotaError
+          not_found: 'cool_off', // from notFoundError
+          unknown: 'cool_off', // from genericError
         },
       };
 

@@ -1,53 +1,65 @@
-import { Config } from '../config/config.js';
-import { MoondreamService } from '../vision/moondream.js';
-import { AuthType } from '../core/contentGenerator.js';
-import { Buffer } from 'node:buffer';
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import type { Config } from '../index.js';
+import { MoondreamVisionProcessor, debugLogger, AuthType } from '../index.js';
+import type { Buffer } from 'node:buffer';
 
 export class VisionService {
   private static instance: VisionService;
-  private config: Config;
-  private moondreamService: MoondreamService | null = null;
+  private moondreamService: MoondreamVisionProcessor | null = null;
 
-  private constructor(config: Config) {
-    this.config = config;
-  }
+  private constructor(private readonly config: Config) {}
 
-  public static getInstance(config: Config): VisionService {
+  static getInstance(config: Config): VisionService {
     if (!VisionService.instance) {
       VisionService.instance = new VisionService(config);
     }
     return VisionService.instance;
   }
 
-  private getMoondreamService(): MoondreamService {
-      if (!this.moondreamService) {
-          this.moondreamService = MoondreamService.getInstance(this.config);
-      }
-      return this.moondreamService;
+  private getMoondreamService(): MoondreamVisionProcessor {
+    if (!this.moondreamService) {
+      this.moondreamService = MoondreamVisionProcessor.getInstance(this.config);
+    }
+    return this.moondreamService;
   }
 
-  async describeImage(imageBuffer: Buffer, prompt: string = 'Describe this image in detail.'): Promise<string> {
+  async describeImage(
+    imageBuffer: Buffer,
+    prompt: string = 'Describe this image in detail.',
+  ): Promise<string> {
     const authType = this.config.getAuthType();
+    const currentModel = this.config.getModel();
 
     // 1. Check for Gemini Vision (Primary)
-    // Assuming all Gemini models support vision or gracefully handle it
-    // Ideally we'd check model capability flags
-    if (authType === AuthType.USE_GEMINI || authType === AuthType.USE_VERTEX_AI) {
-        // We let the LLM handle the image directly via parts if it's Gemini
-        // But if this service is called explicitly for a description string (e.g. for accessibility tree enrichment),
-        // we might want to use the LLM to generate it.
-        // However, the prompt implies "fallback" logic for when the MAIN LLM CANNOT see.
-        // If the main LLM is Gemini, it CAN see.
-        // So this service might return "GEMINI_NATIVE" or similar to indicate "Don't describe, just attach".
-        // But for "Browser Agent", we might want a text description for lighter context.
-        return "GEMINI_NATIVE"; 
+    // If we are using a Gemini-compatible provider and a Gemini model, use native vision.
+    const isGeminiAuth =
+      authType === AuthType.USE_GEMINI ||
+      authType === AuthType.USE_VERTEX_AI ||
+      authType === AuthType.LOGIN_WITH_GOOGLE ||
+      authType === AuthType.COMPUTE_ADC;
+
+    const isGeminiModel =
+      currentModel.startsWith('gemini-') ||
+      currentModel.includes('flash') ||
+      currentModel.includes('pro');
+
+    if (isGeminiAuth && isGeminiModel) {
+      // We let the LLM handle the image directly via multimodal parts.
+      // Returning 'GEMINI_NATIVE' tells the caller (like PhysicalPerceptionService)
+      // that it doesn't need to generate a text description fallback.
+      return 'GEMINI_NATIVE';
     }
 
-    // 2. Check for Native Vision Model (Secondary)
-    // Todo: Implement check for Ollama/HF vision capabilities of current model
+    // 2. Check for Native Multi-modal (Secondary)
+    // Placeholder for other multi-modal models (OpenAI, Anthropic, etc.)
 
     // 3. Fallback to Local Vision Model (Tertiary)
-    console.log('Using Local Vision Model for fallback...');
-    return await this.getMoondreamService().describeImage(imageBuffer, prompt);
+    debugLogger.log('Using Local Vision Model for fallback...');
+    return this.getMoondreamService().describeImage(imageBuffer, prompt);
   }
 }

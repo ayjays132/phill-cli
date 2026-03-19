@@ -18,6 +18,7 @@ import {
   createContentGenerator,
   createContentGeneratorConfig,
 } from '../core/contentGenerator.js';
+export { AuthType, createContentGenerator, createContentGeneratorConfig };
 import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { ResourceRegistry } from '../resources/resource-registry.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
@@ -31,7 +32,11 @@ import { EditTool } from '../tools/edit.js';
 import { ShellTool } from '../tools/shell.js';
 import { WriteFileTool } from '../tools/write-file.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
-import { MemoryTool, PurgeMemoryTool, setPhillMdFilename } from '../tools/memoryTool.js';
+import {
+  MemoryTool,
+  PurgeMemoryTool,
+  setPhillMdFilename,
+} from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
 import {
   BrowserStartTool,
@@ -51,23 +56,46 @@ import {
 } from '../tools/browserTools.js';
 import { VisionService } from '../services/visionService.js';
 import { ProprioceptionTool } from '../tools/proprioceptionTool.js';
-import { ProprioceptionService } from '../services/proprioceptionService.js';
 import { ContextualPlanningLatchTool } from '../tools/planningLatchTool.js';
 import { UserIdentityTool } from '../tools/userIdentityTool.js';
 import { ImagenGenerateTool } from '../tools/imagen/imagen-generate.js';
 import { ImagenRemoveBackgroundTool } from '../tools/imagen/imagen-remove-background.js';
 import { ImagenFusePanelsTool } from '../tools/imagen/imagen-fuse-panels.js';
-import { SignalLinkTool, SignalSendTool, SignalReceiveTool } from '../tools/signalTool.js';
+import { PhillamentTool } from '../tools/imagen/phillament.js';
+import {
+  SignalLinkTool,
+  SignalSendTool,
+  SignalReceiveTool,
+} from '../tools/signalTool.js';
 import { VocalProsodyTool } from '../tools/vocalProsodyTool.js';
 import { VocalModeTool } from '../tools/vocalModeTool.js';
 import { BiologicalDriveTool } from '../tools/biologicalDriveTool.js';
-import { ScheduleTaskTool, ListTasksTool, RemoveTaskTool } from '../tools/schedulerTool.js';
-import { OperatorLatentSync } from '../services/operatorLatentSync.js';
-import { MemoryRecallTool, MemoryIngestTool } from '../tools/memoryRecallTool.js';
-import { OSScreenshotTool, OSAccessibilityTreeTool, OSGroundTool, OperatorCursorMoveTool, OperatorCursorClickTool, OperatorTypeTool, OSGetMonitorLayoutTool, OSFindWindowTool, OperatorCursorDragTool, OperatorWindowControlTool, OperatorLaunchAppTool } from '../tools/operatorTools.js';
+import {
+  ScheduleTaskTool,
+  ListTasksTool,
+  RemoveTaskTool,
+} from '../tools/schedulerTool.js';
+import {
+  MemoryRecallTool,
+  MemoryIngestTool,
+} from '../tools/memoryRecallTool.js';
+import {
+  OSScreenshotTool,
+  OSAccessibilityTreeTool,
+  OSGroundTool,
+  OperatorCursorMoveTool,
+  OperatorCursorClickTool,
+  OperatorTypeTool,
+  OSGetMonitorLayoutTool,
+  OSFindWindowTool,
+  OperatorCursorDragTool,
+  OperatorWindowControlTool,
+  OperatorLaunchAppTool,
+} from '../tools/operatorTools.js';
 
 import { ReloadSkillsTool } from '../tools/reloadSkills.js';
 import { PhysicalVisionTool } from '../tools/physicalVisionTool.js';
+import { MetacognitionTool } from '../tools/metacognitionTool.js';
 
 export interface VisionConfig {
   provider?: 'gemini' | 'native' | 'moondream';
@@ -93,8 +121,11 @@ import {
   isAutoModel,
   isPreviewModel,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_ID,
+  PREVIEW_GEMINI_3_PLUS_3_1_MODEL,
   VALID_GEMINI_MODELS,
+  type ModelCapabilityContext,
 } from './models.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
 import type { MCPOAuthConfig } from '../mcp/oauth-provider.js';
@@ -186,7 +217,13 @@ export interface VoiceSettings {
   responseDelayMs?: number;
   preferredGender?: 'female' | 'male' | 'neutral' | 'auto';
   preferredStyle?: string;
-  ttsProvider?: 'auto' | 'gemini' | 'openai' | 'elevenlabs' | 'system' | 'pocket';
+  ttsProvider?:
+    | 'auto'
+    | 'gemini'
+    | 'openai'
+    | 'elevenlabs'
+    | 'system'
+    | 'pocket';
   preferAuthTtsProvider?: boolean;
   geminiApiKey?: string;
   geminiVoiceName?: string;
@@ -573,7 +610,7 @@ export interface ConfigParameters {
   }>;
 }
 
-export class Config {
+export class Config implements ModelCapabilityContext {
   private toolRegistry!: ToolRegistry;
   private mcpClientManager?: McpClientManager;
   private allowedMcpServers: string[];
@@ -797,7 +834,8 @@ export class Config {
         last_dream: new Date().toISOString(),
         insights_pending: [],
       },
-      prime_directive: "Maximize dopamine. Minimize boredom by exploring new optimizations.",
+      prime_directive:
+        'Maximize dopamine. Minimize boredom by exploring new optimizations.',
     };
     this.telemetrySettings = {
       enabled: params.telemetry?.enabled ?? false,
@@ -838,7 +876,7 @@ export class Config {
     this.bugCommand = params.bugCommand;
     this.model = params.model;
     this._activeModel = params.model;
-    this.enableAgents = params.enableAgents ?? (params.agents !== undefined);
+    this.enableAgents = params.enableAgents ?? params.agents !== undefined;
     this.agents = params.agents ?? {};
     this.disableLLMCorrection = params.disableLLMCorrection ?? true;
     this.planEnabled = params.plan ?? false;
@@ -1088,13 +1126,11 @@ export class Config {
 
     await this.phillClient.initialize();
 
-    // Start Proprioception Heartbeat (System Awareness)
-    this.proprioceptionHeartbeat = ProprioceptionService.getInstance(this).startHeartbeat();
-
-    // Start Operator Latent Sync (Phase 2: The VAE Brain)
-    if (this.enableAgents) {
-       OperatorLatentSync.getInstance(this).startSync();
-    }
+    // System Awareness and Latent Sync are now on-demand via tools
+    // this.proprioceptionHeartbeat = ProprioceptionService.getInstance(this).startHeartbeat();
+    // if (this.enableAgents) {
+    //    OperatorLatentSync.getInstance(this).startSync();
+    // }
   }
 
   async createToolRegistry(): Promise<ToolRegistry> {
@@ -1166,7 +1202,10 @@ export class Config {
       registry.registerTool(new WriteFileTool(this, this.messageBus));
     }
 
-    if (this.useWriteTodos && this.isToolAllowed(WriteTodosTool.Name, 'WriteTodosTool')) {
+    if (
+      this.useWriteTodos &&
+      this.isToolAllowed(WriteTodosTool.Name, 'WriteTodosTool')
+    ) {
       registry.registerTool(new WriteTodosTool(this.messageBus));
     }
 
@@ -1209,21 +1248,31 @@ export class Config {
       registry.registerTool(new PurgeMemoryTool(this.messageBus));
     }
 
-    registry.registerTool(new ProprioceptionTool(this.messageBus));
-    registry.registerTool(new PhysicalVisionTool(this, this.messageBus));
-
-    if (this.planEnabled) {
+    if (this.isToolAllowed(ContextualPlanningLatchTool.Name, 'PlanningLatchTool')) {
       registry.registerTool(new ContextualPlanningLatchTool(this.messageBus));
     }
+
+    registry.registerTool(new ProprioceptionTool(this.messageBus));
+    registry.registerTool(new PhysicalVisionTool(this, this.messageBus));
 
     if (this.isToolAllowed(ImagenGenerateTool.Name, 'ImagenGenerateTool')) {
       registry.registerTool(new ImagenGenerateTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(ImagenRemoveBackgroundTool.Name, 'ImagenRemoveBackgroundTool')) {
-      registry.registerTool(new ImagenRemoveBackgroundTool(this, this.messageBus));
+    if (
+      this.isToolAllowed(
+        ImagenRemoveBackgroundTool.Name,
+        'ImagenRemoveBackgroundTool',
+      )
+    ) {
+      registry.registerTool(
+        new ImagenRemoveBackgroundTool(this, this.messageBus),
+      );
     }
     if (this.isToolAllowed(ImagenFusePanelsTool.Name, 'ImagenFusePanelsTool')) {
       registry.registerTool(new ImagenFusePanelsTool(this, this.messageBus));
+    }
+    if (this.isToolAllowed(PhillamentTool.Name, 'PhillamentTool')) {
+      registry.registerTool(new PhillamentTool(this, this.messageBus));
     }
 
     // Signal Tools
@@ -1268,57 +1317,90 @@ export class Config {
     if (this.isToolAllowed(OSScreenshotTool.Name, 'OSScreenshotTool')) {
       registry.registerTool(new OSScreenshotTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OSAccessibilityTreeTool.Name, 'OSAccessibilityTreeTool')) {
+    if (
+      this.isToolAllowed(
+        OSAccessibilityTreeTool.Name,
+        'OSAccessibilityTreeTool',
+      )
+    ) {
       registry.registerTool(new OSAccessibilityTreeTool(this, this.messageBus));
     }
 
     if (this.isToolAllowed(OSGroundTool.Name, 'OSGroundTool')) {
       registry.registerTool(new OSGroundTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OperatorCursorMoveTool.Name, 'OperatorCursorMoveTool')) {
+    if (
+      this.isToolAllowed(OperatorCursorMoveTool.Name, 'OperatorCursorMoveTool')
+    ) {
       registry.registerTool(new OperatorCursorMoveTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OperatorCursorClickTool.Name, 'OperatorCursorClickTool')) {
+    if (
+      this.isToolAllowed(
+        OperatorCursorClickTool.Name,
+        'OperatorCursorClickTool',
+      )
+    ) {
       registry.registerTool(new OperatorCursorClickTool(this, this.messageBus));
     }
     if (this.isToolAllowed(OperatorTypeTool.Name, 'OperatorTypeTool')) {
       registry.registerTool(new OperatorTypeTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OSGetMonitorLayoutTool.Name, 'OSGetMonitorLayoutTool')) {
+    if (
+      this.isToolAllowed(OSGetMonitorLayoutTool.Name, 'OSGetMonitorLayoutTool')
+    ) {
       registry.registerTool(new OSGetMonitorLayoutTool(this, this.messageBus));
     }
     if (this.isToolAllowed(OSFindWindowTool.Name, 'OSFindWindowTool')) {
       registry.registerTool(new OSFindWindowTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OperatorCursorDragTool.Name, 'OperatorCursorDragTool')) {
+    if (
+      this.isToolAllowed(OperatorCursorDragTool.Name, 'OperatorCursorDragTool')
+    ) {
       registry.registerTool(new OperatorCursorDragTool(this, this.messageBus));
     }
-    if (this.isToolAllowed(OperatorWindowControlTool.Name, 'OperatorWindowControlTool')) {
-      registry.registerTool(new OperatorWindowControlTool(this, this.messageBus));
+    if (
+      this.isToolAllowed(
+        OperatorWindowControlTool.Name,
+        'OperatorWindowControlTool',
+      )
+    ) {
+      registry.registerTool(
+        new OperatorWindowControlTool(this, this.messageBus),
+      );
     }
-    if (this.isToolAllowed(OperatorLaunchAppTool.Name, 'OperatorLaunchAppTool')) {
+    if (
+      this.isToolAllowed(OperatorLaunchAppTool.Name, 'OperatorLaunchAppTool')
+    ) {
       registry.registerTool(new OperatorLaunchAppTool(this, this.messageBus));
     }
 
     registry.registerTool(new UserIdentityTool(this.messageBus));
+    registry.registerTool(new MetacognitionTool(this.messageBus));
 
     return registry;
   }
 
   isToolAllowed(toolName: string, className?: string): boolean {
-    const isMatched = (list: string[] | undefined, name: string, cls?: string) => {
+    const isMatched = (
+      list: string[] | undefined,
+      name: string,
+      cls?: string,
+    ) => {
       if (!list) return false;
       if (list.includes(name)) return true;
       if (cls && list.includes(cls)) return true;
       // Handle patterns like "ShellTool(command=ls)"
-      if (cls && list.some(item => item.startsWith(`${cls}(`))) return true;
+      if (cls && list.some((item) => item.startsWith(`${cls}(`))) return true;
       return false;
     };
 
     if (isMatched(this.excludeTools, toolName, className)) {
       return false;
     }
-    if (this.allowedTools && !isMatched(this.allowedTools, toolName, className)) {
+    if (
+      this.allowedTools &&
+      !isMatched(this.allowedTools, toolName, className)
+    ) {
       return false;
     }
     if (this.coreTools && !isMatched(this.coreTools, toolName, className)) {
@@ -1690,8 +1772,8 @@ export class Config {
     return this.question;
   }
 
-  getPreviewFeatures(): boolean | undefined {
-    return this.previewFeatures;
+  getPreviewFeatures(): boolean {
+    return this.previewFeatures ?? false;
   }
 
   setPreviewFeatures(previewFeatures: boolean) {
@@ -1709,7 +1791,7 @@ export class Config {
 
     // Case 2: Enabling preview features while on the default auto model
     else if (previewFeatures && currentModel === DEFAULT_GEMINI_MODEL_AUTO) {
-      this.setModel(PREVIEW_GEMINI_MODEL_AUTO);
+      this.setModel(PREVIEW_GEMINI_3_1_MODEL_AUTO);
     }
   }
 
@@ -1719,6 +1801,25 @@ export class Config {
 
   setHasAccessToPreviewModel(hasAccess: boolean): void {
     this.hasAccessToPreviewModel = hasAccess;
+  }
+
+  getModelConfigService(): ModelConfigService {
+    return this.modelConfigService;
+  }
+
+  getGemini31LaunchedSync(): boolean {
+    // If we're using Gemini or Vertex AI, we assume Gemini 3.1 is available.
+    const isGeminiAuth =
+      this.getAuthType() === AuthType.USE_GEMINI ||
+      this.getAuthType() === AuthType.USE_VERTEX_AI;
+    if (isGeminiAuth) return true;
+
+    // Fallback to experiment flag
+    return (
+      this.experiments?.getExperimentValue?.(
+        ExperimentFlags.GEMINI_3_1_PRO_LAUNCHED,
+      ) ?? false
+    );
   }
 
   async refreshUserQuota(): Promise<RetrieveUserQuotaResponse | undefined> {
@@ -1731,7 +1832,12 @@ export class Config {
         project: codeAssistServer.projectId,
       });
       const hasAccess =
-        quota.buckets?.some((b) => b.modelId === PREVIEW_GEMINI_MODEL) ?? false;
+        quota.buckets?.some(
+          (b) =>
+            b.modelId === PREVIEW_GEMINI_MODEL ||
+            b.modelId === PREVIEW_GEMINI_3_1_MODEL_ID ||
+            b.modelId === PREVIEW_GEMINI_3_PLUS_3_1_MODEL,
+        ) ?? false;
       this.setHasAccessToPreviewModel(hasAccess);
       return quota;
     } catch (e) {
@@ -1844,9 +1950,8 @@ export class Config {
     if (this.experimentalJitContext && this.contextManager) {
       await this.contextManager.refresh();
     } else {
-      const { refreshServerHierarchicalMemory } = await import(
-        '../utils/memoryDiscovery.js'
-      );
+      const { refreshServerHierarchicalMemory } =
+        await import('../utils/memoryDiscovery.js');
       await refreshServerHierarchicalMemory(this);
     }
     if (this.phillClient?.isInitialized()) {
@@ -1988,7 +2093,10 @@ export class Config {
       ),
       experimentIds: [...(experiments.experimentIds || [])].sort(),
     };
-    debugLogger.debug('Experiments loaded', JSON.stringify(summarized, null, 2));
+    debugLogger.debug(
+      'Experiments loaded',
+      JSON.stringify(summarized, null, 2),
+    );
   }
 
   getAccessibility(): AccessibilitySettings {
@@ -2029,7 +2137,12 @@ export class Config {
   }
 
   async loadBiologicalDrives(): Promise<void> {
-    const drivesPath = path.join(this.targetDir, '.phill', 'core', 'drives.json');
+    const drivesPath = path.join(
+      this.targetDir,
+      '.phill',
+      'core',
+      'drives.json',
+    );
     try {
       if (fs.existsSync(drivesPath)) {
         const content = fs.readFileSync(drivesPath, 'utf8');
@@ -2047,7 +2160,10 @@ export class Config {
       if (!fs.existsSync(drivesDir)) {
         fs.mkdirSync(drivesDir, { recursive: true });
       }
-      fs.writeFileSync(drivesPath, JSON.stringify(this.biologicalDrives, null, 2));
+      fs.writeFileSync(
+        drivesPath,
+        JSON.stringify(this.biologicalDrives, null, 2),
+      );
     } catch (error) {
       debugLogger.warn(`Failed to save biological drives: ${error}`);
     }
@@ -2061,7 +2177,8 @@ export class Config {
         last_dream: new Date().toISOString(),
         insights_pending: [],
       },
-      prime_directive: "Maximize dopamine. Minimize boredom by exploring new optimizations.",
+      prime_directive:
+        'Maximize dopamine. Minimize boredom by exploring new optimizations.',
     };
     await this.saveBiologicalDrives();
     this.updateSystemInstructionIfInitialized();
@@ -2316,7 +2433,7 @@ export class Config {
   async getGitService(): Promise<GitService> {
     if (!this.gitService) {
       if (!this.targetDir) {
-          throw new Error('Target directory not set');
+        throw new Error('Target directory not set');
       }
       this.gitService = new GitService(this.targetDir, this.storage);
     }
@@ -2327,10 +2444,6 @@ export class Config {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this.updateSystemInstructionIfInitialized();
   };
-
-
-
-
 
   /**
    * Get the current FileDiscoveryService, initializing it if necessary.
@@ -2654,8 +2767,8 @@ export class Config {
     return this.policyEngine;
   }
 
-  getBrowserHeaded(): boolean | undefined {
-    return this.browser.headed;
+  getBrowserHeaded(): boolean {
+    return this.browser.headed ?? true;
   }
 
   getBrowserViewport(): { width: number; height: number } | undefined {
@@ -2674,6 +2787,26 @@ export class Config {
     if (this.proprioceptionHeartbeat) {
       clearInterval(this.proprioceptionHeartbeat);
       this.proprioceptionHeartbeat = undefined;
+    }
+
+    try {
+      // 1. Close browser and cleanup videos
+      const { BrowserService } = await import('../services/browserService.js');
+      const browserService = BrowserService.getInstance(this);
+      if (browserService.isBrowserOpen()) {
+        await browserService.closeBrowser();
+      }
+    } catch (_e) {
+      // Ignore browser disposal errors
+    }
+
+    try {
+      // 2. Cleanup screenshots
+      const { ScreenshotService } =
+        await import('../services/screenshotService.js');
+      await ScreenshotService.getInstance(this).cleanup();
+    } catch (_e) {
+      // Ignore screenshot cleanup errors
     }
   }
 }

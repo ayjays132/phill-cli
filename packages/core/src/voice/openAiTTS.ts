@@ -9,7 +9,6 @@ import { AudioManager } from './audioManager.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import type { Config } from '../config/config.js';
 
-
 const DEFAULT_VOICE_STYLE_BASE =
   'Warm, confident, and precise. Feminine default tone. Blend cinematic empathy and calm intelligence with practical execution. Keep phrasing concise and helpful. Match the user language automatically and preserve names, accents, and technical terms naturally.';
 
@@ -24,7 +23,7 @@ export class OpenAITTS implements ITTSProvider {
 
   constructor(config: Config) {
     this.config = config;
-    this.audioManager = new AudioManager();
+    this.audioManager = AudioManager.getInstance();
   }
 
   getName(): string {
@@ -48,15 +47,19 @@ export class OpenAITTS implements ITTSProvider {
       voiceSettings.openAiApiKey?.trim() ||
       openAiConfig?.apiKey ||
       process.env['OPENAI_API_KEY'];
-    
+
     if (!apiKey) {
       throw new Error('OpenAI API key missing for TTS');
     }
 
-    const endpoint = (openAiConfig?.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    const endpoint = (
+      openAiConfig?.endpoint || 'https://api.openai.com/v1'
+    ).replace(/\/+$/, '');
 
     try {
-      const identity = await this.config.getAgentIdentityService().getIdentity();
+      const identity = await this.config
+        .getAgentIdentityService()
+        .getIdentity();
       const model =
         process.env['OPENAI_TTS_MODEL'] ||
         voiceSettings.openAiTtsModel ||
@@ -92,7 +95,7 @@ export class OpenAITTS implements ITTSProvider {
       const response = await fetch(`${endpoint}/audio/speech`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -108,11 +111,16 @@ export class OpenAITTS implements ITTSProvider {
         const errorText = await response.text().catch(() => '');
         try {
           const errorJson = JSON.parse(errorText);
-          const message = errorJson.error?.message || errorJson.message || errorText;
+          const message =
+            errorJson.error?.message || errorJson.message || errorText;
           const code = errorJson.error?.code || errorJson.code;
-          throw new Error(`OpenAI TTS Error: ${message}${code ? ` (Code: ${code})` : ''}`);
+          throw new Error(
+            `OpenAI TTS Error: ${message}${code ? ` (Code: ${code})` : ''}`,
+          );
         } catch {
-          throw new Error(`OpenAI TTS Error: ${response.status} ${response.statusText} ${errorText}`.trim());
+          throw new Error(
+            `OpenAI TTS Error: ${response.status} ${response.statusText} ${errorText}`.trim(),
+          );
         }
       }
 

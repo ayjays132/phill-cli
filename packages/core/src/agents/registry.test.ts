@@ -18,7 +18,7 @@ import {
   DEFAULT_THINKING_MODE,
   PREVIEW_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
 } from '../config/models.js';
 import * as tomlLoader from './agentLoader.js';
 import { SimpleExtensionLoader } from '../utils/extensionLoader.js';
@@ -172,7 +172,7 @@ describe('AgentRegistry', () => {
 
     it('should use preview flash model for codebase investigator if main model is preview auto', async () => {
       const previewConfig = makeMockedConfig({
-        model: PREVIEW_GEMINI_MODEL_AUTO,
+        model: PREVIEW_GEMINI_3_1_MODEL_AUTO,
       });
       const previewRegistry = new TestableAgentRegistry(previewConfig);
 

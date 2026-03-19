@@ -23,7 +23,7 @@ export class ElevenLabsTTS implements ITTSProvider {
   };
 
   constructor(private readonly config: Config) {
-    this.audioManager = new AudioManager();
+    this.audioManager = AudioManager.getInstance();
   }
 
   getName(): string {
@@ -38,7 +38,9 @@ export class ElevenLabsTTS implements ITTSProvider {
     this.prosody = { ...this.prosody, ...options };
   }
 
-  async listVoices(): Promise<Array<{ voice_id: string; name: string; category?: string }>> {
+  async listVoices(): Promise<
+    Array<{ voice_id: string; name: string; category?: string }>
+  > {
     const apiKey =
       this.config.getVoice().elevenLabsApiKey?.trim() ||
       process.env['ELEVENLABS_API_KEY'];
@@ -68,8 +70,7 @@ export class ElevenLabsTTS implements ITTSProvider {
 
     const voice = this.config.getVoice();
     const apiKey =
-      voice.elevenLabsApiKey?.trim() ||
-      process.env['ELEVENLABS_API_KEY'];
+      voice.elevenLabsApiKey?.trim() || process.env['ELEVENLABS_API_KEY'];
     if (!apiKey) {
       throw new Error('Missing ELEVENLABS_API_KEY for ElevenLabs TTS');
     }
@@ -93,7 +94,9 @@ export class ElevenLabsTTS implements ITTSProvider {
       voice_settings: {
         stability: clamp01(voice.elevenLabsStability ?? 0.45),
         similarity_boost: clamp01(voice.elevenLabsSimilarityBoost ?? 0.75),
-        style: clamp01(this.prosody.style ? 0.5 : (voice.elevenLabsStyle ?? 0.2)),
+        style: clamp01(
+          this.prosody.style ? 0.5 : (voice.elevenLabsStyle ?? 0.2),
+        ),
         use_speaker_boost: voice.elevenLabsUseSpeakerBoost !== false,
       },
     };

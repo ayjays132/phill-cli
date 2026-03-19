@@ -36,16 +36,18 @@ export class AnthropicContentGenerator implements ContentGenerator {
   private readonly endpoint: string;
   private readonly model: string;
   private readonly apiKey?: string;
+  private readonly config: Config;
 
   constructor(
     endpoint: string,
     model: string,
     apiKey: string | undefined,
-    _config: Config,
+    config: Config,
   ) {
     this.endpoint = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
     this.model = model;
     this.apiKey = apiKey;
+    this.config = config;
   }
 
   async generateContent(
@@ -68,7 +70,9 @@ export class AnthropicContentGenerator implements ContentGenerator {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Anthropic API error: ${response.statusText} - ${errorText}`);
+      throw new Error(
+        `Anthropic API error: ${response.statusText} - ${errorText}`,
+      );
     }
 
     const data = (await response.json()) as AnthropicResponse;
@@ -118,7 +122,9 @@ export class AnthropicContentGenerator implements ContentGenerator {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Anthropic API error: ${response.statusText} - ${errorText}`);
+      throw new Error(
+        `Anthropic API error: ${response.statusText} - ${errorText}`,
+      );
     }
     if (!response.body) {
       throw new Error('No response body from Anthropic API');
@@ -202,18 +208,44 @@ export class AnthropicContentGenerator implements ContentGenerator {
   }
 
   private mapModelName(model: string): string {
-    // Futuristic models
-    if (model.includes('claude-4')) {
+    // Futuristic and latest models support
+    if (
+      model === 'claude-opus-4-6' ||
+      model === 'claude-sonnet-4-6' ||
+      model === 'claude-haiku-4-5' ||
+      model.includes('claude-4') ||
+      model.includes('claude-5')
+    ) {
       return model;
     }
 
     // Utility model translations (Gemini -> Claude)
-    if (model === 'gemini-2.5-flash-lite' || model === 'gemini-2.5-flash' || model === 'gemini-2.0-flash-lite' || model === 'gemini-1.5-flash') {
-      return 'claude-3-5-haiku-latest';
+    // Map Flash models to Claude Haiku 4.5
+    if (
+      model === 'gemini-2.5-flash-lite' ||
+      model === 'gemini-2.5-flash' ||
+      model === 'gemini-2.0-flash-lite' ||
+      model === 'gemini-1.5-flash' ||
+      model === 'gemini-3.1-flash'
+    ) {
+      return 'claude-haiku-4-5';
     }
 
-    if (model === 'gemini-2.5-pro' || model === 'gemini-2.0-pro' || model === 'gemini-1.5-pro' || model === 'gemini-3-pro') {
-      return 'claude-3-5-sonnet-latest';
+    // Map Pro models to Claude Sonnet 4.6 or Opus 4.6
+    if (
+      model === 'gemini-2.5-pro' ||
+      model === 'gemini-2.0-pro' ||
+      model === 'gemini-1.5-pro' ||
+      model === 'gemini-3-pro' ||
+      model === 'gemini-3.1-pro'
+    ) {
+      // Use Sonnet 4.6 as the high-intelligence workhorse for Pro tasks
+      return 'claude-sonnet-4-6';
+    }
+
+    // Default prefix stripping if any
+    if (model.startsWith('anthropic/')) {
+      return model.split('/').pop()!;
     }
 
     return model;
@@ -224,6 +256,47 @@ export class AnthropicContentGenerator implements ContentGenerator {
     messages: AnthropicMessage[];
   } {
     let system: string | undefined;
+
+    // Add system message if tools or skills are present (tool forcing)
+    const skills = this.config.getSkillManager().getSkills();
+    const hasTools = request.config?.tools && request.config.tools.length > 0;
+    const hasSkills = skills.length > 0;
+
+    let forcingText = '';
+    if (hasTools || hasSkills) {
+      let toolDescriptions = '';
+      if (hasTools) {
+        toolDescriptions += 'Tools available:\n';
+        toolDescriptions += (request.config!.tools as any[])
+          .map((tool: any) => {
+            const declarations = Array.isArray(tool.functionDeclarations)
+              ? tool.functionDeclarations
+              : [];
+            if (declarations.length === 0) return '';
+            return declarations
+              .map(
+                (funcDecl: any) =>
+                  `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`,
+              )
+              .join('\n');
+          })
+          .join('\n');
+      }
+
+      if (hasSkills) {
+        if (toolDescriptions) toolDescriptions += '\n\n';
+        toolDescriptions += 'Skills available:\n';
+        toolDescriptions += skills
+          .map(
+            (s) =>
+              `- ${s.name}: ${s.description || 'No description available'}`,
+          )
+          .join('\n');
+      }
+
+      forcingText = `You have access to the following capabilities:\n${toolDescriptions}\n\nTo use a tool, YOU MUST respond with a JSON object in this format:\n{"tool": "tool_name", "parameters": {...}}\n\nExample for listing a directory:\n{"tool": "list_directory", "parameters": {"dir_path": "E:\\\\phill-cli-0.0.1"}}\n\nDo not provide any other text outside the JSON if you are calling a tool. Ensure you see all tools and follow this format exactly.`;
+    }
+
     if (request.config?.systemInstruction) {
       const sysInst = request.config.systemInstruction as Content;
       const systemText = sysInst.parts
@@ -231,14 +304,19 @@ export class AnthropicContentGenerator implements ContentGenerator {
         .filter(Boolean)
         .join('\n');
       if (systemText) {
-        system = systemText;
+        system = forcingText ? `${forcingText}\n\n${systemText}` : systemText;
       }
+    } else if (forcingText) {
+      system = forcingText;
     }
 
     const messages: AnthropicMessage[] = [];
     const contents = toContents(request.contents);
     for (const content of contents) {
-      const text = content.parts?.map((p) => p.text).filter(Boolean).join('\n');
+      const text = content.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join('\n');
       if (!text) continue;
       messages.push({
         role: content.role === 'user' ? 'user' : 'assistant',

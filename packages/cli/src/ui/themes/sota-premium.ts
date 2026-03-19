@@ -18,11 +18,11 @@ export const SOTAPremium: Theme = new Theme(
       color: sotaPremiumTheme.Foreground,
     },
     'hljs-keyword': {
-      color: sotaPremiumTheme.AccentPurple,
+      color: sotaPremiumTheme.AccentBlue,
       fontWeight: 'bold',
     },
     'hljs-selector-tag': {
-      color: sotaPremiumTheme.AccentPurple,
+      color: sotaPremiumTheme.AccentBlue,
       fontWeight: 'bold',
     },
     'hljs-literal': {
@@ -30,7 +30,7 @@ export const SOTAPremium: Theme = new Theme(
       fontWeight: 'bold',
     },
     'hljs-section': {
-      color: sotaPremiumTheme.AccentPurple,
+      color: sotaPremiumTheme.AccentBlue,
       fontWeight: 'bold',
     },
     'hljs-link': {
@@ -44,15 +44,15 @@ export const SOTAPremium: Theme = new Theme(
       color: sotaPremiumTheme.AccentYellow,
     },
     'hljs-title': {
-      color: sotaPremiumTheme.AccentCyan,
+      color: sotaPremiumTheme.LightBlue,
       fontWeight: 'bold',
     },
     'hljs-name': {
-      color: sotaPremiumTheme.AccentPurple,
+      color: sotaPremiumTheme.AccentBlue,
       fontWeight: 'bold',
     },
     'hljs-type': {
-      color: sotaPremiumTheme.AccentCyan,
+      color: sotaPremiumTheme.LightBlue,
     },
     'hljs-number': {
       color: sotaPremiumTheme.AccentGreen,
@@ -64,7 +64,7 @@ export const SOTAPremium: Theme = new Theme(
       color: sotaPremiumTheme.AccentBlue,
     },
     'hljs-variable': {
-      color: sotaPremiumTheme.AccentPurple,
+      color: sotaPremiumTheme.LightBlue,
     },
     'hljs-comment': {
       color: sotaPremiumTheme.Comment,
@@ -78,4 +78,48 @@ export const SOTAPremium: Theme = new Theme(
     },
   },
   sotaPremiumTheme,
+  {
+    text: {
+      primary: sotaPremiumTheme.Foreground,
+      secondary: '#8FA6DA', // Deeper blue secondary
+      link: sotaPremiumTheme.LightBlue,
+      accent: sotaPremiumTheme.AccentGreen,
+      response: sotaPremiumTheme.Foreground,
+      hint: '#9A83E0', // Purple hint layer
+      dim: '#1D2336', // Dark blue dim base
+    },
+    input: {
+      cursor: sotaPremiumTheme.AccentGreen,
+      border_active: sotaPremiumTheme.AccentGreen,
+    },
+    suggestions: {
+      activeBackground: '#182745', // Deeper blue suggestion rail
+      activeForeground: sotaPremiumTheme.Background,
+    },
+    background: {
+      primary: sotaPremiumTheme.Background,
+      diff: {
+        added: sotaPremiumTheme.DiffAdded,
+        removed: sotaPremiumTheme.DiffRemoved,
+      },
+    },
+    border: {
+      default: '#2C4578', // Deep-blue rail
+      focused: sotaPremiumTheme.AccentGreen, // Neon-light-green focus
+      subtle: '#2A2F4A', // Indigo shadow layer
+      accent: '#654FA2', // Muted purple accent rail
+      strong: '#66F2A4', // Neon strong rail
+    },
+    ui: {
+      comment: sotaPremiumTheme.Comment,
+      symbol: sotaPremiumTheme.AccentBlue, // Blue-leading symbols
+      dark: sotaPremiumTheme.DarkGray,
+      gradient: sotaPremiumTheme.GradientColors,
+    },
+    status: {
+      error: sotaPremiumTheme.AccentRed,
+      success: sotaPremiumTheme.AccentGreen,
+      warning: sotaPremiumTheme.AccentYellow,
+    },
+  },
 );

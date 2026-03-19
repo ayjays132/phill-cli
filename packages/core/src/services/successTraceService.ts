@@ -7,6 +7,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { Storage } from '../config/storage.js';
+import type { Config } from '../config/config.js';
+import { VectorService } from './vectorService.js';
 
 export interface SuccessTrace {
   id: string;
@@ -38,7 +40,7 @@ export class SuccessTraceService {
   /**
    * Indexes a successful trace into the RAG-persistent success bank.
    */
-  async indexTrace(trace: SuccessTrace): Promise<void> {
+  async indexTrace(trace: SuccessTrace, config: Config): Promise<void> {
     const entry = `\n[SUCCESS_GEM_${trace.id}]
 - Goal: ${trace.goal}
 - DLR: ${trace.dlr}
@@ -47,8 +49,18 @@ export class SuccessTraceService {
 [/SUCCESS_GEM]\n`;
 
     try {
+      // 1. Human-readable append (Legacy support)
       await fs.mkdir(path.dirname(this.traceFilePath), { recursive: true });
       await fs.appendFile(this.traceFilePath, entry, 'utf-8');
+
+      // 2. Semantic Indexing (Modern RAG)
+      const vectorService = VectorService.getInstance(config.getContentGenerator());
+      await vectorService.addDocument(trace.goal, {
+        type: 'success_gem',
+        dlr: trace.dlr,
+        id: trace.id,
+        timestamp: trace.timestamp
+      });
     } catch (error) {
       console.error('[SuccessTraceService] Failed to index trace:', error);
     }
@@ -56,10 +68,19 @@ export class SuccessTraceService {
 
   /**
    * Retrieves latent wisdom (relevant DLRs) based on a goal.
-   * Currently uses simple string matching, but intended for RAG retrieval.
+   * Uses semantic search via VectorService.
    */
-  async retrieveLatentWisdom(goal: string): Promise<string[]> {
+  async retrieveLatentWisdom(goal: string, config: Config): Promise<string[]> {
     try {
+      // 1. Semantic Search
+      const vectorService = VectorService.getInstance(config.getContentGenerator());
+      const results = await vectorService.search(goal, 5);
+      
+      if (results.length > 0) {
+        return results.map(r => r.metadata?.['dlr']).filter(dlr => !!dlr);
+      }
+
+      // 2. Fallback to keyword search if vector store is empty/fails
       if (! (await this.exists(this.traceFilePath))) return [];
       
       const content = await fs.readFile(this.traceFilePath, 'utf-8');

@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MessageRecord } from './chatRecordingService.js';
-import type { BaseLlmClient } from '../core/baseLlmClient.js';
-import { partListUnionToString } from '../core/phillRequest.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import {
+  type BaseLlmClient,
+  debugLogger,
+  getResponseText,
+  type MessageRecord,
+  partListUnionToString,
+  type ContentGenerator,
+} from '../index.js';
 import type { Content } from '@google/genai';
-import { getResponseText } from '../utils/partUtils.js';
+import { VectorService } from './vectorService.js';
 
 const DEFAULT_MAX_MESSAGES = 20;
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -44,7 +48,25 @@ export interface GenerateSummaryOptions {
  * Uses Phill Flash Lite to create concise, user-intent-focused summaries.
  */
 export class SessionSummaryService {
+  private isSummarizing = false;
+  private vectorService: VectorService | null = null;
+
   constructor(private readonly baseLlmClient: BaseLlmClient) {}
+
+  private async getVectorService(): Promise<VectorService> {
+    if (!this.vectorService) {
+      // Lazy init to avoid recursive imports
+      this.vectorService = VectorService.getInstance(
+        (
+          this.baseLlmClient as unknown as {
+            contentGenerator: ContentGenerator;
+          }
+        ).contentGenerator,
+      );
+      await this.vectorService.initialize();
+    }
+    return this.vectorService;
+  }
 
   /**
    * Generate a 1-line summary of a chat session focusing on user intent.
@@ -53,13 +75,21 @@ export class SessionSummaryService {
   async generateSummary(
     options: GenerateSummaryOptions,
   ): Promise<string | null> {
-    const {
-      messages,
-      maxMessages = DEFAULT_MAX_MESSAGES,
-      timeout = DEFAULT_TIMEOUT_MS,
-    } = options;
+    if (this.isSummarizing) {
+      debugLogger.debug(
+        '[SessionSummary] Skip generation - already in progress.',
+      );
+      return null;
+    }
 
+    this.isSummarizing = true;
     try {
+      const {
+        messages,
+        maxMessages = DEFAULT_MAX_MESSAGES,
+        timeout = DEFAULT_TIMEOUT_MS,
+      } = options;
+
       // Filter to user/phill messages only (exclude system messages)
       const filteredMessages = messages.filter((msg) => {
         // Skip system messages (info, error, warning)
@@ -142,6 +172,13 @@ export class SessionSummaryService {
         // Remove quotes if the model added them
         cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, '');
 
+        // Self-Correction Reflexion: evaluate if the intent was met and what lessons were learned
+        this.evaluateOutcomeAndLearn(cleanedSummary, conversationText).catch(
+          (e) => {
+            debugLogger.debug(`[Reflexion] Evaluation failed: ${e}`);
+          },
+        );
+
         debugLogger.debug(`[SessionSummary] Generated: "${cleanedSummary}"`);
         return cleanedSummary;
       } finally {
@@ -157,6 +194,136 @@ export class SessionSummaryService {
         );
       }
       return null;
+    } finally {
+      this.isSummarizing = false;
     }
+  }
+
+  /**
+   * Evaluates the execution outcome against the original intent to extract "Lessons Learned"
+   * and automatically commit them to global memory to prevent context rot and repeated mistakes.
+   */
+  private async evaluateOutcomeAndLearn(
+    intentSummary: string,
+    conversationText: string,
+  ) {
+    const EVALUATION_PROMPT = `As a critical Self-Reviewer AI, evaluate the outcome of the following conversation against the user's primary intent: "${intentSummary}".
+Did the AI succeed without major halting, unhandled errors, or 'Goal Drift'? 
+If it failed, drifted, or struggled due to tool errors or wrong assumptions, synthesize a 1-sentence "Lesson Learned" to prevent this in the future.
+If it succeeded smoothly, output exactly "SUCCESS".
+
+Conversation:
+${conversationText}
+
+Analysis & Lesson (if any, otherwise exactly "SUCCESS"):`;
+
+    try {
+      // 1. Latent Focus: Prune conversation using embeddings to save tokens
+      const chunks = conversationText.split('\n\n');
+      let prunedConversation = conversationText;
+
+      if (chunks.length > 5) {
+        try {
+          const queryEmbedding = (
+            await this.baseLlmClient.generateEmbedding([intentSummary])
+          )[0];
+          const chunkEmbeddings =
+            await this.baseLlmClient.generateEmbedding(chunks);
+
+          const rankedChunks = chunks
+            .map((chunk, i) => ({
+              chunk,
+              similarity: this.calculateSimilarity(
+                queryEmbedding,
+                chunkEmbeddings[i],
+              ),
+            }))
+            .sort((a, b) => b.similarity - a.similarity);
+
+          // Take top 5 chunks + first and last for context
+          const topChunks = new Set(
+            rankedChunks.slice(0, 5).map((r) => r.chunk),
+          );
+          topChunks.add(chunks[0]);
+          topChunks.add(chunks[chunks.length - 1]);
+
+          prunedConversation = chunks
+            .filter((c) => topChunks.has(c))
+            .join('\n\n');
+          debugLogger.debug(
+            `[Reflexion] Pruned conversation from ${chunks.length} to ${topChunks.size} chunks.`,
+          );
+        } catch (e) {
+          debugLogger.warn(
+            `[Reflexion] Latent focus failed, using full context: ${e}`,
+          );
+        }
+      }
+
+      const response = await this.baseLlmClient.generateContent({
+        modelConfigKey: { model: 'summarizer-default' },
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: EVALUATION_PROMPT.replace(
+                  '${conversationText}',
+                  prunedConversation,
+                ),
+              },
+            ],
+          },
+        ],
+        promptId: 'session-reflexion-evaluation',
+        abortSignal: new AbortController().signal,
+      });
+
+      const analysis = getResponseText(response)?.trim();
+      if (!analysis || analysis === 'SUCCESS' || analysis.includes('SUCCESS')) {
+        return; // Nothing to learn, went smoothly
+      }
+
+      // We have a lesson learned. Write it to global memory.
+      const fs = await import('node:fs/promises');
+      const { getGlobalMemoryFilePath, computeNewContent } =
+        await import('../index.js');
+
+      const memoryPath = getGlobalMemoryFilePath();
+      let currentContent = '';
+      try {
+        currentContent = await fs.readFile(memoryPath, 'utf-8');
+      } catch (_e) {
+        // File may not exist
+      }
+
+      const lessonEntry = `* [REFLEXION] Failed Intent: ${intentSummary}\n  Lesson: ${analysis.replace(/\n/g, ' ')}`;
+      const newContent = computeNewContent(
+        currentContent,
+        lessonEntry,
+        '## Lessons Learned',
+      );
+      await fs.writeFile(memoryPath, newContent, 'utf-8');
+
+      // Store lesson in Vector Store for future semantic lookups
+      const vService = await this.getVectorService();
+      await vService.addDocument(lessonEntry, {
+        type: 'reflexion_lesson',
+        intent: intentSummary,
+      });
+
+      debugLogger.debug(
+        '[Reflexion] New lesson learned and stored (Latent & Text).',
+      );
+    } catch (error) {
+      debugLogger.debug(`[Reflexion] Error: ${error}`);
+    }
+  }
+
+  private calculateSimilarity(vecA: number[], vecB: number[]): number {
+    const dotProduct = vecA.reduce((acc, val, i) => acc + val * vecB[i], 0);
+    const magA = Math.sqrt(vecA.reduce((acc, val) => acc + val * val, 0));
+    const magB = Math.sqrt(vecB.reduce((acc, val) => acc + val * val, 0));
+    return dotProduct / (magA * magB);
   }
 }

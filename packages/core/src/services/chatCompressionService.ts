@@ -5,44 +5,44 @@
  */
 
 import type { Content } from '@google/genai';
-import type { Config } from '../config/config.js';
-import type { PhillChat } from '../core/phillChat.js';
-import { type ChatCompressionInfo, CompressionStatus } from '../core/turn.js';
-import { tokenLimit } from '../core/tokenLimits.js';
-import { getCompressionPrompt } from '../core/prompts.js';
-import { getResponseText } from '../utils/partUtils.js';
-import { logChatCompression } from '../telemetry/loggers.js';
-import { makeChatCompressionEvent } from '../telemetry/types.js';
-import {
-  saveTruncatedToolOutput,
-  formatTruncatedToolOutput,
-} from '../utils/fileUtils.js';
-import { debugLogger } from '../utils/debugLogger.js';
-import { getInitialChatHistory } from '../utils/environmentContext.js';
 import {
   calculateRequestTokenCount,
-  estimateTokenCountSync,
-} from '../utils/tokenCalculation.js';
-import {
+  type ChatCompressionInfo,
+  CompressionStatus,
+  type Config,
+  debugLogger,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL,
+  estimateTokenCountSync,
+  formatTruncatedToolOutput,
+  getCompressionPrompt,
+  getInitialChatHistory,
+  getResponseText,
+  logChatCompression,
+  makeChatCompressionEvent,
+  type PhillChat,
+  PreCompressTrigger,
   PREVIEW_GEMINI_FLASH_MODEL,
-} from '../config/models.js';
-import { PreCompressTrigger } from '../hooks/types.js';
+  PREVIEW_GEMINI_MODEL,
+  saveTruncatedToolOutput,
+  tokenLimit,
+  VectorService,
+  VisualLatentService,
+} from '../index.js';
 
 /**
  * Default threshold for compression token count as a fraction of the model's
  * token limit. If the chat history exceeds this threshold, it will be compressed.
+ * Reduced to aggressively save tokens while boosting latency reduction.
  */
-export const DEFAULT_COMPRESSION_TOKEN_THRESHOLD = 0.5;
+export const DEFAULT_COMPRESSION_TOKEN_THRESHOLD = 0.4;
 
 /**
- * The fraction of the latest chat history to keep. A value of 0.3
- * means that only the last 30% of the chat history will be kept after compression.
+ * The fraction of the latest chat history to keep.
+ * Reduced to keep a tighter cache.
  */
-export const COMPRESSION_PRESERVE_THRESHOLD = 0.15;
+export const COMPRESSION_PRESERVE_THRESHOLD = 0.1;
 
 /**
  * The budget for function response tokens in the preserved history.
@@ -105,15 +105,15 @@ export function findCompressSplitPoint(
 export function modelStringToModelConfigAlias(model: string): string {
   switch (model) {
     case PREVIEW_GEMINI_MODEL:
-      return 'chat-compression-3-pro';
+      return 'chat-compression-pro-preview';
     case PREVIEW_GEMINI_FLASH_MODEL:
-      return 'chat-compression-3-flash';
+      return 'chat-compression-flash-preview';
     case DEFAULT_GEMINI_MODEL:
-      return 'chat-compression-2.5-pro';
+      return 'chat-compression-pro';
     case DEFAULT_GEMINI_FLASH_MODEL:
-      return 'chat-compression-2.5-flash';
+      return 'chat-compression-flash';
     case DEFAULT_GEMINI_FLASH_LITE_MODEL:
-      return 'chat-compression-2.5-flash-lite';
+      return 'chat-compression-flash-lite';
     default:
       return 'chat-compression-default';
   }
@@ -328,6 +328,9 @@ export class ChatCompressionService {
       ? 'A previous <state_snapshot> exists in the history. You MUST integrate all still-relevant information from that snapshot into the new one, updating it with the more recent events. Do not lose established constraints or critical knowledge.'
       : 'Generate a new <state_snapshot> based on the provided history.';
 
+    const visualTrace = VisualLatentService.getInstance().getVisualTrace();
+    const systemInstructionText = `${getCompressionPrompt()}\n\n[VISUAL_HISTORY_TRACE]\n${visualTrace}\n[/VISUAL_HISTORY_TRACE]`;
+
     const summaryResponse = await config.getBaseLlmClient().generateContent({
       modelConfigKey: { model: modelStringToModelConfigAlias(model) },
       contents: [
@@ -341,14 +344,42 @@ export class ChatCompressionService {
           ],
         },
       ],
-      systemInstruction: { text: getCompressionPrompt() },
+      systemInstruction: { text: systemInstructionText },
       promptId,
       // TODO(joshualitt): wire up a sensible abort signal,
       abortSignal: abortSignal ?? new AbortController().signal,
     });
     const summary = getResponseText(summaryResponse) ?? '';
-
     const finalSummary = summary.trim();
+
+    // --- Semantic Sieve: Keep semantically relevant messages from compressed history ---
+    let semanticallyRelevant: Content[] = [];
+    try {
+      const lastUserMessage = curatedHistory
+        .filter(c => c.role === 'user' && c.parts?.some(p => !!p.text))
+        .pop();
+      const query = lastUserMessage?.parts?.find(p => !!p.text)?.text;
+      
+      if (query) {
+        const vectorService = VectorService.getInstance(config.getContentGenerator());
+        const results = await vectorService.search(query, 5); // Find top 5 relevant snippets
+        
+        // Match results back to historyToCompressTruncated
+        const relevantContents = new Set<Content>();
+        for (const res of results) {
+          const matched = historyToCompressTruncated.find(c => 
+            c.parts?.some(p => p.text === res.content)
+          );
+          if (matched) relevantContents.add(matched);
+        }
+        semanticallyRelevant = Array.from(relevantContents);
+        if (semanticallyRelevant.length > 0) {
+          debugLogger.debug(`[SemanticSieve] Retained ${semanticallyRelevant.length} relevant messages from compressed history.`);
+        }
+      }
+    } catch (e) {
+      debugLogger.warn('[SemanticSieve] Failed to find relevant messages:', e);
+    }
 
     const extraHistory: Content[] = [
       {
@@ -359,6 +390,7 @@ export class ChatCompressionService {
         role: 'model',
         parts: [{ text: 'Context synthesized. Standing by.' }],
       },
+      ...semanticallyRelevant,
       ...historyToKeepTruncated,
     ];
 

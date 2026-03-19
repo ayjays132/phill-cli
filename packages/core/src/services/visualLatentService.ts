@@ -10,6 +10,9 @@ import { createHash } from 'node:crypto';
 export class VisualLatentService {
   private static instance: VisualLatentService;
   private currentLatent: string = 'V:EMPTY';
+  private history: string[] = [];
+  private readonly MAX_HISTORY = 10;
+  private lastImageHash: string = '';
 
   private constructor() {}
 
@@ -22,22 +25,24 @@ export class VisualLatentService {
 
   async initialize() {
     // Zero-dependency initialization
-    console.log('Visual Latent Encoder (Algorithmic Multimodal) initialized.');
+    console.log('Visual Latent Encoder (Temporal Multimodal) initialized.');
   }
 
   /**
    * Encodes an image buffer into a dense symbolic visual latent.
-   * Format: V:[GEO_HASH]:[SEMANTIC_TAGS]
-   * 
-   * This uses a reliable algorithmic approach (Multimodal Algorithmic Latent)
-   * to avoid external model dependencies while providing spatial awareness.
+   * Includes temporal coherency checks to detect "Visual Latches".
    */
   async encode(imageBuffer: Buffer): Promise<string> {
     try {
-      // 1. Spatially Aware Hashing (3x3 Grid Simulation)
-      // We simulate a 3x3 grid by taking chunks of the buffer.
-      // In a real implementation with 'sharp', we would crop.
-      // Here, we use a stride-based sampling to simulate regions.
+      // 1. Coherency Check (Temporal Latch)
+      const stateId = createHash('md5').update(imageBuffer).digest('hex').substring(0, 8).toUpperCase();
+      if (stateId.substring(0, 4) === this.lastImageHash.substring(0, 4)) {
+        // State is likely coherent (similar enough to avoid re-encoding)
+        return this.currentLatent + ':COHERENT';
+      }
+      this.lastImageHash = stateId;
+
+      // 2. Spatially Aware Hashing (3x3 Grid Simulation)
       const totalSize = imageBuffer.length;
       const chunkSize = Math.floor(totalSize / 9);
       
@@ -46,30 +51,28 @@ export class VisualLatentService {
       
       for (let i = 0; i < 9; i++) {
         const start = i * chunkSize;
-        const end = start + 100; // Sample first 100 bytes of the chunk
+        const end = start + 200; // Sample more bytes for better fidelity
         const sample = imageBuffer.subarray(start, Math.min(end, totalSize));
         
-        // Simple entropy calculation to detect "activity" in this region
         let entropy = 0;
         for (const byte of sample) {
           entropy += byte;
         }
         const activityLevel = Math.floor((entropy / sample.length) % 10);
         
-        // Only add to hash if significant activity
         if (activityLevel > 2) {
             gridHash += `${regions[i]}${activityLevel}`;
         }
       }
 
-      // 2. Global Semantic Tag (Simplified)
-      // Use overall buffer size/hash as a proxy for "State ID"
-      const stateId = createHash('md5').update(imageBuffer).digest('hex').substring(0, 4).toUpperCase();
+      // 3. Assemble Latent and Track History
+      const latentId = stateId.substring(0, 4);
+      this.currentLatent = `V:${gridHash || 'NIL'}:${latentId}`;
       
-      // 3. Assemble Latent
-      // V:[GRID_ACTIVITY]:[STATE_ID]
-      // Example: V:TL5MM8BR3:A1B2
-      this.currentLatent = `V:${gridHash || 'NIL'}:${stateId}`;
+      this.history.push(this.currentLatent);
+      if (this.history.length > this.MAX_HISTORY) {
+        this.history.shift();
+      }
       
       return this.currentLatent;
     } catch (error) {
@@ -80,5 +83,13 @@ export class VisualLatentService {
 
   getCurrentLatent(): string {
     return this.currentLatent;
+  }
+
+  /**
+   * Returns a DLR of the visual history (Temporal Context).
+   */
+  getVisualTrace(): string {
+    if (this.history.length === 0) return 'TRACE:EMPTY';
+    return `TRACE:${this.history.join('->')}`;
   }
 }

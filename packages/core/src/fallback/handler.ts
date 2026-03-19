@@ -17,6 +17,10 @@ import {
   resolvePolicyAction,
   applyAvailabilityTransition,
 } from '../availability/policyHelpers.js';
+import {
+  DEFAULT_GEMINI_FLASH_LITE_MODEL,
+  DEFAULT_GEMINI_MODEL,
+} from '../config/models.js';
 
 const UPGRADE_URL_PAGE = 'https://goo.gle/set-up-gemini-code-assist';
 
@@ -82,6 +86,25 @@ export async function handleFallback(
       selectedPolicy,
     };
     void recommendation;
+  }
+
+  // Emergency fallback for model-not-found when normal policy chain cannot move.
+  // This preserves existing behavior for successful chain selection and only
+  // kicks in when we'd otherwise return/throw on the same failed model.
+  if (fallbackModel === failedModel && failureKind === 'not_found') {
+    const emergencyCandidates = [
+      DEFAULT_GEMINI_FLASH_LITE_MODEL,
+      DEFAULT_GEMINI_MODEL,
+    ].filter((model) => model !== failedModel);
+    const emergencySelection = availability.selectFirstAvailable(
+      emergencyCandidates,
+    );
+    const emergencyModel = emergencySelection.selectedModel;
+    if (emergencyModel && emergencyModel !== failedModel) {
+      fallbackModel = emergencyModel;
+      applyAvailabilityTransition(getAvailabilityContext, failureKind);
+      return processIntent(config, 'retry_always', fallbackModel);
+    }
   }
 
   const handler = config.getFallbackModelHandler();

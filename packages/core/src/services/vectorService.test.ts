@@ -28,7 +28,7 @@ describe('VectorService', () => {
     } as any;
 
     vi.mocked(Storage.getGlobalPhillDir).mockReturnValue('/mock/path');
-    vectorService = new VectorService(mockContentGenerator);
+    vectorService = VectorService.getInstance(mockContentGenerator);
   });
 
   afterEach(() => {

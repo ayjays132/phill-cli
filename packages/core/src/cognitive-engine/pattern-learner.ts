@@ -26,7 +26,7 @@ export class PatternLearner {
     return 'GENERIC_INPUT';
   }
 
-  public observe(input: string) {
+  observe(input: string) {
     const symbol = this.tokenize(input);
     if (this.lastSymbol) {
       this.learn(this.lastSymbol, symbol);
@@ -44,7 +44,7 @@ export class PatternLearner {
     this.transitions[from][to]++;
   }
 
-  public predictNext(input: string): string | null {
+  predictNext(input: string): string | null {
     const symbol = this.tokenize(input);
     const nextOptions = this.transitions[symbol];
     if (!nextOptions) return null;
@@ -58,24 +58,34 @@ export class PatternLearner {
         bestNext = next;
       }
     }
-    
+
     return this.decode(bestNext);
   }
 
   private decode(symbol: string | null): string | null {
     if (!symbol) return null;
     switch (symbol) {
-      case 'GIT_STATUS': return 'Check git status?';
-      case 'GIT_COMMIT': return 'Ready to commit?';
-      case 'TEST_ACTION': return 'Run tests?';
-      case 'BUILD_ACTION': return 'Build project?';
-      case 'FIX_ACTION': return 'Apply fix?';
-      default: return null;
+      case 'GIT_STATUS':
+        return 'Check git status?';
+      case 'GIT_COMMIT':
+        return 'Ready to commit?';
+      case 'TEST_ACTION':
+        return 'Run tests?';
+      case 'BUILD_ACTION':
+        return 'Build project?';
+      case 'FIX_ACTION':
+        return 'Apply fix?';
+      default:
+        return null;
     }
   }
-  
-  public clear() {
+
+  clear() {
     this.transitions = {};
     this.lastSymbol = null;
+  }
+
+  getPatterns(): string[] {
+    return Object.keys(this.transitions);
   }
 }

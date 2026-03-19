@@ -8,6 +8,8 @@ import type React from 'react';
 import { Box, Text } from 'ink';
 import { RadioButtonSelect } from './shared/RadioButtonSelect.js';
 import { theme } from '../semantic-colors.js';
+import { useUIState } from '../contexts/UIStateContext.js';
+import { PremiumFrame } from './shared/PremiumFrame.js';
 
 interface ProQuotaDialogProps {
   failedModel: string;
@@ -28,6 +30,7 @@ export function ProQuotaDialog({
   isModelNotFoundError,
   onChoice,
 }: ProQuotaDialogProps): React.JSX.Element {
+  const { terminalWidth } = useUIState();
   let items;
   // Do not provide a fallback option if failed model and fallbackmodel are same.
   if (failedModel === fallbackModel) {
@@ -109,11 +112,30 @@ export function ProQuotaDialog({
   };
 
   return (
-    <Box borderStyle="round" flexDirection="column" padding={1}>
+    <PremiumFrame
+      width={Math.max(60, terminalWidth - 2)}
+      title="Rate Limit Handling"
+      subtitle={`Current: ${failedModel}  •  Fallback: ${fallbackModel}`}
+      borderColor={theme.status.warning}
+      accentColor={theme.text.accent}
+    >
       <Box marginBottom={1}>{renderMessage(message)}</Box>
+      <Box marginBottom={1} flexDirection="column">
+        <Text color={theme.text.secondary}>
+          Auto mode can retry transient limits and route to a lower-latency model.
+        </Text>
+        <Text color={theme.text.secondary}>
+          Choose a strategy now; you can still change it later via /settings or /model.
+        </Text>
+      </Box>
       <Box marginTop={1} marginBottom={1}>
         <RadioButtonSelect items={items} onSelect={handleSelect} />
       </Box>
-    </Box>
+      <Box>
+        <Text color={theme.text.secondary}>
+          Tip: upgrade increases quota headroom and reduces retry loops.
+        </Text>
+      </Box>
+    </PremiumFrame>
   );
 }

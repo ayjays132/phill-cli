@@ -5,7 +5,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Text } from 'ink';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,9 +14,9 @@ import {
   AuthType,
   PREVIEW_GEMINI_MODEL,
   PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL_ID,
-  PREVIEW_GEMINI_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
   DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
@@ -28,8 +28,10 @@ import {
 import { useKeypress } from '../hooks/useKeypress.js';
 import { theme } from '../semantic-colors.js';
 import { DescriptiveRadioButtonSelect } from './shared/DescriptiveRadioButtonSelect.js';
-import { ConfigContext } from '../contexts/ConfigContext.js';
+import { useConfig } from '../contexts/ConfigContext.js';
 import { ThemedGradient } from './ThemedGradient.js';
+import { useUIState } from '../contexts/UIStateContext.js';
+import { PremiumFrame } from './shared/PremiumFrame.js';
 
 interface ModelDialogProps {
   onClose: () => void;
@@ -195,7 +197,8 @@ async function discoverHuggingFaceCacheModels(): Promise<string[]> {
 }
 
 export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
-  const config = useContext(ConfigContext);
+  const config = useConfig();
+  const { terminalWidth } = useUIState();
   const [view, setView] = useState<'main' | 'manual'>('main');
   const [persistMode, setPersistMode] = useState(false);
   const authType = config?.getContentGeneratorConfig()?.authType;
@@ -328,6 +331,8 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       DEFAULT_GEMINI_FLASH_LITE_MODEL,
       PREVIEW_GEMINI_MODEL,
       PREVIEW_GEMINI_FLASH_MODEL,
+      PREVIEW_GEMINI_3_1_MODEL_ID,
+      PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
     ];
     if (manualModels.includes(preferredModel)) {
       return preferredModel;
@@ -370,17 +375,17 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
     const list = [
       {
-        value: PREVIEW_GEMINI_MODEL_AUTO,
-        title: getDisplayString(PREVIEW_GEMINI_MODEL_AUTO),
+        value: PREVIEW_GEMINI_3_1_MODEL_AUTO,
+        title: getDisplayString(PREVIEW_GEMINI_3_1_MODEL_AUTO),
         description:
-          'Let Phill CLI decide the best model for the task: gemini-3-pro, gemini-3-flash (requires "Preview features")',
-        key: PREVIEW_GEMINI_MODEL_AUTO,
+          'Adaptive auto mode (preview tier): routes between gemini-3.1-pro and gemini-3.1-flash, then retries intelligently on transient limits.',
+        key: PREVIEW_GEMINI_3_1_MODEL_AUTO,
       },
       {
         value: DEFAULT_GEMINI_MODEL_AUTO,
         title: getDisplayString(DEFAULT_GEMINI_MODEL_AUTO),
         description:
-          'Let Phill CLI decide the best model for the task: gemini-2.5-pro, gemini-2.5-flash',
+          'Adaptive auto mode (stable tier): routes between gemini-2.5-pro and gemini-2.5-flash with fast fallback behavior under rate pressure.',
         key: DEFAULT_GEMINI_MODEL_AUTO,
       },
       {
@@ -395,57 +400,32 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     return list;
   }, [
     isGeminiAuth,
-    shouldShowPreviewModels,
     manualModelSelected,
     preferredModel,
     providerOptions,
   ]);
 
   const manualOptions = useMemo(() => {
-    const list = dedupeNonEmpty([
-      {
-        value: DEFAULT_GEMINI_MODEL,
-        title: DEFAULT_GEMINI_MODEL,
-        key: DEFAULT_GEMINI_MODEL,
-      },
-      {
-        value: DEFAULT_GEMINI_FLASH_MODEL,
-        title: DEFAULT_GEMINI_FLASH_MODEL,
-        key: DEFAULT_GEMINI_FLASH_MODEL,
-      },
-      {
-        value: DEFAULT_GEMINI_FLASH_LITE_MODEL,
-        title: DEFAULT_GEMINI_FLASH_LITE_MODEL,
-        key: DEFAULT_GEMINI_FLASH_LITE_MODEL,
-      },
-    ].map((m) => m.value));
-
-    const additionalGemini = [
-      // Newest frontier Phill 3 models.
-      'gemini-3-pro',
-      'gemini-3-flash',
-      'gemini-3-pro-preview',
-      'gemini-3-flash-preview',
-      // Keep existing defaults, add common modern aliases.
+    // Gemini 2.5 core models — the primary manual selection tier.
+    const gemini25Models = [
       'gemini-2.5-pro',
       'gemini-2.5-flash',
       'gemini-2.5-flash-lite',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
     ];
 
+    // Phill 3 / preview tier (only shown when preview is enabled).
     const withPreview = shouldShowPreviewModels
       ? [
-        PREVIEW_GEMINI_MODEL,
-        PREVIEW_GEMINI_FLASH_MODEL,
-        PREVIEW_GEMINI_MODEL_ID,
-        PREVIEW_GEMINI_FLASH_MODEL_ID,
-      ]
+          PREVIEW_GEMINI_MODEL,
+          PREVIEW_GEMINI_FLASH_MODEL,
+          PREVIEW_GEMINI_3_1_MODEL_ID,
+          PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+          'gemini-3-pro',
+          'gemini-3-flash',
+        ]
       : [];
 
-    return dedupeNonEmpty([...withPreview, ...list, ...additionalGemini]).map(
+    return dedupeNonEmpty([...withPreview, ...gemini25Models]).map(
       (model) => ({
         value: model,
         title: model,
@@ -514,12 +494,11 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   }
 
   return (
-    <Box
-      borderStyle="round"
-      borderColor={theme.border.default}
-      flexDirection="column"
-      padding={1}
-      width="100%"
+    <PremiumFrame
+      width={Math.max(60, terminalWidth - 2)}
+      title="Model Routing Control"
+      subtitle="Auto mode, manual selection, and persistence are all configurable."
+      borderColor={theme.border.focused}
     >
       <Text bold>Select Model</Text>
 
@@ -554,12 +533,17 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.secondary}>
+          {'> Auto modes are rate-limit aware and designed to preserve flow with minimal interruption.'}
+        </Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text color={theme.text.secondary}>
           {'> To use a specific model on startup, use the --model flag.'}
         </Text>
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.secondary}>(Press Esc to close)</Text>
       </Box>
-    </Box>
+    </PremiumFrame>
   );
 }

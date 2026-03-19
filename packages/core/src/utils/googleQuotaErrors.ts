@@ -211,7 +211,9 @@ export function classifyGoogleError(error: unknown): unknown {
     const errorMessage =
       googleApiError?.message ||
       (error instanceof Error ? error.message : String(error));
-    const match = errorMessage.match(/Please retry in ([0-9.]+(?:ms|s))/);
+    const match = errorMessage.match(
+      /(?:Please retry in|quota will reset after)\s*([0-9.]+(?:ms|s))/i,
+    );
     if (match?.[1]) {
       const retryDelaySeconds = parseDurationInSeconds(match[1]);
       if (retryDelaySeconds !== null) {

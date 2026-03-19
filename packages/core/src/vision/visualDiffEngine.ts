@@ -30,9 +30,12 @@ export class VisualDiffEngine {
    * Compares the current frame buffer with the last known state.
    * Returns true if a significant change is detected.
    */
-  isSignificantChange(frame: Buffer): { significant: boolean; type: 'foveated' | 'full' | 'none' } {
+  isSignificantChange(frame: Buffer): {
+    significant: boolean;
+    type: 'foveated' | 'full' | 'none';
+  } {
     const fullHash = this.calculateHash(frame);
-    
+
     // 1. Check Full Frame Change
     if (fullHash === this.lastFullHash) {
       return { significant: false, type: 'none' };
@@ -63,8 +66,9 @@ export class VisualDiffEngine {
    * Grid-based hashing for more granular change detection.
    * (Placeholder for Phase 2 refinement)
    */
-  calculateGridHashes(frame: Buffer, rows: number, cols: number): string[] {
+  calculateGridHashes(_frame: Buffer, _rows: number, cols: number): string[] {
     // Split frame into grid and hash each cell
+    void cols;
     return [];
   }
 }

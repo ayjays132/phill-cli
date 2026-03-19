@@ -1,0 +1,21 @@
+{
+    "happy": { "text": "Happy, Joyful, Bright", "weight": 1.5, "brightness": 0.8 },
+    "sad": { "text": "Sad, Melancholy, Somber", "weight": 1.5, "brightness": 0.2 },
+    "tense": { "text": "Tense, Suspenseful, On Edge", "weight": 1.5, "density": 0.6 },
+    "epic": { "text": "Epic, Grand, Cinematic", "weight": 1.5, "density": 0.9 },
+    "calm": { "text": "Calm, Relaxing, Peaceful", "weight": 1.5, "density": 0.3 },
+    "dark": { "text": "Dark, Ominous, Foreboding", "weight": 1.5, "brightness": 0.1 },
+    "upbeat": { "text": "Upbeat, Energetic, Fun", "weight": 1.5, "bpm": 120 },
+    "focused": { "text": "Focused, Productive, Flow State", "weight": 1.5, "density": 0.4 },
+    "dreamy": { "text": "Dreamy, Ethereal, Floating", "weight": 1.5, "density": 0.3 },
+    "intense": { "text": "Intense, High Energy, Action", "weight": 1.5, "bpm": 140 },
+    "chill": { "text": "Chill, Laid Back, Cool", "weight": 1.5, "bpm": 90 },
+    "emotional": { "text": "Emotional, Moving, Heartfelt", "weight": 1.5 },
+    "psychedelic": { "text": "Psychedelic, Trippy, Mind-Bending", "weight": 1.5 },
+    "romantic": { "text": "Romantic, Loving, Passionate", "weight": 1.5 },
+    "nostalgic": { "text": "Nostalgic, Retro, Memories", "weight": 1.5 },
+    "mysterious": { "text": "Mysterious, Unknown, Secret", "weight": 1.5 },
+    "ominous": { "text": "Ominous Drone, Threatening", "weight": 1.5 },
+    "aggressive": { "text": "Aggressive, Angry, Hard", "weight": 1.5, "density": 0.8 },
+    "hopeful": { "text": "Hopeful, Optimistic, Rising", "weight": 1.5, "brightness": 0.7 }
+}

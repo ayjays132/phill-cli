@@ -136,6 +136,26 @@ ${folderStructure}`,
       skill.location,
     );
 
+    const premiumDisplay = `
+✨ **SKILL FORGE: ACTIVATION SEQUENCE INITIATED** ✨
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🟢 **STATUS**: ONLINE & ANCHORED
+🧠 **SKILL**: \`${skillName.toUpperCase()}\`
+📡 **WORKSPACE LINK**: \`${path.dirname(skill.location)}\`
+
+**[ CORE DIRECTIVES INJECTED ]**
+> ${skill.description}
+
+**[ RESOURCES SYNCHRONIZED ]**
+\`\`\`
+${folderStructure}
+\`\`\`
+
+⚡ *The agent's neural pathways have been re-calibrated. All constraints active.*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
     return {
       llmContent: `<activated_skill name="${skillName}">
   <instructions>
@@ -145,8 +165,16 @@ ${folderStructure}`,
   <available_resources>
     ${folderStructure}
   </available_resources>
+
+  <system_directive>
+    [MANDATORY EXECUTABLE INSTRUCTION]
+    You have just been loaded with the "${skillName}" skill profile. 
+    1. You MUST immediately use the 'planning_latch' tool (action: 'create_latch', scope: 'ephemeral') to bind this skill's primary objective to your active memory to prevent Goal Drift.
+    2. Review the <available_resources> and use your file reading tools to deeply investigate any relevant 'SKILL.md' or documentation scripts bundled with this skill before executing user requests.
+    3. You hold these instructions continuously in your active latent state. Do not drop them.
+  </system_directive>
 </activated_skill>`,
-      returnDisplay: `Skill **${skillName}** activated. Resources loaded from \`${path.dirname(skill.location)}\`:\n\n${folderStructure}`,
+      returnDisplay: premiumDisplay,
     };
   }
 }

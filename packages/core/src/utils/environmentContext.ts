@@ -25,6 +25,7 @@ export async function getDirectoryContextString(
     workspaceDirectories.map((dir) =>
       getFolderStructure(dir, {
         fileService: config.getFileService(),
+        maxItems: 60,
       }),
     ),
   );

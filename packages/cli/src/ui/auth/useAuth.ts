@@ -39,6 +39,57 @@ export const useAuthCommand = (
   config: Config,
   initialAuthError: string | null = null,
 ) => {
+  const authTypeRequiresApiKey = (authType: AuthType): boolean =>
+    authType === AuthType.USE_GEMINI ||
+    authType === AuthType.HUGGINGFACE ||
+    authType === AuthType.OPENAI ||
+    authType === AuthType.ANTHROPIC ||
+    authType === AuthType.GROQ ||
+    authType === AuthType.CUSTOM_API;
+
+  const hasApiKeyConfigured = (
+    authType: AuthType,
+    loadedSettings: LoadedSettings,
+  ): boolean => {
+    const hasNonEmpty = (value: string | undefined): boolean =>
+      typeof value === 'string' && value.trim().length > 0;
+    switch (authType) {
+      case AuthType.USE_GEMINI:
+        return (
+          hasNonEmpty(process.env['PHILL_API_KEY']) ||
+          hasNonEmpty(process.env['GEMINI_API_KEY']) ||
+          hasNonEmpty(process.env['GOOGLE_API_KEY'])
+        );
+      case AuthType.HUGGINGFACE:
+        return (
+          hasNonEmpty(process.env['HUGGINGFACE_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.huggingFace?.apiKey)
+        );
+      case AuthType.OPENAI:
+        return (
+          hasNonEmpty(process.env['OPENAI_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.openAI?.apiKey)
+        );
+      case AuthType.ANTHROPIC:
+        return (
+          hasNonEmpty(process.env['ANTHROPIC_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.anthropic?.apiKey)
+        );
+      case AuthType.GROQ:
+        return (
+          hasNonEmpty(process.env['GROQ_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.groq?.apiKey)
+        );
+      case AuthType.CUSTOM_API:
+        return (
+          hasNonEmpty(process.env['CUSTOM_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.customApi?.apiKey)
+        );
+      default:
+        return true;
+    }
+  };
+
   const [authState, setAuthState] = useState<AuthState>(
     initialAuthError ? AuthState.Updating : AuthState.Unauthenticated,
   );
@@ -109,6 +160,15 @@ export const useAuthCommand = (
           setAuthState(AuthState.AwaitingApiKeyInput);
           return;
         }
+      }
+
+      if (
+        authTypeRequiresApiKey(authType) &&
+        !hasApiKeyConfigured(authType, settings)
+      ) {
+        setAuthState(AuthState.AwaitingApiKeyInput);
+        setAuthError(null);
+        return;
       }
 
       const error = validateAuthMethodWithSettings(authType, settings);

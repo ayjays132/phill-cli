@@ -5,11 +5,10 @@
  */
 
 import { Box, Text } from 'ink';
-import { theme } from '../semantic-colors.js';
 import { ExpandableText, MAX_WIDTH } from './shared/ExpandableText.js';
 import { CommandKind } from '../commands/types.js';
-import { Colors } from '../colors.js';
 import { sanitizeForDisplay } from '../utils/textUtils.js';
+import { AGI_THEME, PULSE_DOT } from '../AppContainer.js';
 
 export interface Suggestion {
   label: string;
@@ -18,6 +17,7 @@ export interface Suggestion {
   matchedIndex?: number;
   commandKind?: CommandKind;
 }
+
 interface SuggestionsDisplayProps {
   suggestions: Suggestion[];
   activeIndex: number;
@@ -45,16 +45,17 @@ export function SuggestionsDisplay({
   if (isLoading) {
     return (
       <Box paddingX={1} width={width}>
-        <Text color="gray">Loading suggestions...</Text>
+        <Text color={AGI_THEME.muted}>
+          <Text color={AGI_THEME.glow}>{PULSE_DOT}</Text> SCANNING MATRIX...
+        </Text>
       </Box>
     );
   }
 
   if (suggestions.length === 0) {
-    return null; // Don't render anything if there are no suggestions
+    return null;
   }
 
-  // Calculate the visible slice based on scrollOffset
   const startIndex = scrollOffset;
   const endIndex = Math.min(
     scrollOffset + MAX_SUGGESTIONS_TO_SHOW,
@@ -64,13 +65,13 @@ export function SuggestionsDisplay({
 
   const COMMAND_KIND_SUFFIX: Partial<Record<CommandKind, string>> = {
     [CommandKind.MCP_PROMPT]: ' [MCP]',
-    [CommandKind.AGENT]: ' [Agent]',
+    [CommandKind.AGENT]: ' [AGENT]',
   };
 
   const getFullLabel = (s: Suggestion) => {
-    const icon = s.commandKind === CommandKind.AGENT ? '🤖 ' :
-      s.commandKind === CommandKind.BUILT_IN ? '⚙️ ' :
-        s.commandKind === CommandKind.MCP_PROMPT ? '🧩 ' : '';
+    const icon = s.commandKind === CommandKind.AGENT ? '⚛ ' :
+      s.commandKind === CommandKind.BUILT_IN ? '⌬ ' :
+        s.commandKind === CommandKind.MCP_PROMPT ? '⌘ ' : '';
     return icon + s.label + (s.commandKind ? (COMMAND_KIND_SUFFIX[s.commandKind] ?? '') : '');
   };
 
@@ -81,28 +82,35 @@ export function SuggestionsDisplay({
     mode === 'slash' ? Math.min(maxLabelLength, Math.floor(width * 0.5)) : 0;
 
   return (
-    <Box flexDirection="column" paddingX={1} width={width}>
-      {scrollOffset > 0 && <Text color={theme.text.primary}>▲</Text>}
+    <Box flexDirection="column" paddingX={1} width={width} marginBottom={1}>
+      {scrollOffset > 0 && (
+        <Box marginLeft={1}>
+          <Text color={AGI_THEME.glow}>▴ MORE ABOVE</Text>
+        </Box>
+      )}
 
       {visibleSuggestions.map((suggestion, index) => {
         const originalIndex = startIndex + index;
         const isActive = originalIndex === activeIndex;
         const isExpanded = originalIndex === expandedIndex;
-        const textColor = isActive ? theme.suggestions.activeForeground : theme.text.secondary;
-        const backgroundColor = isActive ? theme.suggestions.activeBackground : undefined;
+        
         const isLong = suggestion.value.length >= MAX_WIDTH;
         const labelElement = (
           <ExpandableText
             label={suggestion.value}
             matchedIndex={suggestion.matchedIndex}
             userInput={userInput}
-            textColor={textColor}
+            textColor={isActive ? AGI_THEME.primary : AGI_THEME.muted}
             isExpanded={isExpanded}
           />
         );
 
         return (
-          <Box key={`${suggestion.value}-${originalIndex}`} flexDirection="row" backgroundColor={backgroundColor}>
+          <Box key={`${suggestion.value}-${originalIndex}`} flexDirection="row">
+            <Box width={2}>
+              {isActive && <Text color={AGI_THEME.glow}>{PULSE_DOT}</Text>}
+            </Box>
+            
             <Box
               {...(mode === 'slash'
                 ? { width: commandColumnWidth, flexShrink: 0 as const }
@@ -112,7 +120,7 @@ export function SuggestionsDisplay({
                 {labelElement}
                 {suggestion.commandKind &&
                   COMMAND_KIND_SUFFIX[suggestion.commandKind] && (
-                    <Text color={textColor}>
+                    <Text color={isActive ? AGI_THEME.accent : AGI_THEME.muted}>
                       {COMMAND_KIND_SUFFIX[suggestion.commandKind]}
                     </Text>
                   )}
@@ -121,24 +129,33 @@ export function SuggestionsDisplay({
 
             {suggestion.description && (
               <Box flexGrow={1} paddingLeft={3}>
-                <Text color={isActive ? theme.suggestions.activeForeground : theme.text.dim} wrap="truncate">
+                <Text color={isActive ? AGI_THEME.primary : AGI_THEME.muted} wrap="truncate">
                   {sanitizeForDisplay(suggestion.description, 100)}
                 </Text>
               </Box>
             )}
+            
             {isActive && isLong && (
               <Box width={3} flexShrink={0}>
-                <Text color={Colors.Gray}>{isExpanded ? ' ← ' : ' → '}</Text>
+                <Text color={AGI_THEME.glow}>{isExpanded ? ' ⋘ ' : ' ⋙ '}</Text>
               </Box>
             )}
           </Box>
         );
       })}
-      {endIndex < suggestions.length && <Text color="gray">▼</Text>}
+      
+      {endIndex < suggestions.length && (
+        <Box marginLeft={1}>
+          <Text color={AGI_THEME.glow}>▾ MORE BELOW</Text>
+        </Box>
+      )}
+      
       {suggestions.length > MAX_SUGGESTIONS_TO_SHOW && (
-        <Text color="gray">
-          ({activeIndex + 1}/{suggestions.length})
-        </Text>
+        <Box alignSelf="flex-end">
+          <Text color={AGI_THEME.muted}>
+            [{activeIndex + 1}/{suggestions.length}]
+          </Text>
+        </Box>
       )}
     </Box>
   );

@@ -4,251 +4,322 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const PREVIEW_GEMINI_MODEL = 'gemini-3-pro';
-export const PREVIEW_GEMINI_FLASH_MODEL = 'gemini-3-flash';
-export const PREVIEW_GEMINI_MODEL_ID = 'gemini-3-pro-preview';
-export const PREVIEW_GEMINI_FLASH_MODEL_ID = 'gemini-3-flash-preview';
-export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
-export const DEFAULT_GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
-export const DEFAULT_GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite';
+import type { ModelConfigService } from '../services/modelConfigService.js';
+
+// Gemini 3.x Preview Series (Verified Available)
+export const PREVIEW_GEMINI_3_1_MODEL_ID = 'gemini-3.1-pro-preview';
+export const PREVIEW_GEMINI_3_1_FLASH_MODEL_ID = 'gemini-3-flash-preview'; // Aligned to user availability
+export const PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID = 'gemini-3.1-flash-lite-preview';
+export const PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview';
+
+// Gemini 3.0 model family (Legacy Preview)
+export const PREVIEW_GEMINI_3_PRO_MODEL_ID = 'gemini-3-pro-preview';
+export const PREVIEW_GEMINI_3_FLASH_MODEL_ID = 'gemini-3-flash-preview';
+export const PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID = 'gemini-3-pro-image-preview';
+
+// Stable Gemini (Current Verified Production)
+export const STABLE_GEMINI_2_5_PRO = 'gemini-2.5-pro';
+export const STABLE_GEMINI_2_5_FLASH = 'gemini-2.5-flash';
+export const STABLE_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
+
+export const STABLE_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
+export const PREVIEW_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-2-preview';
+
+export const DEFAULT_GEMINI_MODEL = STABLE_GEMINI_2_5_PRO;
+export const DEFAULT_GEMINI_FLASH_MODEL = STABLE_GEMINI_2_5_FLASH;
+export const DEFAULT_GEMINI_FLASH_LITE_MODEL = STABLE_GEMINI_2_5_FLASH_LITE;
+export const DEFAULT_GEMINI_EMBEDDING_MODEL = PREVIEW_GEMINI_EMBEDDING_MODEL;
+
+export const PREVIEW_GEMINI_MODEL = PREVIEW_GEMINI_3_1_MODEL_ID;
+export const PREVIEW_GEMINI_FLASH_MODEL = PREVIEW_GEMINI_3_1_FLASH_MODEL_ID;
+// Back-compat aliases retained for older imports.
+export const PREVIEW_GEMINI_MODEL_ID = PREVIEW_GEMINI_MODEL;
+export const PREVIEW_GEMINI_FLASH_MODEL_ID = PREVIEW_GEMINI_FLASH_MODEL;
+
+// Gemini 3+ 3.1 (High-Tier Reasoning / Deep Think)
+export const PREVIEW_GEMINI_3_DEEP_THINK_MODEL = 'gemini-3-deep-think-preview';
+export const PREVIEW_GEMINI_3_PLUS_3_1_MODEL = PREVIEW_GEMINI_3_1_MODEL_ID;
+export const PREVIEW_GEMINI_3_PLUS_3_1_FLASH_MODEL = PREVIEW_GEMINI_3_1_FLASH_MODEL_ID;
+
+// Veo Video Generation Models
+export const PREVIEW_VEO_3_1_MODEL = 'veo-3.1-generate-preview';
+export const PREVIEW_VEO_3_1_FAST_MODEL = 'veo-3.1-fast-generate-preview';
+export const STABLE_VEO_2_MODEL = 'veo-2.0-generate-001';
 
 export const VALID_GEMINI_MODELS = new Set([
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL_ID,
-  PREVIEW_GEMINI_FLASH_MODEL_ID,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
+  PREVIEW_GEMINI_3_1_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID,
+  PREVIEW_GEMINI_3_PRO_MODEL_ID,
+  PREVIEW_GEMINI_3_FLASH_MODEL_ID,
+  PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID,
+  PREVIEW_GEMINI_3_DEEP_THINK_MODEL,
+  // Stable
+  STABLE_GEMINI_2_5_PRO,
+  STABLE_GEMINI_2_5_FLASH,
+  STABLE_GEMINI_2_5_FLASH_LITE,
+  // Embedding
+  STABLE_GEMINI_EMBEDDING_MODEL,
+  PREVIEW_GEMINI_EMBEDDING_MODEL,
+  // Legacy support
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  // Veo
+  PREVIEW_VEO_3_1_MODEL,
+  PREVIEW_VEO_3_1_FAST_MODEL,
+  STABLE_VEO_2_MODEL,
 ]);
 
+export const PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO = 'auto-gemini-deep-think';
 export const PREVIEW_GEMINI_MODEL_AUTO = 'auto-gemini-3';
-export const DEFAULT_GEMINI_MODEL_AUTO = 'auto-gemini-2.5';
+export const PREVIEW_GEMINI_3_1_MODEL_AUTO = 'auto-gemini-3.1';
+export const PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO = 'auto-gemini-3plus-3.1';
+export const DEFAULT_GEMINI_MODEL_AUTO = 'auto-gemini-3.1-stable';
 
 // Model aliases for user convenience.
 export const GEMINI_MODEL_ALIAS_AUTO = 'auto';
 export const GEMINI_MODEL_ALIAS_PRO = 'pro';
 export const GEMINI_MODEL_ALIAS_FLASH = 'flash';
 export const GEMINI_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
-export const GEMINI_MODEL_ALIAS_FLASH_LATEST = 'flash-latest';
-export const GEMINI_MODEL_ALIAS_FLASH_PREVIEW = 'flash-preview';
-export const GROQ_MODEL_LLAMA_3_3_70B = 'llama-3.3-70b-versatile';
-export const GROQ_MODEL_LLAMA_3_1_70B = 'llama-3.1-70b-versatile';
-export const GROQ_MODEL_LLAMA_3_1_8B = 'llama-3.1-8b-instant';
-export const GROQ_MODEL_GEMMA2_9B = 'gemma2-9b-it';
-export const GROQ_MODEL_DEEPSEEK_R1_LLAMA_70B = 'deepseek-r1-distill-llama-70b';
-export const GROQ_MODEL_DEEPSEEK_R1_QWEN_32B = 'deepseek-r1-distill-qwen-32b';
-export const GROQ_MODEL_MIXTRAL_8X7B = 'mixtral-8x7b-32768';
 
-export const VALID_GROQ_MODELS = new Set([
-  GROQ_MODEL_LLAMA_3_3_70B,
-  GROQ_MODEL_LLAMA_3_1_70B,
-  GROQ_MODEL_LLAMA_3_1_8B,
-  GROQ_MODEL_GEMMA2_9B,
-  GROQ_MODEL_DEEPSEEK_R1_LLAMA_70B,
-  GROQ_MODEL_DEEPSEEK_R1_QWEN_32B,
-  GROQ_MODEL_MIXTRAL_8X7B,
-  'groq/compound',
-  'groq/compound-mini',
-  'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
-  'openai/gpt-oss-safeguard-20b',
-  'meta-llama/llama-4-maverick-17b-128e-instruct',
-  'meta-llama/llama-4-scout-17b-16e-instruct',
-  'qwen/qwen3-32b',
-  'moonshotai/kimi-k2-instruct-0905',
-  'whisper-large-v3',
-  'whisper-large-v3-turbo',
-]);
-
-export const DEFAULT_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
-
-// Cap the thinking at 8192 to prevent run-away thinking loops.
-export const DEFAULT_THINKING_MODE = 8192;
+/** Context provided during model resolution. */
+export interface ModelCapabilityContext {
+  modelConfigService: ModelConfigService;
+  getPreviewFeatures?: () => boolean;
+  getHasAccessToPreviewModel?: () => boolean;
+  getGemini31Launched?: () => Promise<boolean>;
+  getGemini31LaunchedSync?: () => boolean;
+}
 
 /**
- * Resolves the requested model alias (e.g., 'auto-gemini-3', 'pro', 'flash', 'flash-lite')
- * to a concrete model name, considering preview features.
- *
- * @param requestedModel The model alias or concrete model name requested by the user.
- * @param previewFeaturesEnabled A boolean indicating if preview features are enabled.
- * @returns The resolved concrete model name.
+ * Resolves a requested model name or alias to a valid Gemini model ID.
+ * This is the Apex Resolution Engine, matching official Google reference logic.
  */
 export function resolveModel(
   requestedModel: string,
   previewFeaturesEnabled: boolean = false,
+  useCustomToolModel: boolean = false,
+  hasAccessToPreview: boolean = true,
+  config?: ModelCapabilityContext,
 ): string {
-  switch (requestedModel) {
-    case PREVIEW_GEMINI_MODEL_AUTO: {
-      return PREVIEW_GEMINI_MODEL_ID;
-    }
-    case DEFAULT_GEMINI_MODEL_AUTO: {
+  // If we have the full capability context, use the declarative resolution engine.
+  if (config?.modelConfigService) {
+    return config.modelConfigService.resolveModelId(requestedModel, {
+      useGemini3_1: previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
+      useCustomTools: useCustomToolModel,
+      hasAccessToPreview: hasAccessToPreview && (config.getHasAccessToPreviewModel?.() ?? true),
+      requestedModel,
+    });
+  }
+
+  // Fast-path / Fallback for procedural resolution
+  const normalizedRequestedModel = requestedModel.toLowerCase();
+  switch (normalizedRequestedModel) {
+    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO:
+      return PREVIEW_GEMINI_3_DEEP_THINK_MODEL;
+    case PREVIEW_GEMINI_3_1_MODEL_AUTO:
+      return (previewFeaturesEnabled && hasAccessToPreview) 
+        ? PREVIEW_GEMINI_3_1_MODEL_ID 
+        : STABLE_GEMINI_2_5_PRO;
+    case PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO:
+      return PREVIEW_GEMINI_3_1_MODEL_ID;
+    case DEFAULT_GEMINI_MODEL_AUTO:
       return DEFAULT_GEMINI_MODEL;
-    }
-    case GEMINI_MODEL_ALIAS_AUTO:
-    case GEMINI_MODEL_ALIAS_PRO: {
-      return previewFeaturesEnabled
+    case GEMINI_MODEL_ALIAS_PRO:
+      return (previewFeaturesEnabled && hasAccessToPreview)
         ? PREVIEW_GEMINI_MODEL
         : DEFAULT_GEMINI_MODEL;
-    }
     case GEMINI_MODEL_ALIAS_FLASH:
-    case GEMINI_MODEL_ALIAS_FLASH_LATEST: {
-      return previewFeaturesEnabled
+      return (previewFeaturesEnabled && hasAccessToPreview)
         ? PREVIEW_GEMINI_FLASH_MODEL
         : DEFAULT_GEMINI_FLASH_MODEL;
-    }
-    case GEMINI_MODEL_ALIAS_FLASH_PREVIEW: {
-      return PREVIEW_GEMINI_FLASH_MODEL;
-    }
-    case GEMINI_MODEL_ALIAS_FLASH_LITE: {
+    case GEMINI_MODEL_ALIAS_FLASH_LITE:
       return DEFAULT_GEMINI_FLASH_LITE_MODEL;
-    }
-    default: {
+    case GEMINI_MODEL_ALIAS_AUTO:
+      return (previewFeaturesEnabled && hasAccessToPreview)
+        ? PREVIEW_GEMINI_MODEL
+        : DEFAULT_GEMINI_MODEL;
+    default:
       return requestedModel;
-    }
   }
 }
 
 /**
- * Resolves the appropriate model based on the classifier's decision.
- *
- * @param requestedModel The current requested model (e.g. auto-gemini-2.0).
- * @param modelAlias The alias selected by the classifier ('flash' or 'pro').
- * @param previewFeaturesEnabled Whether preview features are enabled.
- * @returns The resolved concrete model name.
+ * Resolves the classifier model based on the requested model and preview features.
  */
 export function resolveClassifierModel(
   requestedModel: string,
-  modelAlias: string,
   previewFeaturesEnabled: boolean = false,
+  config?: ModelCapabilityContext,
 ): string {
-  if (modelAlias === GEMINI_MODEL_ALIAS_FLASH) {
-    const normalized = requestedModel.toLowerCase();
-    
-    // Catch-all for Gemini 2.x family (including 2.5) if it's a 'pro' variant
-    if (
-      requestedModel === DEFAULT_GEMINI_MODEL_AUTO ||
-      (isGemini2Model(normalized) && normalized.includes('pro'))
-    ) {
-      return DEFAULT_GEMINI_FLASH_MODEL;
-    }
-    
-    // Catch-all for Gemini 3 family if it's a 'pro' variant
-    if (
-      requestedModel === PREVIEW_GEMINI_MODEL_AUTO ||
-      (isGemini3Model(normalized) && normalized.includes('pro'))
-    ) {
-      // If we are in explicitly requested auto-3 or a preview variant, use the preview flash
-      if (requestedModel === PREVIEW_GEMINI_MODEL_AUTO || normalized.includes('preview')) {
-        return PREVIEW_GEMINI_FLASH_MODEL_ID;
+  if (config?.modelConfigService) {
+    return config.modelConfigService.resolveClassifierModelId(
+      'flash', // Classifiers typically use the flash tier
+      requestedModel,
+      {
+        useGemini3_1: previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
+        hasAccessToPreview: config.getHasAccessToPreviewModel?.() ?? true,
       }
-      return PREVIEW_GEMINI_FLASH_MODEL;
-    }
-    
-    return resolveModel(GEMINI_MODEL_ALIAS_FLASH, previewFeaturesEnabled);
+    );
   }
-  return resolveModel(requestedModel, previewFeaturesEnabled);
+
+  if (
+    previewFeaturesEnabled ||
+    requestedModel === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
+    requestedModel === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO
+  ) {
+    return PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID;
+  }
+  return DEFAULT_GEMINI_FLASH_LITE_MODEL;
 }
+
+/**
+ * Returns a user-friendly display string for a model or auto mode.
+ */
 export function getDisplayString(
   model: string,
-  previewFeaturesEnabled: boolean = false,
+  config?: ModelCapabilityContext,
 ) {
+  // If we have metadata in the definition, use the display name from there.
+  const definition = config?.modelConfigService?.getModelDefinition(model);
+  if (definition?.displayName) {
+    return definition.displayName;
+  }
+
   switch (model) {
-    case PREVIEW_GEMINI_MODEL_AUTO:
-      return 'Auto (Phill 3)';
+    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO:
+      return 'Auto (Deep Think)';
+    case PREVIEW_GEMINI_3_1_MODEL_AUTO:
+      return 'Auto (Phill 3.1)';
+    case PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO:
+      return 'Auto (Phill 3+ 3.1)';
+    case STABLE_GEMINI_2_5_PRO:
+      return 'Phill 2.5 Pro';
+    case STABLE_GEMINI_2_5_FLASH:
+      return 'Phill 2.5 Flash';
+    case STABLE_GEMINI_2_5_FLASH_LITE:
+      return 'Phill 2.5 Flash-Lite';
+    case PREVIEW_GEMINI_3_1_MODEL_ID:
+      return 'Phill 3.1 Pro Preview';
+    case PREVIEW_GEMINI_3_1_FLASH_MODEL_ID:
+      return 'Phill 3 Flash Preview';
+    case PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID:
+      return 'Phill 3.1 Flash-Lite Preview';
+    case PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID:
+      return 'Phill 3.1 Flash-Image Preview';
+    case PREVIEW_GEMINI_3_PRO_MODEL_ID:
+      return 'Phill 3 Pro Preview';
+    case PREVIEW_GEMINI_3_FLASH_MODEL_ID:
+      return 'Phill 3 Flash Preview';
+    case PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID:
+      return 'Nano Banana 2 (Image)';
+    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL:
+      return 'Phill 3 Deep Think';
     case DEFAULT_GEMINI_MODEL_AUTO:
-      return 'Auto (Phill 2.5)';
+      return 'Auto (Phill Stable)';
     case GEMINI_MODEL_ALIAS_PRO:
-      return previewFeaturesEnabled
-        ? PREVIEW_GEMINI_MODEL
-        : DEFAULT_GEMINI_MODEL;
+      return 'Pro Tier (Adaptive)';
     case GEMINI_MODEL_ALIAS_FLASH:
-    case GEMINI_MODEL_ALIAS_FLASH_LATEST:
-      return previewFeaturesEnabled
-        ? PREVIEW_GEMINI_FLASH_MODEL
-        : DEFAULT_GEMINI_FLASH_MODEL;
-    case GEMINI_MODEL_ALIAS_FLASH_PREVIEW:
-      return PREVIEW_GEMINI_FLASH_MODEL;
+      return 'Flash Tier (Adaptive)';
+    case GEMINI_MODEL_ALIAS_FLASH_LITE:
+      return 'Flash-Lite (Stable)';
     default:
       return model;
   }
 }
 
 /**
- * Checks if the model is a preview model.
- *
- * @param model The model name to check.
- * @returns True if the model is a preview model.
- */
-export function isPreviewModel(model: string): boolean {
-  return (
-    model.startsWith('gemini-3-') ||
-    model === PREVIEW_GEMINI_MODEL_AUTO
-  );
-}
-
-/**
- * Checks if the model is a Gemini 2.x model.
- *
- * @param model The model name to check.
- * @returns True if the model is a Gemini-2.x model.
- */
-export function isGemini2Model(model: string): boolean {
-  return /^gemini-2([-.]|$)/.test(model);
-}
-
-/**
- * Checks if the model is a Gemini 3 model.
- *
- * @param model The model name to check.
- * @returns True if the model is a Gemini-3 model.
- */
-export function isGemini3Model(model: string): boolean {
-  return /^gemini-3([-.]|$)/.test(model);
-}
-
-/**
- * Checks if the model is an auto model.
- *
- * @param model The model name to check.
- * @returns True if the model is an auto model.
+ * Returns whether the given model is an 'auto' model.
  */
 export function isAutoModel(model: string): boolean {
   return (
-    model === GEMINI_MODEL_ALIAS_AUTO ||
-    model === PREVIEW_GEMINI_MODEL_AUTO ||
-    model === DEFAULT_GEMINI_MODEL_AUTO
+    model === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
+    model === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO ||
+    model === DEFAULT_GEMINI_MODEL_AUTO ||
+    model === PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO ||
+    model === GEMINI_MODEL_ALIAS_AUTO
   );
 }
 
 /**
- * Checks if the model supports multimodal function responses (multimodal data nested within function response).
- * This is supported in Gemini 3.
- *
- * @param model The model name to check.
- * @returns True if the model supports multimodal function responses.
+ * Returns whether the given model is a 'preview' model.
  */
-export function supportsMultimodalFunctionResponse(model: string): boolean {
-  return model.startsWith('gemini-3-');
+export function isPreviewModel(model: string): boolean {
+  return (
+    model === PREVIEW_GEMINI_3_1_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_1_FLASH_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_PRO_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_FLASH_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID ||
+    model === PREVIEW_GEMINI_3_DEEP_THINK_MODEL
+  );
 }
+
 /**
- * Checks if the model supports thinking (reasoning) features.
- *
- * @param model The model name to check.
- * @returns True if the model supports thinking.
+ * Returns whether the given model is a 'gemini-2' model.
  */
-export function supportsThinking(model: string): boolean {
-  // Gemini 3 models support thinking.
-  if (model.startsWith('gemini-3-')) {
+export function isGemini2Model(model: string): boolean {
+  return model.includes('gemini-2');
+}
+
+/**
+ * Returns whether the given model is a 'gemini-3' model.
+ */
+export function isGemini3Model(model: string): boolean {
+  return model.includes('gemini-3');
+}
+
+/**
+ * Returns whether the given model supports multi-modal function responses.
+ */
+export function supportsMultimodalFunctionResponse(model: string, config?: ModelCapabilityContext): boolean {
+  if (config?.modelConfigService) {
+    return config.modelConfigService.getModelDefinition(model)?.features?.multimodalToolUse ?? false;
+  }
+  return isGemini3Model(model) || model.includes('gemini-2.5');
+}
+
+/**
+ * Returns whether the given model supports the 'Thinking' feature.
+ */
+export function supportsThinking(model: string, config?: ModelCapabilityContext): boolean {
+  if (config?.modelConfigService) {
+    return config.modelConfigService.getModelDefinition(model)?.features?.thinking ?? false;
+  }
+  // Gemini 3.x models support thinking.
+  if (
+    model.includes('gemini-3.1-pro') || 
+    model.includes('gemini-3-flash') ||
+    model.includes('gemini-3.1-flash-lite') ||
+    model.includes('gemini-3.1-flash-image')
+  ) {
     return true;
   }
-  // Gemini 2.5 Pro and Flash models support thinking.
-  if (model.includes('gemini-2.5-pro') || model.includes('gemini-2.5-flash')) {
-    return true;
-  }
-  // Gemini 2.0 Pro models support thinking (legacy support).
-  if (model.includes('gemini-2.0-pro')) {
+  // Gemini 2.5 Pro models support thinking.
+  if (model.includes('gemini-2.5-pro')) {
     return true;
   }
   return false;
 }
+
+export enum ThinkingBudget {
+  OFF = 0,
+  LOW = 1024,
+  MEDIUM = 4096,
+  HIGH = 16384,
+  MAX = 32768,
+}
+
+export enum ThinkingLevel {
+  OFF = 'off',
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+export const DEFAULT_THINKING_BUDGET = ThinkingBudget.MEDIUM;
+export const DEFAULT_THINKING_MODE = ThinkingLevel.MEDIUM;

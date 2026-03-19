@@ -47,14 +47,12 @@ interface OllamaTagsResponse {
 export class OllamaContentGenerator implements ContentGenerator {
   private endpoint: string;
   private model: string;
+  private config: Config;
 
-  constructor(
-    endpoint: string,
-    model: string,
-    _config: Config,
-  ) {
+  constructor(endpoint: string, model: string, config: Config) {
     this.endpoint = this.normalizeEndpoint(endpoint);
     this.model = model;
+    this.config = config;
   }
 
   private normalizeEndpoint(endpoint: string): string {
@@ -78,7 +76,7 @@ export class OllamaContentGenerator implements ContentGenerator {
   ): Promise<GenerateContentResponse> {
     const messages = this.convertToOllamaMessages(request);
     const model = request.model || this.model;
-    
+
     const ollamaRequest: OllamaChatRequest = {
       model,
       messages,
@@ -117,7 +115,7 @@ export class OllamaContentGenerator implements ContentGenerator {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const messages = this.convertToOllamaMessages(request);
     const model = request.model || this.model;
-    
+
     const ollamaRequest: OllamaChatRequest = {
       model,
       messages,
@@ -146,7 +144,7 @@ export class OllamaContentGenerator implements ContentGenerator {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -156,7 +154,7 @@ export class OllamaContentGenerator implements ContentGenerator {
         for (const line of lines) {
           if (line.trim()) {
             const data = JSON.parse(line) as OllamaChatResponse;
-            
+
             const result = new GenerateContentResponse();
             result.candidates = [
               {
@@ -175,23 +173,27 @@ export class OllamaContentGenerator implements ContentGenerator {
     })();
   }
 
-  async countTokens(request: CountTokensParameters): Promise<CountTokensResponse> {
+  async countTokens(
+    request: CountTokensParameters,
+  ): Promise<CountTokensResponse> {
     // Ollama doesn't have a direct token counting API
     // Approximate based on text length (rough estimate: 1 token ≈ 4 characters)
     const text = JSON.stringify(request);
     const approximateTokens = Math.ceil(text.length / 4);
-    
+
     return {
       totalTokens: approximateTokens,
     };
   }
 
-  async embedContent(request: EmbedContentParameters): Promise<EmbedContentResponse> {
+  async embedContent(
+    request: EmbedContentParameters,
+  ): Promise<EmbedContentResponse> {
     // Ollama has an embeddings endpoint
     const contents = toContents(request.contents);
     const text = contents[0]?.parts?.[0]?.text || '';
     const model = request.model || this.model;
-    
+
     const response = await fetch(`${this.endpoint}/api/embeddings`, {
       method: 'POST',
       headers: {
@@ -222,22 +224,50 @@ export class OllamaContentGenerator implements ContentGenerator {
     };
   }
 
-  private convertToOllamaMessages(request: GenerateContentParameters): OllamaMessage[] {
+  private convertToOllamaMessages(
+    request: GenerateContentParameters,
+  ): OllamaMessage[] {
     const messages: OllamaMessage[] = [];
 
-    // Add system message if tools are present (tool forcing)
-    if (request.config?.tools && request.config.tools.length > 0) {
-      const toolDescriptions = request.config.tools
-        .map((tool: any) => {
-          const funcDecl = tool.functionDeclarations?.[0];
-          if (!funcDecl) return '';
-          return `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`;
-        })
-        .join('\n');
+    // Add system message if tools or skills are present (tool forcing)
+    const skills = this.config.getSkillManager().getSkills();
+    const hasTools = request.config?.tools && request.config.tools.length > 0;
+    const hasSkills = skills.length > 0;
+
+    if (hasTools || hasSkills) {
+      let toolDescriptions = '';
+      if (hasTools) {
+        toolDescriptions += 'Tools available:\n';
+        toolDescriptions += (request.config!.tools as any[])
+          .map((tool: any) => {
+            const declarations = Array.isArray(tool.functionDeclarations)
+              ? tool.functionDeclarations
+              : [];
+            if (declarations.length === 0) return '';
+            return declarations
+              .map(
+                (funcDecl: any) =>
+                  `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`,
+              )
+              .join('\n');
+          })
+          .join('\n');
+      }
+
+      if (hasSkills) {
+        if (toolDescriptions) toolDescriptions += '\n\n';
+        toolDescriptions += 'Skills available:\n';
+        toolDescriptions += skills
+          .map(
+            (s) =>
+              `- ${s.name}: ${s.description || 'No description available'}`,
+          )
+          .join('\n');
+      }
 
       messages.push({
         role: 'system',
-        content: `You have access to the following tools:\n${toolDescriptions}\n\nTo use a tool, respond with a JSON object in this format:\n{"tool": "tool_name", "parameters": {...}}`,
+        content: `You have access to the following capabilities:\n${toolDescriptions}\n\nTo use a tool, YOU MUST respond with a JSON object in this format:\n{"tool": "tool_name", "parameters": {...}}\n\nExample for listing a directory:\n{"tool": "list_directory", "parameters": {"dir_path": "E:\\\\phill-cli-0.0.1"}}\n\nDo not provide any other text outside the JSON if you are calling a tool. Ensure you see all tools and follow this format exactly.`,
       });
     }
 
@@ -259,7 +289,10 @@ export class OllamaContentGenerator implements ContentGenerator {
     // Convert contents to messages
     const contents = toContents(request.contents);
     for (const content of contents) {
-      const text = content.parts?.map((p: any) => p.text).filter(Boolean).join('\n');
+      const text = content.parts
+        ?.map((p: any) => p.text)
+        .filter(Boolean)
+        .join('\n');
       if (text) {
         messages.push({
           role: content.role === 'user' ? 'user' : 'assistant',
@@ -307,7 +340,12 @@ export class OllamaContentGenerator implements ContentGenerator {
     if (response.status !== 404) {
       return false;
     }
-    const details = (await response.clone().text().catch(() => '')).toLowerCase();
+    const details = (
+      await response
+        .clone()
+        .text()
+        .catch(() => '')
+    ).toLowerCase();
     return details.includes('model') && details.includes('not found');
   }
 

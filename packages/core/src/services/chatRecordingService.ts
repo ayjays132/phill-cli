@@ -16,6 +16,8 @@ import type {
   GenerateContentResponseUsageMetadata,
 } from '@google/genai';
 import { debugLogger } from '../utils/debugLogger.js';
+import { VectorService } from './vectorService.js';
+import { partListUnionToString } from '../core/phillRequest.js';
 import type { ToolResultDisplay } from '../tools/tools.js';
 
 export const SESSION_FILE_PREFIX = 'session-';
@@ -242,6 +244,21 @@ export class ChatRecordingService {
           conversation.messages.push(msg);
         }
       });
+
+      // Semantic Indexing for Semantic Sieve
+      if (message.type === 'user' || message.type === 'phill') {
+        const contentStr = partListUnionToString(message.content);
+        if (contentStr.trim().length > 10) {
+          const vectorService = VectorService.getInstance(this.config.getContentGenerator());
+          // Fire and forget indexing to avoid blocking the main chat loop
+          void vectorService.addDocument(contentStr, {
+            type: 'chat_history',
+            role: message.type,
+            sessionId: this.sessionId,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
     } catch (error) {
       debugLogger.error('Error saving message to chat history.', error);
       throw error;

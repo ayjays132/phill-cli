@@ -13,6 +13,7 @@ import type { Config } from '../../config/config.js';
 import { MessageBus } from '../../confirmation-bus/message-bus.js';
 import { debugLogger } from '../../utils/debugLogger.js';
 import { getCodeAssistServer } from '../../code_assist/codeAssist.js';
+import { AuthType } from '../../core/contentGenerator.js';
 
 export const IMAGEN_GENERATE_TOOL_NAME = 'image_generation_imagen';
 
@@ -47,6 +48,55 @@ class ImagenGenerateToolInvocation extends BaseToolInvocation<
     _toolDisplayName?: string,
   ) {
     super(params, messageBus, _toolName, _toolDisplayName);
+  }
+
+  private isOpenAiAuth(): boolean {
+    const authType = this.config.getContentGeneratorConfig()?.authType;
+    return (
+      authType === AuthType.OPENAI || authType === AuthType.OPENAI_BROWSER
+    );
+  }
+
+  private async tryOpenAiImageFallback(fullPrompt: string): Promise<string | undefined> {
+    const contentGenConfig = this.config.getContentGeneratorConfig();
+    const endpoint =
+      contentGenConfig?.openAi?.endpoint ||
+      this.config.openAI?.endpoint ||
+      process.env['OPENAI_ENDPOINT'] ||
+      'https://api.openai.com/v1';
+    const apiKey =
+      contentGenConfig?.openAi?.apiKey ||
+      this.config.openAI?.apiKey ||
+      process.env['OPENAI_API_KEY'];
+
+    if (!apiKey) {
+      return undefined;
+    }
+
+    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    const response = await fetch(`${normalizedEndpoint}/images/generations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: process.env['OPENAI_IMAGE_MODEL'] || 'gpt-image-1',
+        prompt: fullPrompt,
+        size: '1024x1024',
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(
+        `OpenAI image fallback API error: ${response.status} ${errText}`,
+      );
+    }
+
+    const data = (await response.json()) as any;
+    const b64 = data?.data?.[0]?.b64_json;
+    return typeof b64 === 'string' && b64.length > 0 ? b64 : undefined;
   }
 
   async execute(_signal: AbortSignal): Promise<ToolResult> {
@@ -196,6 +246,19 @@ class ImagenGenerateToolInvocation extends BaseToolInvocation<
             }
         } catch (err: any) {
             debugLogger.warn(`[ImagenGenerateTool] Gemini API fallback failed: ${err.message}`);
+        }
+    }
+
+    if (!base64Data && this.isOpenAiAuth()) {
+        debugLogger.warn('[ImagenGenerateTool] Gemini backends unavailable under OpenAI/Codex auth. Falling back to OpenAI image endpoint.');
+        try {
+          const openAiB64 = await this.tryOpenAiImageFallback(fullPrompt);
+          if (openAiB64) {
+            base64Data = openAiB64;
+            usedBackend = 'openai-image';
+          }
+        } catch (err: any) {
+          debugLogger.warn(`[ImagenGenerateTool] OpenAI image fallback failed: ${err.message}`);
         }
     }
 

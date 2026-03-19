@@ -1,0 +1,14 @@
+{
+  "film_horror":    { "genre": ["score"], "mood": ["tense","unsettling","ominous"], "brightness": 0.2, "density": 0.5 },
+  "film_action":    { "genre": ["orchestral"], "mood": ["epic","intense","huge_drop"], "bpm": 140, "brightness": 0.8 },
+  "game_explore":   { "mood": ["ambient","dreamy","ethereal_ambience"], "bpm": 70, "density": 0.3 },
+  "game_combat":    { "mood": ["intense","fat_beats","tight_groove"], "bpm": 140, "density": 0.9 },
+  "game_menu":      { "mood": ["chill","upbeat"], "density": 0.4, "musicGenerationMode": "QUALITY" },
+  "studying":       { "mood": ["lo-fi","subdued_melody","non-distracting"], "bpm": 80, "density": 0.3 },
+  "meditation":     { "mood": ["ambient","ethereal_ambience","dreamy"], "density": 0.2, "brightness": 0.5 },
+  "podcast_bg":     { "mood": ["subtle","acoustic_instruments","chill"], "density": 0.2 },
+  "workout":        { "mood": ["energetic","fat_beats","danceable"], "bpm": 145, "density": 0.9 },
+  "cafe_ambience":  { "genre": ["jazz"], "mood": ["chill","live_performance"], "density": 0.5 },
+  "app_ui":         { "mood": ["bright_tones","upbeat","subtle"], "duration": 30, "density": 0.3 },
+  "horror_ambient": { "mood": ["unsettling","ominous_drone","psychedelic"], "density": 0.4, "brightness": 0.1 }
+}

@@ -319,6 +319,9 @@ export class Session {
         const model = resolveModel(
           this.config.getModel(),
           this.config.getPreviewFeatures(),
+          false,
+          this.config.getHasAccessToPreviewModel(),
+          this.config,
         );
         const responseStream = await chat.sendMessageStream(
           { model },

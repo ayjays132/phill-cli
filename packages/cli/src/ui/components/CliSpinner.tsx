@@ -29,5 +29,7 @@ export const CliSpinner = (props: SpinnerProps) => {
     return null;
   }
 
-  return <Spinner {...props} />;
+  // Use a premium spinner type ('bounce' or 'aesthetic' usually look great)
+  // We'll use the 'bounce' spinner for a fluid OS feel.
+  return <Spinner type="bounce" {...props} />;
 };

@@ -13,6 +13,7 @@ import {
   classifyGoogleError,
 } from './googleQuotaErrors.js';
 import { delay, createAbortError } from './delay.js';
+import { isAbortError } from './errors.js';
 import { debugLogger } from './debugLogger.js';
 import { getErrorStatus, ModelNotFoundError } from './httpErrors.js';
 import type { RetryAvailabilityContext } from '../availability/modelPolicy.js';
@@ -105,6 +106,10 @@ export function isRetryableError(
     }
   }
 
+  if (isAbortError(error)) {
+    return true;
+  }
+
   // Priority check for ApiError
   if (error instanceof ApiError) {
     // Explicitly do not retry 400 (Bad Request)
@@ -195,8 +200,16 @@ export async function retryWithBackoff<T>(
 
       return result;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw error;
+      if (isAbortError(error)) {
+        if (signal?.aborted) {
+          throw error;
+        }
+        // If the signal isn't aborted, this is an unexpected abort (e.g. network/proxy reset).
+        // We'll treat it as a retryable error.
+        debugLogger.warn(
+          'Unexpected request abort detected, will retry.',
+          error,
+        );
       }
 
       const classifiedError = classifyGoogleError(error);
@@ -250,27 +263,28 @@ export async function retryWithBackoff<T>(
         errorCode !== undefined && errorCode >= 500 && errorCode < 600;
 
       if (classifiedError instanceof RetryableQuotaError || is500) {
+        // Breakthrough: If we have a persistent 429 handler, try falling back IMMEDIATELY on any quota error
+        // rather than wasting multiple 10-30s wait cycles on a model that is clearly exhausted.
+        if (classifiedError instanceof RetryableQuotaError && onPersistent429) {
+          try {
+            const fallbackModel = await onPersistent429(authType, classifiedError);
+            if (fallbackModel) {
+              debugLogger.debug(`[Retry] Quota hit on attempt ${attempt}. Pivoting to fallback model: ${fallbackModel}`);
+              attempt = 0; // Reset attempts for the new model
+              currentDelay = initialDelayMs;
+              continue;
+            }
+          } catch (fallbackError) {
+            debugLogger.warn('[Retry] Immediate model fallback failed:', fallbackError);
+          }
+        }
+
         if (attempt >= maxAttempts) {
           const errorMessage =
             classifiedError instanceof Error ? classifiedError.message : '';
           debugLogger.warn(
             `Attempt ${attempt} failed${errorMessage ? `: ${errorMessage}` : ''}. Max attempts reached`,
           );
-          if (onPersistent429) {
-            try {
-              const fallbackModel = await onPersistent429(
-                authType,
-                classifiedError,
-              );
-              if (fallbackModel) {
-                attempt = 0; // Reset attempts and retry with the new model.
-                currentDelay = initialDelayMs;
-                continue;
-              }
-            } catch (fallbackError) {
-              debugLogger.warn('Model fallback failed:', fallbackError);
-            }
-          }
           throw classifiedError instanceof RetryableQuotaError
             ? classifiedError
             : error;

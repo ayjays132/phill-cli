@@ -15,6 +15,7 @@ import {
   ensurePocketModelReady,
   resolvePocketHfToken,
   resolvePocketModelId,
+  resolvePocketModelDir,
 } from './pocketTtsSetupService.js';
 
 interface TtsResult {
@@ -23,6 +24,10 @@ interface TtsResult {
 }
 
 export class PocketTTS implements ITTSProvider {
+  private static synthesizer: any = null;
+  private static lastModelId: string | null = null;
+  private static lastModelDir: string | null = null;
+
   private prosody: ProsodyOptions = {
     rate: 1.0,
     pitch: 1.0,
@@ -125,8 +130,13 @@ export class PocketTTS implements ITTSProvider {
         'Start-Sleep -Milliseconds ([Math]::Ceiling($player.NaturalDuration.TimeSpan.TotalMilliseconds));',
         '$player.Close();',
       ].join(' ');
-      const code = await this.run('powershell', ['-NoProfile', '-Command', script]);
-      if (code !== 0) throw new Error('Failed to play Pocket audio on Windows.');
+      const code = await this.run('powershell', [
+        '-NoProfile',
+        '-Command',
+        script,
+      ]);
+      if (code !== 0)
+        throw new Error('Failed to play Pocket audio on Windows.');
       return;
     }
     if (process.platform === 'darwin') {
@@ -143,6 +153,7 @@ export class PocketTTS implements ITTSProvider {
 
   private async synthesizeWithTransformers(text: string): Promise<string> {
     const modelId = resolvePocketModelId(this.config);
+    const modelDir = resolvePocketModelDir(this.config);
     const voice = this.config.getVoice();
     const preset = voice.pocketVoicePreset?.trim() || 'alba';
     const referenceCandidate = this.resolveReferenceAudioPath(
@@ -174,16 +185,24 @@ export class PocketTTS implements ITTSProvider {
       }
     });
 
-    const transformers = (await import('@xenova/transformers')) as {
-      pipeline: (
-        task: string,
-        model: string,
-        opts?: Record<string, unknown>,
-      ) => Promise<(input: string, opts?: Record<string, unknown>) => Promise<TtsResult>>;
-    };
+    if (!PocketTTS.synthesizer || PocketTTS.lastModelId !== modelId || PocketTTS.lastModelDir !== modelDir) {
+      const transformers = (await import('@huggingface/transformers')) as {
+        pipeline: (
+          task: string,
+          model: string,
+          opts?: Record<string, unknown>,
+        ) => Promise<
+          (input: string, opts?: Record<string, unknown>) => Promise<TtsResult>
+        >;
+      };
 
-    const synthesizer = await transformers.pipeline('text-to-speech', modelId);
-    const result = await synthesizer(text, {
+      debugLogger.log(`Loading Pocket TTS pipeline for model ${modelId} from ${modelDir}...`);
+      PocketTTS.synthesizer = await transformers.pipeline('text-to-speech', modelId);
+      PocketTTS.lastModelId = modelId;
+      PocketTTS.lastModelDir = modelDir;
+    }
+
+    const result = await PocketTTS.synthesizer(text, {
       voice: preset,
       speaker: preset,
       speaker_audio: referenceAudioPath,

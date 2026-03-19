@@ -20,6 +20,8 @@ import type { EventEmitter } from 'node:events';
 import { coreEvents } from '../utils/events.js';
 import { debugLogger } from '../utils/debugLogger.js';
 
+import * as crypto from 'node:crypto';
+
 /**
  * Manages the lifecycle of multiple MCP clients, including local child processes.
  * This class is responsible for starting, stopping, and discovering tools from
@@ -29,6 +31,8 @@ export class McpClientManager {
   private clients: Map<string, McpClient> = new Map();
   // Track all configured servers (including disabled ones) for UI display
   private allServerConfigs: Map<string, MCPServerConfig> = new Map();
+  private serverHashes: Map<string, string> = new Map();
+  private discoveryPromises: Map<string, Promise<void>> = new Map();
   private readonly clientVersion: string;
   private readonly toolRegistry: ToolRegistry;
   private readonly cliConfig: Config;
@@ -160,130 +164,100 @@ export class McpClientManager {
     }
   }
 
+  private calculateConfigHash(config: MCPServerConfig): string {
+    return crypto.createHash('md5').update(JSON.stringify(config)).digest('hex');
+  }
+
   async maybeDiscoverMcpServer(
     name: string,
     config: MCPServerConfig,
   ): Promise<void> {
-    // Always track server config for UI display
     this.allServerConfigs.set(name, config);
 
-    // Check if blocked by admin settings (allowlist/excludelist)
+    // Fast-Path: Skip if configuration is identical and already connected
+    const newHash = this.calculateConfigHash(config);
+    const existing = this.clients.get(name);
+    if (existing && this.serverHashes.get(name) === newHash) {
+      debugLogger.debug(`[MCP] Skipping discovery for ${name} (unchanged config).`);
+      return;
+    }
+
+    // Check if blocked by admin settings
     if (this.isBlockedBySettings(name)) {
       if (!this.blockedMcpServers.find((s) => s.name === name)) {
-        this.blockedMcpServers?.push({
-          name,
-          extensionName: config.extension?.name ?? '',
-        });
+        this.blockedMcpServers?.push({ name, extensionName: config.extension?.name ?? '' });
       }
       return;
     }
+
     // User-disabled servers: disconnect if running, don't start
     if (await this.isDisabledByUser(name)) {
-      const existing = this.clients.get(name);
-      if (existing) {
-        await this.disconnectClient(name);
-      }
-      return;
-    }
-    if (!this.cliConfig.isTrustedFolder()) {
-      return;
-    }
-    if (config.extension && !config.extension.isActive) {
-      return;
-    }
-    const existing = this.clients.get(name);
-    if (existing && existing.getServerConfig().extension !== config.extension) {
-      const extensionText = config.extension
-        ? ` from extension "${config.extension.name}"`
-        : '';
-      debugLogger.warn(
-        `Skipping MCP config for server with name "${name}"${extensionText} as it already exists.`,
-      );
+      if (existing) await this.disconnectClient(name);
       return;
     }
 
-    const currentDiscoveryPromise = new Promise<void>((resolve, reject) => {
-      (async () => {
-        try {
-          if (existing) {
-            await existing.disconnect();
-          }
+    if (!this.cliConfig.isTrustedFolder()) return;
+    if (config.extension && !config.extension.isActive) return;
 
-          const client =
-            existing ??
-            new McpClient(
-              name,
-              config,
-              this.toolRegistry,
-              this.cliConfig.getPromptRegistry(),
-              this.cliConfig.getResourceRegistry(),
-              this.cliConfig.getWorkspaceContext(),
-              this.cliConfig,
-              this.cliConfig.getDebugMode(),
-              this.clientVersion,
-              async () => {
-                debugLogger.log('Tools changed, updating Phill context...');
-                await this.scheduleMcpContextRefresh();
-              },
-            );
-          if (!existing) {
-            this.clients.set(name, client);
-            this.eventEmitter?.emit('mcp-client-update', this.clients);
-          }
-          try {
-            await client.connect();
-            await client.discover(this.cliConfig);
-            this.eventEmitter?.emit('mcp-client-update', this.clients);
-          } catch (error) {
-            this.eventEmitter?.emit('mcp-client-update', this.clients);
-            // Check if this is a 401/auth error - if so, don't show as red error
-            // (the info message was already shown in mcp-client.ts)
-            if (!isAuthenticationError(error)) {
-              // Log the error but don't let a single failed server stop the others
-              const errorMessage = getErrorMessage(error);
-              coreEvents.emitFeedback(
-                'error',
-                `Error during discovery for MCP server '${name}': ${errorMessage}`,
-                error,
-              );
-            }
-          }
-        } catch (error) {
-          const errorMessage = getErrorMessage(error);
-          coreEvents.emitFeedback(
-            'error',
-            `Error initializing MCP server '${name}': ${errorMessage}`,
-            error,
-          );
-        } finally {
-          resolve();
+    // Check if discovery is already in flight for this specific server
+    const existingDiscovery = this.discoveryPromises.get(name);
+    if (existingDiscovery) return existingDiscovery;
+
+    const currentDiscoveryPromise = (async () => {
+      try {
+        if (existing) {
+          await existing.disconnect();
         }
-      })().catch(reject);
-    });
 
-    if (this.discoveryPromise) {
-      // Ensure the next discovery starts regardless of the previous one's success/failure
-      this.discoveryPromise = this.discoveryPromise
-        .catch(() => {})
-        .then(() => currentDiscoveryPromise);
-    } else {
-      this.discoveryState = MCPDiscoveryState.IN_PROGRESS;
-      this.discoveryPromise = currentDiscoveryPromise;
-    }
-    this.eventEmitter?.emit('mcp-client-update', this.clients);
-    const currentPromise = this.discoveryPromise;
-    void currentPromise
-      .finally(() => {
-        // If we are the last recorded discoveryPromise, then we are done, reset
-        // the world.
-        if (currentPromise === this.discoveryPromise) {
-          this.discoveryPromise = undefined;
+        const client = new McpClient(
+          name,
+          config,
+          this.toolRegistry,
+          this.cliConfig.getPromptRegistry(),
+          this.cliConfig.getResourceRegistry(),
+          this.cliConfig.getWorkspaceContext(),
+          this.cliConfig,
+          this.cliConfig.getDebugMode(),
+          this.clientVersion,
+          async () => {
+            debugLogger.log('Tools changed, updating Phill context...');
+            await this.scheduleMcpContextRefresh();
+          },
+        );
+
+        this.clients.set(name, client);
+        this.serverHashes.set(name, newHash);
+        this.eventEmitter?.emit('mcp-client-update', this.clients);
+
+        try {
+          await client.connect();
+          await client.discover(this.cliConfig);
+          this.eventEmitter?.emit('mcp-client-update', this.clients);
+        } catch (error) {
+          this.eventEmitter?.emit('mcp-client-update', this.clients);
+          if (!isAuthenticationError(error)) {
+            const errorMessage = getErrorMessage(error);
+            coreEvents.emitFeedback('error', `Error during discovery for MCP server '${name}': ${errorMessage}`, error);
+          }
+        }
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        coreEvents.emitFeedback('error', `Error initializing MCP server '${name}': ${errorMessage}`, error);
+      } finally {
+        this.discoveryPromises.delete(name);
+        // Update overall state if this was the last one
+        if (this.discoveryPromises.size === 0) {
           this.discoveryState = MCPDiscoveryState.COMPLETED;
           this.eventEmitter?.emit('mcp-client-update', this.clients);
         }
-      })
-      .catch(() => {}); // Prevents unhandled rejection from the .finally branch
-    return currentPromise;
+      }
+    })();
+
+    this.discoveryPromises.set(name, currentDiscoveryPromise);
+    this.discoveryState = MCPDiscoveryState.IN_PROGRESS;
+    this.eventEmitter?.emit('mcp-client-update', this.clients);
+    
+    return currentDiscoveryPromise;
   }
 
   /**

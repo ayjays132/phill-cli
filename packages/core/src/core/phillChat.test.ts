@@ -799,6 +799,141 @@ describe('PhillChat', () => {
       ).resolves.not.toThrow();
     });
 
+    it('should detect manual tool call JSON with whitespace/newlines', async () => {
+      const manualToolCallStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                role: 'model',
+                parts: [
+                  {
+                    text: '{\n  "tool": "list_directory",\n  "parameters": { "path": "." }\n}',
+                  },
+                ],
+              },
+              finishReason: 'STOP',
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
+        manualToolCallStream,
+      );
+
+      const stream = await chat.sendMessageStream(
+        { model: 'ollama-any-model' },
+        'use a tool',
+        'prompt-id-manual-json-tool',
+        new AbortController().signal,
+      );
+
+      const chunks: GenerateContentResponse[] = [];
+      for await (const event of stream) {
+        if (event.type === StreamEventType.CHUNK) {
+          chunks.push(event.value);
+        }
+      }
+
+      const hasSyntheticToolCall = chunks.some((c) =>
+        c.candidates?.[0]?.content?.parts?.some(
+          (p) => p.functionCall?.name === 'list_directory',
+        ),
+      );
+      expect(hasSyntheticToolCall).toBe(true);
+    });
+
+    it('should detect tool call JSON wrapped in code fences', async () => {
+      const manualToolCallStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                role: 'model',
+                parts: [
+                  {
+                    text: '```json\n{"tool":"read_file","parameters":{"absolute_path":"E:/phill-cli-0.0.1/README.md"}}\n```',
+                  },
+                ],
+              },
+              finishReason: 'STOP',
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
+        manualToolCallStream,
+      );
+
+      const stream = await chat.sendMessageStream(
+        { model: 'ollama-any-model' },
+        'use a tool',
+        'prompt-id-fenced-json-tool',
+        new AbortController().signal,
+      );
+
+      const chunks: GenerateContentResponse[] = [];
+      for await (const event of stream) {
+        if (event.type === StreamEventType.CHUNK) {
+          chunks.push(event.value);
+        }
+      }
+
+      const hasSyntheticToolCall = chunks.some((c) =>
+        c.candidates?.[0]?.content?.parts?.some(
+          (p) => p.functionCall?.name === 'read_file',
+        ),
+      );
+      expect(hasSyntheticToolCall).toBe(true);
+    });
+
+    it('should detect OpenAI-style name/arguments tool call JSON', async () => {
+      const manualToolCallStream = (async function* () {
+        yield {
+          candidates: [
+            {
+              content: {
+                role: 'model',
+                parts: [
+                  {
+                    text: '{"name":"list_directory","arguments":"{\\"path\\":\\".\\"}"}',
+                  },
+                ],
+              },
+              finishReason: 'STOP',
+            },
+          ],
+        } as unknown as GenerateContentResponse;
+      })();
+
+      vi.mocked(mockContentGenerator.generateContentStream).mockResolvedValue(
+        manualToolCallStream,
+      );
+
+      const stream = await chat.sendMessageStream(
+        { model: 'ollama-any-model' },
+        'use a tool',
+        'prompt-id-openai-shape-tool',
+        new AbortController().signal,
+      );
+
+      const chunks: GenerateContentResponse[] = [];
+      for await (const event of stream) {
+        if (event.type === StreamEventType.CHUNK) {
+          chunks.push(event.value);
+        }
+      }
+
+      const hasSyntheticToolCall = chunks.some((c) =>
+        c.candidates?.[0]?.content?.parts?.some(
+          (p) => p.functionCall?.name === 'list_directory',
+        ),
+      );
+      expect(hasSyntheticToolCall).toBe(true);
+    });
+
     it('should throw InvalidStreamError when finishReason is MALFORMED_FUNCTION_CALL', async () => {
       // Setup: Stream with MALFORMED_FUNCTION_CALL finish reason and empty response
       const streamWithMalformedFunctionCall = (async function* () {

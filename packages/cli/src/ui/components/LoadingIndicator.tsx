@@ -15,6 +15,7 @@ import { formatDuration } from '../utils/formatters.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { isNarrowWidth } from '../utils/isNarrowWidth.js';
 import { INTERACTIVE_SHELL_WAITING_PHRASE } from '../hooks/usePhraseCycler.js';
+import { ThemedGradient } from './ThemedGradient.js';
 
 interface LoadingIndicatorProps {
   currentLoadingPhrase?: string;
@@ -44,22 +45,22 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
       ? currentLoadingPhrase
       : thought?.subject || currentLoadingPhrase;
   const stateEmoji =
-    streamingState === StreamingState.WaitingForConfirmation ? '🟡 ' : '⚙️ ';
+    streamingState === StreamingState.WaitingForConfirmation ? '⚡' : '⚙️';
 
   const cancelAndTimerContent =
     streamingState !== StreamingState.WaitingForConfirmation
-      ? `(esc to cancel, ${elapsedTime < 60 ? `${elapsedTime}s` : formatDuration(elapsedTime * 1000)})`
+      ? `[ esc to cancel | ${elapsedTime < 60 ? `${elapsedTime}s` : formatDuration(elapsedTime * 1000)} ]`
       : null;
 
   return (
-    <Box paddingLeft={0} flexDirection="column">
+    <Box paddingLeft={1} flexDirection="column" marginY={0}>
       {/* Main loading line */}
       <Box
         width="100%"
         flexDirection={isNarrow ? 'column' : 'row'}
         alignItems={isNarrow ? 'flex-start' : 'center'}
       >
-        <Box>
+        <Box alignItems="center">
           <Box marginRight={1}>
             <PhillRespondingSpinner
               nonRespondingDisplay={
@@ -70,15 +71,16 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
             />
           </Box>
           {primaryText && (
-            <Text color={theme.text.accent} wrap="truncate-end">
-              {stateEmoji}
-              {primaryText}
-            </Text>
+            <ThemedGradient animate={streamingState !== StreamingState.WaitingForConfirmation} speed={150}>
+              <Text bold wrap="truncate-end">
+                {stateEmoji} {primaryText.toUpperCase()}
+              </Text>
+            </ThemedGradient>
           )}
           {!isNarrow && cancelAndTimerContent && (
             <>
-              <Box flexShrink={0} width={1} />
-              <Text color={theme.text.secondary}>{cancelAndTimerContent}</Text>
+              <Box flexShrink={0} width={2} />
+              <Text color={theme.text.secondary} dimColor italic>{cancelAndTimerContent}</Text>
             </>
           )}
         </Box>
@@ -86,8 +88,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
         {!isNarrow && rightContent && <Box>{rightContent}</Box>}
       </Box>
       {isNarrow && cancelAndTimerContent && (
-        <Box>
-          <Text color={theme.text.secondary}>{cancelAndTimerContent}</Text>
+        <Box paddingLeft={3}>
+          <Text color={theme.text.secondary} dimColor italic>{cancelAndTimerContent}</Text>
         </Box>
       )}
       {isNarrow && rightContent && <Box>{rightContent}</Box>}

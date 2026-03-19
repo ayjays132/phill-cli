@@ -135,9 +135,14 @@ export enum CoreEvent {
   RetryAttempt = 'retry-attempt',
   AgentsDiscovered = 'agents-discovered',
   MemoryWiped = 'memory-wiped',
+  NexusPipelineChanged = 'nexus-pipeline-changed',
+  MetacognitiveAction = 'metacognitive-action',
 }
 
 export interface CoreEvents extends ExtensionEvents {
+  [CoreEvent.MetacognitiveAction]: [
+    { action: 'dream' | 'insights' | 'reset'; payload?: any },
+  ];
   [CoreEvent.UserFeedback]: [UserFeedbackPayload];
   [CoreEvent.ModelChanged]: [ModelChangedPayload];
   [CoreEvent.ConsoleLog]: [ConsoleLogPayload];
@@ -154,6 +159,15 @@ export interface CoreEvents extends ExtensionEvents {
   [CoreEvent.AdminSettingsChanged]: never[];
   [CoreEvent.RetryAttempt]: [RetryAttemptPayload];
   [CoreEvent.AgentsDiscovered]: [AgentsDiscoveredPayload];
+  [CoreEvent.NexusPipelineChanged]: [
+    {
+      pipeline: string;
+      confidence: number;
+      reason?: string;
+      logosDominantDimension: string;
+      logosScore: number;
+    },
+  ];
 }
 
 type EventBacklogItem = {

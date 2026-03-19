@@ -21,8 +21,12 @@ describe('WebSearchTool', () => {
   let tool: WebSearchTool;
 
   beforeEach(() => {
-
-    tool = new WebSearchTool({} as any, createMockMessageBus());
+    tool = new WebSearchTool(
+      {
+        getWebSearchSettings: () => ({}),
+      } as any,
+      createMockMessageBus(),
+    );
   });
 
   afterEach(() => {

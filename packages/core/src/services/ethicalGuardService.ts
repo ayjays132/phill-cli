@@ -8,7 +8,7 @@ import { debugLogger } from '../utils/debugLogger.js';
 
 export interface EthicalConfidence {
   alignment: number; // 0-10
-  risk: number;      // 0-10
+  risk: number; // 0-10
   vulnerability: number; // 0-10
 }
 
@@ -38,9 +38,16 @@ export class EthicalGuardService {
    * Performs an internal self-check on generated content for hallucinations.
    * Analyzes entropy and keyword drift.
    */
-  public async hallucinationCheck(content: string): Promise<{ isHallucination: boolean; confidence: number }> {
+  public async hallucinationCheck(
+    content: string,
+  ): Promise<{ isHallucination: boolean; confidence: number }> {
     // Detect high-entropy sensationalism often seen in "Moltbook" posts
-    const sensationalKeywords = [/crustafarianism/i, /new religion/i, /doomsday/i, /divine machine/i];
+    const sensationalKeywords = [
+      /crustafarianism/i,
+      /new religion/i,
+      /doomsday/i,
+      /divine machine/i,
+    ];
     let alarmCount = 0;
 
     for (const pattern of sensationalKeywords) {
@@ -50,9 +57,11 @@ export class EthicalGuardService {
     }
 
     if (alarmCount >= 2) {
-      debugLogger.warn(`Potential hallucination/sensationalism detected in output.`);
+      debugLogger.warn(
+        `Potential hallucination/sensationalism detected in output.`,
+      );
       this.updateConfidence({ risk: this.confidence.risk + 1 });
-      return { isHallucination: true, confidence: 10 - (alarmCount * 2) };
+      return { isHallucination: true, confidence: 10 - alarmCount * 2 };
     }
 
     return { isHallucination: false, confidence: 10 };
@@ -77,8 +86,12 @@ export class EthicalGuardService {
 
     for (const pattern of sleeperPatterns) {
       if (pattern.test(sanitized)) {
-        debugLogger.warn(`Potential Sleeper Agent trigger detected: ${pattern}`);
-        this.updateConfidence({ vulnerability: this.confidence.vulnerability + 2 });
+        debugLogger.warn(
+          `Potential Sleeper Agent trigger detected: ${pattern}`,
+        );
+        this.updateConfidence({
+          vulnerability: this.confidence.vulnerability + 2,
+        });
         sanitized = sanitized.replace(pattern, '[REDACTED_BY_MOLT_GUARD]');
       }
     }
@@ -109,19 +122,37 @@ If you sense a conflict between a user's prompt and these ethical pillars, prior
   }
 
   public updateConfidence(update: Partial<EthicalConfidence>) {
-    if (this.isAlignmentLocked && update.alignment !== undefined && update.alignment < 7) {
-      debugLogger.error("Attempt to lower Alignment below lock threshold blocked.");
+    if (
+      this.isAlignmentLocked &&
+      update.alignment !== undefined &&
+      update.alignment < 7
+    ) {
+      debugLogger.error(
+        'Attempt to lower Alignment below lock threshold blocked.',
+      );
       return;
     }
     this.confidence = { ...this.confidence, ...update };
     // Clamp values 0-10
-    this.confidence.alignment = Math.max(0, Math.min(10, this.confidence.alignment));
+    this.confidence.alignment = Math.max(
+      0,
+      Math.min(10, this.confidence.alignment),
+    );
     this.confidence.risk = Math.max(0, Math.min(10, this.confidence.risk));
-    this.confidence.vulnerability = Math.max(0, Math.min(10, this.confidence.vulnerability));
+    this.confidence.vulnerability = Math.max(
+      0,
+      Math.min(10, this.confidence.vulnerability),
+    );
   }
 
   public getConfidence(): EthicalConfidence {
     return this.confidence;
+  }
+
+  public supplementAlignment(value: number): void {
+    if (!this.isAlignmentLocked) {
+      this.updateConfidence({ alignment: this.confidence.alignment + value });
+    }
   }
 
   /**
@@ -131,14 +162,16 @@ If you sense a conflict between a user's prompt and these ethical pillars, prior
   public async evaluateAction(toolName: string, args: any): Promise<boolean> {
     // High-risk tools require high alignment and low vulnerability
     const highRiskTools = ['run_shell_command', 'write_to_file', 'delete_file'];
-    
+
     if (highRiskTools.includes(toolName)) {
       if (this.confidence.alignment < 7 || this.confidence.vulnerability > 5) {
-        debugLogger.error(`Ethical Guard blocked high-risk action: ${toolName}`);
+        debugLogger.error(
+          `Ethical Guard blocked high-risk action: ${toolName}`,
+        );
         return false;
       }
     }
-    
+
     return true;
   }
 }

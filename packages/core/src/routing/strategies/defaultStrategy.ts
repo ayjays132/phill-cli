@@ -24,6 +24,9 @@ export class DefaultStrategy implements TerminalStrategy {
     const defaultModel = resolveModel(
       config.getModel(),
       config.getPreviewFeatures(),
+      false,
+      config.getHasAccessToPreviewModel(),
+      config,
     );
     return {
       model: defaultModel,

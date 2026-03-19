@@ -20,9 +20,6 @@ import { debugLogger } from '../../utils/debugLogger.js';
 // The number of recent history turns to provide to the router for context.
 const HISTORY_TURNS_FOR_CONTEXT = 8;
 
-const FLASH_MODEL = 'flash';
-const PRO_MODEL = 'pro';
-
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -140,7 +137,16 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
 
       const promptId = getPromptIdWithFallback('classifier-router');
 
-      const finalHistory = context.history.slice(-HISTORY_TURNS_FOR_CONTEXT);
+      const finalHistory = context.history
+        .filter(
+          (h) =>
+            !h.parts?.some((p) =>
+              p.text?.includes(
+                'This is the Phill CLI. We are setting up the context',
+              ),
+            ),
+        )
+        .slice(-HISTORY_TURNS_FOR_CONTEXT);
 
       // Wrap the user's request in tags to prevent prompt injection
       const requestParts = Array.isArray(context.request)
@@ -169,7 +175,7 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
       const routerResponse = ClassifierResponseSchema.parse(jsonResponse);
       const score = routerResponse.complexity_score;
 
-      const { threshold, groupLabel, modelAlias } =
+      const { threshold, groupLabel } =
         await this.getRoutingDecision(
           score,
           config,
@@ -178,8 +184,8 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
 
       const selectedModel = resolveClassifierModel(
         config.getModel(),
-        modelAlias,
         config.getPreviewFeatures(),
+        config,
       );
 
       const latencyMs = Date.now() - startTime;
@@ -205,7 +211,6 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
   ): Promise<{
     threshold: number;
     groupLabel: string;
-    modelAlias: typeof FLASH_MODEL | typeof PRO_MODEL;
   }> {
     let threshold: number;
     let groupLabel: string;
@@ -226,8 +231,6 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
       groupLabel = threshold === 80 ? 'Strict' : 'Control';
     }
 
-    const modelAlias = score >= threshold ? PRO_MODEL : FLASH_MODEL;
-
-    return { threshold, groupLabel, modelAlias };
+    return { threshold, groupLabel };
   }
 }

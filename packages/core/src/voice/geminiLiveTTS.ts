@@ -69,7 +69,7 @@ export class GeminiLiveTTS implements ITTSProvider {
 
   constructor(config: Config) {
     this.config = config;
-    this.audioManager = new AudioManager();
+    this.audioManager = AudioManager.getInstance();
   }
 
   getName(): string {
@@ -88,10 +88,16 @@ export class GeminiLiveTTS implements ITTSProvider {
     preferredGender: 'female' | 'male' | 'neutral' | 'auto' | undefined,
     identityVoiceName: string | undefined,
   ): string {
-    if (identityVoiceName && SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)) {
+    if (
+      identityVoiceName &&
+      SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)
+    ) {
       return identityVoiceName;
     }
-    if (identityVoiceName && !SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)) {
+    if (
+      identityVoiceName &&
+      !SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)
+    ) {
       debugLogger.warn(
         `Unknown Gemini voice "${identityVoiceName}". Falling back to default voice "${DEFAULT_GEMINI_VOICE_NAME}".`,
       );
@@ -109,7 +115,7 @@ export class GeminiLiveTTS implements ITTSProvider {
 
   private extractDialogSpeakers(text: string): string[] {
     const lines = text.split(/\r?\n/);
-    const speakerRegex = /^\s*([A-Za-z][A-Za-z0-9 .'\-]{0,40}):\s+\S+/;
+    const speakerRegex = /^\s*([A-Za-z][A-Za-z0-9 .'-]{0,40}):\s+\S+/;
     const speakers: string[] = [];
     const seen = new Set<string>();
 
@@ -144,7 +150,9 @@ export class GeminiLiveTTS implements ITTSProvider {
       const shouldPreferOauth =
         authType === AuthType.LOGIN_WITH_GOOGLE ||
         authType === AuthType.COMPUTE_ADC;
-      const identity = await this.config.getAgentIdentityService().getIdentity();
+      const identity = await this.config
+        .getAgentIdentityService()
+        .getIdentity();
       const voiceName = this.resolveVoiceName(
         voiceSettings.preferredGender,
         voiceSettings.geminiVoiceName || identity.voiceName,
@@ -175,21 +183,23 @@ export class GeminiLiveTTS implements ITTSProvider {
       const dialogSpeakers = this.extractDialogSpeakers(text);
       const useMultiSpeaker = dialogSpeakers.length >= 2;
       const speakerVoiceConfigs = useMultiSpeaker
-        ? dialogSpeakers.slice(0, MULTI_SPEAKER_VOICE_CYCLE.length).map((speaker, index) => ({
-            speaker,
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: MULTI_SPEAKER_VOICE_CYCLE[index],
+        ? dialogSpeakers
+            .slice(0, MULTI_SPEAKER_VOICE_CYCLE.length)
+            .map((speaker, index) => ({
+              speaker,
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: MULTI_SPEAKER_VOICE_CYCLE[index],
+                },
               },
-            },
-          }))
+            }))
         : [];
 
       const ttsModels = [
         voiceSettings.geminiTtsModel,
         process.env['PHILL_TTS_MODEL'],
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-lite-preview-02-05',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
         'gemini-2.5-pro-preview-tts',
         'gemini-2.5-flash-preview-tts',
       ].filter((m): m is string => Boolean(m && m.trim()));
@@ -319,7 +329,8 @@ export class GeminiLiveTTS implements ITTSProvider {
         if (response) {
           break;
         }
-        const message = lastError instanceof Error ? lastError.message.toLowerCase() : '';
+        const message =
+          lastError instanceof Error ? lastError.message.toLowerCase() : '';
         if (
           model.includes('2.5-pro-preview-tts') &&
           (message.includes('quota') || message.includes('429'))
@@ -332,7 +343,7 @@ export class GeminiLiveTTS implements ITTSProvider {
       }
 
       if (!response) {
-        throw (lastError ?? new Error('No Gemini TTS model succeeded.'));
+        throw lastError ?? new Error('No Gemini TTS model succeeded.');
       }
 
       const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -345,7 +356,7 @@ export class GeminiLiveTTS implements ITTSProvider {
         ? audioData
         : typeof audioData === 'string'
           ? Buffer.from(audioData, 'base64')
-          : Buffer.from(audioData as Uint8Array);
+          : Buffer.from(audioData);
       const audioBuffer = stripWavHeaderIfPresent(pcmBuffer);
 
       this.audioManager.startPlayback();

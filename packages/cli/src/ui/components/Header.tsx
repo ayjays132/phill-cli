@@ -59,26 +59,33 @@ export const Header: React.FC<HeaderProps> = ({
       paddingBottom={1}
     >
       <Box
-        borderStyle="round"
-        borderColor={theme.input.border_active}
-        paddingX={2}
+        borderStyle="bold"
+        borderColor={theme.border.focused}
+        paddingX={3}
         paddingY={1}
         flexDirection="column"
         alignItems="center"
       >
-        <ThemedGradient>{title}</ThemedGradient>
-        <Box marginTop={1}>
-          <Text color={theme.text.accent} bold>PHILL</Text>
-          <Text color={theme.text.secondary}> | </Text>
-          <Text color={theme.text.secondary}>Powered by Gemini & Local Models</Text>
+        <ThemedGradient animate speed={150}>{title}</ThemedGradient>
+        <Box marginTop={1} alignItems="center">
+          <Text color={theme.text.accent} bold> ❖ PHILL AGI </Text>
+          <Text color={theme.text.dim}> — </Text>
+          <Text color={theme.text.secondary} italic>Metropolis Core v{version}</Text>
         </Box>
       </Box>
 
+      <Box width="100%" justifyContent="center" marginTop={1}>
+        <Text color={theme.text.dim}>
+          ─────────────────────────────────────────────────
+        </Text>
+      </Box>
+
       {nightly && (
-        <Box width="100%" flexDirection="row" justifyContent="flex-end" paddingRight={2}>
-          <Text color="yellow">v{version}-nightly</Text>
+        <Box width="100%" flexDirection="row" justifyContent="center" paddingY={0}>
+          <Text color={theme.status.warning} bold inverse> NIGHTLY BUILD </Text>
         </Box>
       )}
+
     </Box>
   );
 };

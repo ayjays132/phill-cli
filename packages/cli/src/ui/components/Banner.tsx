@@ -26,7 +26,7 @@ export function getFormattedBannerContent(
   return lines.map((line, index) => {
     if (index === 0) {
       return (
-        <ThemedGradient key={index}>
+        <ThemedGradient key={index} animate speed={120}>
           <Text>{line}</Text>
         </ThemedGradient>
       );
@@ -57,14 +57,21 @@ export const Banner = ({ bannerText, isWarning, width }: BannerProps) => {
 
   return (
     <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={isWarning ? theme.status.warning : theme.border.default}
+      flexDirection="row"
+      borderStyle={isWarning ? 'bold' : 'round'}
+      borderColor={isWarning ? theme.status.warning : theme.border.accent}
       width={width}
-      paddingLeft={1}
-      paddingRight={1}
+      paddingX={1}
+      paddingY={isWarning ? 1 : 0}
     >
-      {formattedBannerContent}
+      <Box marginRight={2} flexShrink={0}>
+        <Text bold color={isWarning ? theme.status.warning : theme.status.success}>
+          {isWarning ? '⚠️' : '✦'}
+        </Text>
+      </Box>
+      <Box flexDirection="column" flexGrow={1}>
+        {formattedBannerContent}
+      </Box>
     </Box>
   );
 };

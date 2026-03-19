@@ -22,7 +22,8 @@ import {
 import {
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_MODEL_AUTO,
+  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO,
   isAutoModel,
   resolveModel,
 } from '../config/models.js';
@@ -43,18 +44,27 @@ export function resolvePolicyChain(
   const configuredModel = config.getModel();
 
   let chain;
-  const resolvedModel = resolveModel(modelFromConfig);
+  const resolvedModel = resolveModel(
+    modelFromConfig,
+    config.getPreviewFeatures(),
+    false,
+    config.getHasAccessToPreviewModel(),
+    config,
+  );
   const isAutoPreferred = preferredModel ? isAutoModel(preferredModel) : false;
   const isAutoConfigured = isAutoModel(configuredModel);
 
   if (resolvedModel === DEFAULT_GEMINI_FLASH_LITE_MODEL) {
     chain = getFlashLitePolicyChain();
   } else if (isAutoPreferred || isAutoConfigured) {
+    const autoMode = isAutoPreferred ? preferredModel! : configuredModel;
     const previewEnabled =
-      preferredModel === PREVIEW_GEMINI_MODEL_AUTO ||
-      configuredModel === PREVIEW_GEMINI_MODEL_AUTO;
+      autoMode === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
+      autoMode === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO;
+
     chain = getModelPolicyChain({
       previewEnabled,
+      autoMode,
       userTier: config.getUserTier(),
     });
   } else {
@@ -70,9 +80,25 @@ export function resolvePolicyChain(
       : [...chain.slice(activeIndex)];
   }
 
+  // For explicit auto modes, never collapse to a stale out-of-chain model.
+  // If the active/resolved model drifts (e.g. prior fallback), keep using the
+  // intended auto chain so routing returns to the selected family.
+  if (isAutoPreferred || isAutoConfigured) {
+    return clonePolicyChainForReturn(chain, wrapsAround);
+  }
+
   // If the user specified a model not in the default chain, we assume they want
   // *only* that model. We do not fallback to the default chain.
   return [createDefaultPolicy(resolvedModel, { isLastResort: true })];
+}
+
+function clonePolicyChainForReturn(
+  chain: ModelPolicyChain,
+  wrapsAround: boolean,
+): ModelPolicyChain {
+  // When active model is not in-chain, wrapsAround has no practical effect here;
+  // return a cloned chain to avoid accidental mutations upstream.
+  return wrapsAround ? [...chain] : [...chain];
 }
 
 /**
@@ -207,7 +233,7 @@ export function applyAvailabilityTransition(
   const transition = context.policy.stateTransitions?.[failureKind];
   if (!transition) return;
 
-  if (transition === 'terminal') {
+  if (transition === 'cool_off') {
     context.service.markTerminal(
       context.policy.model,
       failureKind === 'terminal' ? 'quota' : 'capacity',
