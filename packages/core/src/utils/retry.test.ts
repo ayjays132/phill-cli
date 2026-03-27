@@ -16,7 +16,7 @@ import {
   TerminalQuotaError,
   RetryableQuotaError,
 } from './googleQuotaErrors.js';
-import { PREVIEW_GEMINI_MODEL } from '../config/models.js';
+import { PREVIEW_PHILL_MODEL } from '../config/models.js';
 import type { ModelPolicy } from '../availability/modelPolicy.js';
 import { createAvailabilityServiceMock } from '../availability/testUtils.js';
 import type { ModelAvailabilityService } from '../availability/modelAvailabilityService.js';
@@ -463,7 +463,7 @@ describe('retryWithBackoff', () => {
       expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 12345);
     });
 
-    it.each([[AuthType.USE_GEMINI], [AuthType.USE_VERTEX_AI], [undefined]])(
+    it.each([[AuthType.USE_PHILL], [AuthType.USE_VERTEX_AI], [undefined]])(
       'should invoke onPersistent429 callback (delegating decision) for non-Google auth users (authType: %s) on TerminalQuotaError',
       async (authType) => {
         const fallbackCallback = vi.fn();
@@ -539,7 +539,7 @@ describe('retryWithBackoff', () => {
   });
 
   it('should trigger fallback for OAuth personal users on ModelNotFoundError', async () => {
-    const fallbackCallback = vi.fn().mockResolvedValue(PREVIEW_GEMINI_MODEL);
+    const fallbackCallback = vi.fn().mockResolvedValue(PREVIEW_PHILL_MODEL);
 
     let fallbackOccurred = false;
     const mockFn = vi.fn().mockImplementation(async () => {
@@ -704,3 +704,5 @@ describe('retryWithBackoff', () => {
     });
   });
 });
+
+

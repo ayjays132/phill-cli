@@ -231,7 +231,7 @@ describe('activate', () => {
             await activate(context);
             // Wait for the promise from showInformationMessage.then() to resolve
             await new Promise(process.nextTick);
-            expect(executeCommandMock).toHaveBeenCalledWith('workbench.extensions.installExtension', 'Google.gemini-cli-vscode-ide-companion');
+            expect(executeCommandMock).toHaveBeenCalledWith('workbench.extensions.installExtension', 'phill.phill-cli-vscode-ide-companion');
         });
         it('should handle fetch errors gracefully', async () => {
             vi.spyOn(global, 'fetch').mockResolvedValue({

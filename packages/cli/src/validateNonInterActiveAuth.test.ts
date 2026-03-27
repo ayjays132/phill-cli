@@ -256,7 +256,7 @@ describe('validateNonInterActiveAuth', () => {
     });
     try {
       await validateNonInteractiveAuth(
-        AuthType.USE_GEMINI,
+        AuthType.USE_PHILL,
         undefined,
         nonInteractiveConfig,
         mockSettings,
@@ -295,7 +295,7 @@ describe('validateNonInterActiveAuth', () => {
   });
 
   it('succeeds if effectiveAuthType matches enforcedAuthType', async () => {
-    mockSettings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
+    mockSettings.merged.security.auth.enforcedType = AuthType.USE_PHILL;
     process.env['PHILL_API_KEY'] = 'fake-key';
     const nonInteractiveConfig = createLocalMockConfig({});
     await validateNonInteractiveAuth(
@@ -315,7 +315,7 @@ describe('validateNonInterActiveAuth', () => {
     });
     try {
       await validateNonInteractiveAuth(
-        AuthType.USE_GEMINI,
+        AuthType.USE_PHILL,
         undefined,
         nonInteractiveConfig,
         mockSettings,
@@ -327,7 +327,7 @@ describe('validateNonInterActiveAuth', () => {
       );
     }
     expect(debugLoggerErrorSpy).toHaveBeenCalledWith(
-      "The enforced authentication type is 'oauth-personal', but the current type is 'gemini-api-key'. Please re-authenticate with the correct type.",
+      "The enforced authentication type is 'oauth-personal', but the current type is 'phill-api-key'. Please re-authenticate with the correct type.",
     );
     expect(processExitSpy).toHaveBeenCalledWith(
       ExitCodes.FATAL_AUTHENTICATION_ERROR,
@@ -354,7 +354,7 @@ describe('validateNonInterActiveAuth', () => {
       );
     }
     expect(debugLoggerErrorSpy).toHaveBeenCalledWith(
-      "The enforced authentication type is 'oauth-personal', but the current type is 'gemini-api-key'. Please re-authenticate with the correct type.",
+      "The enforced authentication type is 'oauth-personal', but the current type is 'phill-api-key'. Please re-authenticate with the correct type.",
     );
     expect(processExitSpy).toHaveBeenCalledWith(
       ExitCodes.FATAL_AUTHENTICATION_ERROR,
@@ -396,7 +396,7 @@ describe('validateNonInterActiveAuth', () => {
     });
 
     it(`prints JSON error when enforced auth mismatches current auth and exits with code ${ExitCodes.FATAL_AUTHENTICATION_ERROR}`, async () => {
-      mockSettings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
+      mockSettings.merged.security.auth.enforcedType = AuthType.USE_PHILL;
       const nonInteractiveConfig = createLocalMockConfig({
         getOutputFormat: vi.fn().mockReturnValue(OutputFormat.JSON),
         getContentGeneratorConfig: vi
@@ -426,7 +426,7 @@ describe('validateNonInterActiveAuth', () => {
         expect(payload.error.type).toBe('Error');
         expect(payload.error.code).toBe(ExitCodes.FATAL_AUTHENTICATION_ERROR);
         expect(payload.error.message).toContain(
-          "The enforced authentication type is 'gemini-api-key', but the current type is 'oauth-personal'. Please re-authenticate with the correct type.",
+          "The enforced authentication type is 'phill-api-key', but the current type is 'oauth-personal'. Please re-authenticate with the correct type.",
         );
       }
     });
@@ -445,7 +445,7 @@ describe('validateNonInterActiveAuth', () => {
       let thrown: Error | undefined;
       try {
         await validateNonInteractiveAuth(
-          AuthType.USE_GEMINI,
+          AuthType.USE_PHILL,
           undefined,
           nonInteractiveConfig,
           mockSettings,
@@ -468,3 +468,4 @@ describe('validateNonInterActiveAuth', () => {
     });
   });
 });
+

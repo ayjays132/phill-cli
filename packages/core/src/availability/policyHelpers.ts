@@ -20,10 +20,10 @@ import {
   getFlashLitePolicyChain,
 } from './policyCatalog.js';
 import {
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
-  PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO,
   isAutoModel,
   resolveModel,
 } from '../config/models.js';
@@ -54,13 +54,13 @@ export function resolvePolicyChain(
   const isAutoPreferred = preferredModel ? isAutoModel(preferredModel) : false;
   const isAutoConfigured = isAutoModel(configuredModel);
 
-  if (resolvedModel === DEFAULT_GEMINI_FLASH_LITE_MODEL) {
+  if (resolvedModel === DEFAULT_PHILL_FLASH_LITE_MODEL) {
     chain = getFlashLitePolicyChain();
   } else if (isAutoPreferred || isAutoConfigured) {
     const autoMode = isAutoPreferred ? preferredModel! : configuredModel;
     const previewEnabled =
-      autoMode === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
-      autoMode === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO;
+      autoMode === PREVIEW_PHILL_3_1_MODEL_AUTO ||
+      autoMode === PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO;
 
     chain = getModelPolicyChain({
       previewEnabled,
@@ -177,7 +177,7 @@ export function selectModelForAvailability(
   if (selection.selectedModel) return selection;
 
   const backupModel =
-    chain.find((p) => p.isLastResort)?.model ?? DEFAULT_GEMINI_MODEL;
+    chain.find((p) => p.isLastResort)?.model ?? DEFAULT_PHILL_MODEL;
 
   return { selectedModel: backupModel, skipped: [] };
 }
@@ -242,3 +242,4 @@ export function applyAvailabilityTransition(
     context.service.markRetryOncePerTurn(context.policy.model);
   }
 }
+

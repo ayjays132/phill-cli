@@ -158,15 +158,15 @@ describe('AuthDialog', () => {
   });
 
   it('filters auth types when enforcedType is set', () => {
-    props.settings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
+    props.settings.merged.security.auth.enforcedType = AuthType.USE_PHILL;
     renderWithProviders(<AuthDialog {...props} />);
     const items = mockedRadioButtonSelect.mock.calls[0][0].items;
     expect(items).toHaveLength(1);
-    expect(items[0].value).toBe(AuthType.USE_GEMINI);
+    expect(items[0].value).toBe(AuthType.USE_PHILL);
   });
 
   it('sets initial index to 0 when enforcedType is set', () => {
-    props.settings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
+    props.settings.merged.security.auth.enforcedType = AuthType.USE_PHILL;
     renderWithProviders(<AuthDialog {...props} />);
     const { initialIndex } = mockedRadioButtonSelect.mock.calls[0][0];
     expect(initialIndex).toBe(0);
@@ -184,16 +184,16 @@ describe('AuthDialog', () => {
       },
       {
         setup: () => {
-          vi.stubEnv('PHILL_DEFAULT_AUTH_TYPE', AuthType.USE_GEMINI);
+          vi.stubEnv('PHILL_DEFAULT_AUTH_TYPE', AuthType.USE_PHILL);
         },
-        expected: AuthType.USE_GEMINI,
+        expected: AuthType.USE_PHILL,
         desc: 'from PHILL_DEFAULT_AUTH_TYPE env var',
       },
       {
         setup: () => {
           vi.stubEnv('PHILL_API_KEY', 'test-key');
         },
-        expected: AuthType.USE_GEMINI,
+        expected: AuthType.USE_PHILL,
         desc: 'from PHILL_API_KEY env var',
       },
       {
@@ -215,10 +215,10 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      handleAuthSelect(AuthType.USE_GEMINI);
+      handleAuthSelect(AuthType.USE_PHILL);
 
       expect(mockedValidateAuthMethod).toHaveBeenCalledWith(
-        AuthType.USE_GEMINI,
+        AuthType.USE_PHILL,
         props.settings,
       );
       expect(props.onAuthError).toHaveBeenCalledWith('Invalid method');
@@ -242,7 +242,7 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      await handleAuthSelect(AuthType.USE_GEMINI);
+      await handleAuthSelect(AuthType.USE_PHILL);
 
       expect(props.setAuthContext).toHaveBeenCalledWith({});
     });
@@ -255,7 +255,7 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      await handleAuthSelect(AuthType.USE_GEMINI);
+      await handleAuthSelect(AuthType.USE_PHILL);
 
       expect(props.setAuthState).toHaveBeenCalledWith(
         AuthState.Unauthenticated,
@@ -270,7 +270,7 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      await handleAuthSelect(AuthType.USE_GEMINI);
+      await handleAuthSelect(AuthType.USE_PHILL);
 
       expect(props.setAuthState).toHaveBeenCalledWith(
         AuthState.Unauthenticated,
@@ -285,7 +285,7 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      await handleAuthSelect(AuthType.USE_GEMINI);
+      await handleAuthSelect(AuthType.USE_PHILL);
 
       expect(props.setAuthState).toHaveBeenCalledWith(
         AuthState.AwaitingApiKeyInput,
@@ -302,7 +302,7 @@ describe('AuthDialog', () => {
       renderWithProviders(<AuthDialog {...props} />);
       const { onSelect: handleAuthSelect } =
         mockedRadioButtonSelect.mock.calls[0][0];
-      await handleAuthSelect(AuthType.USE_GEMINI);
+      await handleAuthSelect(AuthType.USE_PHILL);
 
       expect(props.setAuthState).toHaveBeenCalledWith(
         AuthState.Unauthenticated,
@@ -367,7 +367,7 @@ describe('AuthDialog', () => {
         desc: 'calls setAuthState(Unauthenticated) on escape if auth method is set',
         setup: () => {
           props.settings.merged.security.auth.selectedType =
-            AuthType.USE_GEMINI;
+            AuthType.USE_PHILL;
         },
         expectations: (p: typeof props) => {
           expect(p.setAuthState).toHaveBeenCalledWith(
@@ -398,9 +398,10 @@ describe('AuthDialog', () => {
     });
 
     it('renders correctly with enforced auth type', () => {
-      props.settings.merged.security.auth.enforcedType = AuthType.USE_GEMINI;
+      props.settings.merged.security.auth.enforcedType = AuthType.USE_PHILL;
       const { lastFrame } = renderWithProviders(<AuthDialog {...props} />);
       expect(lastFrame()).toMatchSnapshot();
     });
   });
 });
+

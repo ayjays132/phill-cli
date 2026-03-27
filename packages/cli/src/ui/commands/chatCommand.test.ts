@@ -299,7 +299,7 @@ describe('chatCommand', () => {
       ];
       mockLoadCheckpoint.mockResolvedValue({
         history: conversation,
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       });
 
       const result = await resumeCommand?.action?.(mockContext, goodTag);
@@ -307,7 +307,7 @@ describe('chatCommand', () => {
       expect(result).toEqual({
         type: 'message',
         messageType: 'error',
-        content: `Cannot resume chat. It was saved with a different authentication method (${AuthType.USE_GEMINI}) than the current one (${AuthType.LOGIN_WITH_GOOGLE}).`,
+        content: `Cannot resume chat. It was saved with a different authentication method (${AuthType.USE_PHILL}) than the current one (${AuthType.LOGIN_WITH_GOOGLE}).`,
       });
     });
 
@@ -753,3 +753,4 @@ Hi there!`;
     });
   });
 });
+

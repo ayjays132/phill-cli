@@ -1,7 +1,7 @@
-# 🦅 Phill CLI (v1.1.1)
+# 🦅 Phill CLI (v1.1.2)
 
 [![Phill CLI CI](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.1.1--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
+[![Version](https://img.shields.io/badge/version-1.1.2--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
 [![License](https://img.shields.io/github/license/ayjays132/phill-cli?style=for-the-badge&logo=git)](https://github.com/ayjays132/phill-cli/blob/main/LICENSE)
 
 ![Phill CLI Banner](./docs/assets/phill-screenshot.png)
@@ -23,23 +23,39 @@ tracking towards AGI principles.
 
 ---
 
-## 🆕 What's New (v1.1.1 - The Apex Breakthrough)
+## 🆕 What's New (v1.1.2 - The Apex Breakthrough)
 
 ### 🧠 Apex Cognitive Pipeline & Gemini 3.1 Alignment
-- **Native Gemini 3.1 Support**: Full integration with `gemini-3.1-pro`, `gemini-3.1-flash`, and `gemini-3.1-flash-lite`.
-- **Advanced Tiered Auto-Mode**: The system now implements **Round-Robin Tiered Recovery**. When hitting rate limits, the agent intelligently cycles through available tiers (Pro -> Flash-Image -> Flash -> Lite) to ensure zero downtime.
-- **Multimodal Embedding v2**: Upgraded to high-fidelity v2 embeddings with verified self-healing fallback to v1 for maximum RAG reliability.
+
+- **Native Gemini 3.1 Support**: Full integration with `gemini-3.1-pro`,
+  `gemini-3.1-flash`, and `gemini-3.1-flash-lite`.
+- **Advanced Tiered Auto-Mode**: The system now implements **Round-Robin Tiered
+  Recovery**. When hitting rate limits, the agent intelligently cycles through
+  available tiers (Pro -> Flash-Image -> Flash -> Lite) to ensure zero downtime.
+- **Multimodal Embedding v2**: Upgraded to high-fidelity v2 embeddings with
+  verified self-healing fallback to v1 for maximum RAG reliability.
 
 ### 🧬 Semantic Sieve & DLR-Style History Truncation
-- **Weighted History Retention**: Uses `VectorService` to identify and retain high-importance conversation threads while compressing noisy tool outputs.
-- **Surgical DLR Truncation**: Automatically summarizes massive data blocks (keeping top 10/bottom 20 lines) to preserve terminal context and minimize token burn.
-- **Zero-Latency Live-Sync**: Background `fs.watch` integration maintains a perfect semantic map of your codebase with 0ms reasoning scan latency.
+
+- **Weighted History Retention**: Uses `VectorService` to identify and retain
+  high-importance conversation threads while compressing noisy tool outputs.
+- **Surgical DLR Truncation**: Automatically summarizes massive data blocks
+  (keeping top 10/bottom 20 lines) to preserve terminal context and minimize
+  token burn.
+- **Zero-Latency Live-Sync**: Background `fs.watch` integration maintains a
+  perfect semantic map of your codebase with 0ms reasoning scan latency.
 
 ### 🎭 Premium "Fluid OS" UI Architecture
-- **Single-Line Rounded Borders**: Stripped legacy ASCII layers for a sleek, modern app-like aesthetic (`╭`, `╰`, `─`, `│`).
-- **Animated Skill Forge**: Active skills (like `activate_skill`) now feature a distinct **Brain Icon (🧠)** and animated gradients during neural recalibration.
-- **Micro-Stutter Eliminated**: Memoized React rendering pipeline for zero-latency streaming of massive text/code blocks.
-- **Automated Dependency Resolver**: New `/browser setup` and `/voice setup` commands provide one-click initialization for local browsers and TTS models.
+
+- **Single-Line Rounded Borders**: Stripped legacy ASCII layers for a sleek,
+  modern app-like aesthetic (`╭`, `╰`, `─`, `│`).
+- **Animated Skill Forge**: Active skills (like `activate_skill`) now feature a
+  distinct **Brain Icon (🧠)** and animated gradients during neural
+  recalibration.
+- **Micro-Stutter Eliminated**: Memoized React rendering pipeline for
+  zero-latency streaming of massive text/code blocks.
+- **Automated Dependency Resolver**: New `/browser setup` and `/voice setup`
+  commands provide one-click initialization for local browsers and TTS models.
 
 ---
 

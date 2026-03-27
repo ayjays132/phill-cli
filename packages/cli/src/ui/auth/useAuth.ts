@@ -28,7 +28,7 @@ export function validateAuthMethodWithSettings(
     return null;
   }
   // If using Phill API key, we don't validate it here as we might need to prompt for it.
-  if (authType === AuthType.USE_GEMINI) {
+  if (authType === AuthType.USE_PHILL) {
     return null;
   }
   return validateAuthMethod(authType);
@@ -40,7 +40,7 @@ export const useAuthCommand = (
   initialAuthError: string | null = null,
 ) => {
   const authTypeRequiresApiKey = (authType: AuthType): boolean =>
-    authType === AuthType.USE_GEMINI ||
+    authType === AuthType.USE_PHILL ||
     authType === AuthType.HUGGINGFACE ||
     authType === AuthType.OPENAI ||
     authType === AuthType.ANTHROPIC ||
@@ -54,7 +54,7 @@ export const useAuthCommand = (
     const hasNonEmpty = (value: string | undefined): boolean =>
       typeof value === 'string' && value.trim().length > 0;
     switch (authType) {
-      case AuthType.USE_GEMINI:
+      case AuthType.USE_PHILL:
         return (
           hasNonEmpty(process.env['PHILL_API_KEY']) ||
           hasNonEmpty(process.env['GEMINI_API_KEY']) ||
@@ -154,7 +154,7 @@ export const useAuthCommand = (
         return;
       }
 
-      if (authType === AuthType.USE_GEMINI) {
+      if (authType === AuthType.USE_PHILL) {
         const key = await reloadApiKey(); // Use the unified function
         if (!key) {
           setAuthState(AuthState.AwaitingApiKeyInput);
@@ -218,3 +218,4 @@ export const useAuthCommand = (
     reloadApiKey,
   };
 };
+

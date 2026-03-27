@@ -45,6 +45,13 @@ function getPlatformArch() {
       shellcheck: 'darwin.aarch64',
     };
   }
+  if (platform === 'win32') {
+    return {
+      actionlint: 'windows_amd64',
+      shellcheck: 'windows.x86_64',
+      skipNativeLinters: true
+    };
+  }
   throw new Error(`Unsupported platform/architecture: ${platform}/${arch}`);
 }
 
@@ -141,6 +148,10 @@ export function setupLinters() {
   mkdirSync(TEMP_DIR, { recursive: true });
 
   for (const linter in LINTERS) {
+    if (platformArch.skipNativeLinters && (linter === 'actionlint' || linter === 'shellcheck')) {
+      console.log(`Skipping ${linter} installation on Windows.`);
+      continue;
+    }
     const { check, installer } = LINTERS[linter];
     if (!runCommand(check, 'ignore')) {
       console.log(`Installing ${linter}...`);
@@ -163,6 +174,7 @@ export function runESLint() {
 }
 
 export function runActionlint() {
+  if (platformArch.skipNativeLinters) return;
   console.log('\nRunning actionlint...');
   if (!runCommand(LINTERS.actionlint.run)) {
     process.exit(1);
@@ -170,6 +182,7 @@ export function runActionlint() {
 }
 
 export function runShellcheck() {
+  if (platformArch.skipNativeLinters) return;
   console.log('\nRunning shellcheck...');
   if (!runCommand(LINTERS.shellcheck.run)) {
     process.exit(1);

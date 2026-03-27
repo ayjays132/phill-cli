@@ -12,15 +12,15 @@ import path from 'node:path';
 import { readdir } from 'node:fs/promises';
 import {
   AuthType,
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_3_1_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  DEFAULT_GEMINI_MODEL_AUTO,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
+  DEFAULT_PHILL_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_MODEL_AUTO,
   ModelSlashCommandEvent,
   logModelSlashCommand,
   getDisplayString,
@@ -207,10 +207,10 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   const [providerError, setProviderError] = useState<string | null>(null);
 
   // Determine the Preferred Model (read once when the dialog opens).
-  const preferredModel = config?.getModel() || DEFAULT_GEMINI_MODEL_AUTO;
+  const preferredModel = config?.getModel() || DEFAULT_PHILL_MODEL_AUTO;
   const isGeminiAuth =
     authType === AuthType.LOGIN_WITH_GOOGLE ||
-    authType === AuthType.USE_GEMINI ||
+    authType === AuthType.USE_PHILL ||
     authType === AuthType.USE_VERTEX_AI ||
     authType === AuthType.COMPUTE_ADC;
 
@@ -326,13 +326,13 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
   const manualModelSelected = useMemo(() => {
     const manualModels = [
-      DEFAULT_GEMINI_MODEL,
-      DEFAULT_GEMINI_FLASH_MODEL,
-      DEFAULT_GEMINI_FLASH_LITE_MODEL,
-      PREVIEW_GEMINI_MODEL,
-      PREVIEW_GEMINI_FLASH_MODEL,
-      PREVIEW_GEMINI_3_1_MODEL_ID,
-      PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+      DEFAULT_PHILL_MODEL,
+      DEFAULT_PHILL_FLASH_MODEL,
+      DEFAULT_PHILL_FLASH_LITE_MODEL,
+      PREVIEW_PHILL_MODEL,
+      PREVIEW_PHILL_FLASH_MODEL,
+      PREVIEW_PHILL_3_1_MODEL_ID,
+      PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
     ];
     if (manualModels.includes(preferredModel)) {
       return preferredModel;
@@ -375,18 +375,18 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
     const list = [
       {
-        value: PREVIEW_GEMINI_3_1_MODEL_AUTO,
-        title: getDisplayString(PREVIEW_GEMINI_3_1_MODEL_AUTO),
+        value: PREVIEW_PHILL_3_1_MODEL_AUTO,
+        title: getDisplayString(PREVIEW_PHILL_3_1_MODEL_AUTO),
         description:
           'Adaptive auto mode (preview tier): routes between gemini-3.1-pro and gemini-3.1-flash, then retries intelligently on transient limits.',
-        key: PREVIEW_GEMINI_3_1_MODEL_AUTO,
+        key: PREVIEW_PHILL_3_1_MODEL_AUTO,
       },
       {
-        value: DEFAULT_GEMINI_MODEL_AUTO,
-        title: getDisplayString(DEFAULT_GEMINI_MODEL_AUTO),
+        value: DEFAULT_PHILL_MODEL_AUTO,
+        title: getDisplayString(DEFAULT_PHILL_MODEL_AUTO),
         description:
           'Adaptive auto mode (stable tier): routes between gemini-2.5-pro and gemini-2.5-flash with fast fallback behavior under rate pressure.',
-        key: DEFAULT_GEMINI_MODEL_AUTO,
+        key: DEFAULT_PHILL_MODEL_AUTO,
       },
       {
         value: 'Manual',
@@ -416,10 +416,10 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     // Phill 3 / preview tier (only shown when preview is enabled).
     const withPreview = shouldShowPreviewModels
       ? [
-          PREVIEW_GEMINI_MODEL,
-          PREVIEW_GEMINI_FLASH_MODEL,
-          PREVIEW_GEMINI_3_1_MODEL_ID,
-          PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+          PREVIEW_PHILL_MODEL,
+          PREVIEW_PHILL_FLASH_MODEL,
+          PREVIEW_PHILL_3_1_MODEL_ID,
+          PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
           'gemini-3-pro',
           'gemini-3-flash',
         ]
@@ -547,3 +547,5 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     </PremiumFrame>
   );
 }
+
+

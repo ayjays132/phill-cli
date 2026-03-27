@@ -47,7 +47,7 @@ describe('PrivacyNotice', () => {
 
   it.each([
     {
-      authType: 'gemini-api-key' as AuthType,
+      authType: 'phill-api-key' as AuthType,
       expectedComponent: 'PhillPrivacyNotice',
     },
     {
@@ -77,3 +77,4 @@ describe('PrivacyNotice', () => {
     },
   );
 });
+

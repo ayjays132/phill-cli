@@ -28,8 +28,7 @@ if (!process.cwd().includes('packages')) {
 
 const packageName = basename(process.cwd());
 
-// build typescript files
-execSync('node --max-old-space-size=8192 ../../node_modules/typescript/lib/tsc.js --build', { stdio: 'inherit' });
+// tsc is now run from the root build script for performance
 
 // copy .{md,json} files
 execSync('node ../../scripts/copy_files.js', { stdio: 'inherit' });

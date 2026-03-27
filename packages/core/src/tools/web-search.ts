@@ -18,17 +18,16 @@ import { ideContextStore } from '../ide/ideContext.js';
 import type { File } from '../ide/types.js';
 import { AuthType } from '../core/contentGenerator.js';
 
-import { createRequire } from 'node:module';
-const dynamicRequire = createRequire(import.meta.url);
+// @ts-expect-error
+import ddgSearchLib from '@pikisoft/duckduckgo-search';
+
 type DuckDuckGoSearch = {
   text: (
     query: string,
   ) => AsyncIterable<{ title: string; href: string; body: string }>;
 };
-const ddgSearchLib = dynamicRequire('@pikisoft/duckduckgo-search') as {
-  default: DuckDuckGoSearch;
-};
-const ddg = ddgSearchLib.default;
+
+const ddg = ddgSearchLib as unknown as DuckDuckGoSearch;
 
 interface GroundingChunkWeb {
   uri?: string;

@@ -15,9 +15,9 @@ import {
   type IdeInfo,
 } from 'phill-cli-core/src/ide/detect-ide.js';
 
-const CLI_IDE_COMPANION_IDENTIFIER = 'Google.gemini-cli-vscode-ide-companion';
+const CLI_IDE_COMPANION_IDENTIFIER = 'phill.phill-cli-vscode-ide-companion';
 const INFO_MESSAGE_SHOWN_KEY = 'phillCliInfoMessageShown';
-export const DIFF_SCHEME = 'gemini-diff';
+export const DIFF_SCHEME = 'phill-diff';
 
 /**
  * In these environments the companion extension is installed and managed by the IDE instead of the user.
@@ -130,7 +130,7 @@ export async function activate(context: vscode.ExtensionContext) {
       diffContentProvider,
     ),
     (vscode.commands.registerCommand(
-      'gemini.diff.accept',
+      'phill.diff.accept',
       (uri?: vscode.Uri) => {
         const docUri = uri ?? vscode.window.activeTextEditor?.document.uri;
         if (docUri && docUri.scheme === DIFF_SCHEME) {
@@ -140,7 +140,7 @@ export async function activate(context: vscode.ExtensionContext) {
       },
     ),
     vscode.commands.registerCommand(
-      'gemini.diff.cancel',
+      'phill.diff.cancel',
       (uri?: vscode.Uri) => {
         const docUri = uri ?? vscode.window.activeTextEditor?.document.uri;
         if (docUri && docUri.scheme === DIFF_SCHEME) {

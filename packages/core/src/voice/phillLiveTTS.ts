@@ -13,7 +13,7 @@ import type { Config } from '../config/config.js';
 import { AuthType } from '../core/contentGenerator.js';
 import { getOauthClient } from '../code_assist/oauth2.js';
 
-const SUPPORTED_GEMINI_VOICE_NAMES = new Set([
+const SUPPORTED_PHILL_VOICE_NAMES = new Set([
   'Zephyr',
   'Puck',
   'Charon',
@@ -46,7 +46,7 @@ const SUPPORTED_GEMINI_VOICE_NAMES = new Set([
   'Sulafat',
 ]);
 
-const DEFAULT_GEMINI_VOICE_NAME = 'Kore';
+const DEFAULT_PHILL_VOICE_NAME = 'Kore';
 const DEFAULT_VOICE_STYLE_BASE =
   'Warm, confident, and precise. Feminine default tone. Blend cinematic empathy and calm intelligence with practical execution. Keep phrasing concise and helpful. Match the user language automatically and preserve names, accents, and technical terms naturally.';
 const MULTI_SPEAKER_VOICE_CYCLE = [
@@ -58,7 +58,7 @@ const MULTI_SPEAKER_VOICE_CYCLE = [
   'Fenrir',
 ] as const;
 
-export class GeminiLiveTTS implements ITTSProvider {
+export class PhillLiveTTS implements ITTSProvider {
   private audioManager: AudioManager;
   private config: Config;
   private prosody: ProsodyOptions = {
@@ -90,27 +90,27 @@ export class GeminiLiveTTS implements ITTSProvider {
   ): string {
     if (
       identityVoiceName &&
-      SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)
+      SUPPORTED_PHILL_VOICE_NAMES.has(identityVoiceName)
     ) {
       return identityVoiceName;
     }
     if (
       identityVoiceName &&
-      !SUPPORTED_GEMINI_VOICE_NAMES.has(identityVoiceName)
+      !SUPPORTED_PHILL_VOICE_NAMES.has(identityVoiceName)
     ) {
       debugLogger.warn(
-        `Unknown Gemini voice "${identityVoiceName}". Falling back to default voice "${DEFAULT_GEMINI_VOICE_NAME}".`,
+        `Unknown Gemini voice "${identityVoiceName}". Falling back to default voice "${DEFAULT_PHILL_VOICE_NAME}".`,
       );
-      return DEFAULT_GEMINI_VOICE_NAME;
+      return DEFAULT_PHILL_VOICE_NAME;
     }
     if (preferredGender === 'female') return 'Kore';
     if (preferredGender === 'male') return 'Puck';
     if (preferredGender === 'neutral') return 'Charon';
     const envVoice = process.env['PHILL_TTS_VOICE'];
-    if (envVoice && SUPPORTED_GEMINI_VOICE_NAMES.has(envVoice)) {
+    if (envVoice && SUPPORTED_PHILL_VOICE_NAMES.has(envVoice)) {
       return envVoice;
     }
-    return DEFAULT_GEMINI_VOICE_NAME;
+    return DEFAULT_PHILL_VOICE_NAME;
   }
 
   private extractDialogSpeakers(text: string): string[] {
@@ -378,3 +378,4 @@ function stripWavHeaderIfPresent(buffer: Buffer): Buffer {
   }
   return buffer;
 }
+

@@ -505,7 +505,7 @@ describe('Logger', () => {
           ...conversation,
           { role: 'user', parts: [{ text: 'hello' }] },
         ],
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       };
       const taggedFilePath = path.join(
         TEST_PHILL_DIR,
@@ -775,3 +775,4 @@ describe('Logger', () => {
     });
   });
 });
+

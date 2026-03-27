@@ -9,8 +9,8 @@ import { Storage } from '../config/storage.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { 
-  PREVIEW_GEMINI_EMBEDDING_MODEL, 
-  STABLE_GEMINI_EMBEDDING_MODEL 
+  PREVIEW_PHILL_EMBEDDING_MODEL, 
+  STABLE_PHILL_EMBEDDING_MODEL 
 } from '../config/models.js';
 
 import * as crypto from 'node:crypto';
@@ -36,7 +36,7 @@ export class VectorService {
   private saveTimeout: NodeJS.Timeout | null = null;
   private isSaving = false;
   private pendingSave: Promise<void> | null = null;
-  private activeEmbeddingModel: string = PREVIEW_GEMINI_EMBEDDING_MODEL;
+  private activeEmbeddingModel: string = PREVIEW_PHILL_EMBEDDING_MODEL;
 
   private constructor(private contentGenerator: ContentGenerator) {}
 
@@ -124,9 +124,9 @@ export class VectorService {
       });
     } catch (error) {
       // If preview fails, pivot to stable for this session
-      if (this.activeEmbeddingModel === PREVIEW_GEMINI_EMBEDDING_MODEL) {
-        debugLogger.debug(`[VectorService] Preview embedding failed, pivoting to stable: ${STABLE_GEMINI_EMBEDDING_MODEL}`);
-        this.activeEmbeddingModel = STABLE_GEMINI_EMBEDDING_MODEL;
+      if (this.activeEmbeddingModel === PREVIEW_PHILL_EMBEDDING_MODEL) {
+        debugLogger.debug(`[VectorService] Preview embedding failed, pivoting to stable: ${STABLE_PHILL_EMBEDDING_MODEL}`);
+        this.activeEmbeddingModel = STABLE_PHILL_EMBEDDING_MODEL;
         try {
           response = await this.contentGenerator.embedContent({
             model: this.activeEmbeddingModel,
@@ -175,8 +175,8 @@ export class VectorService {
         contents: [{ role: 'user', parts: [{ text: query }] }],
       });
     } catch (error) {
-      if (this.activeEmbeddingModel === PREVIEW_GEMINI_EMBEDDING_MODEL) {
-        this.activeEmbeddingModel = STABLE_GEMINI_EMBEDDING_MODEL;
+      if (this.activeEmbeddingModel === PREVIEW_PHILL_EMBEDDING_MODEL) {
+        this.activeEmbeddingModel = STABLE_PHILL_EMBEDDING_MODEL;
         try {
           response = await this.contentGenerator.embedContent({
             model: this.activeEmbeddingModel,
@@ -215,3 +215,4 @@ export class VectorService {
       await this.save();
   }
 }
+

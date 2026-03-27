@@ -23,7 +23,7 @@ import {
 import { computeSessionStats } from '../utils/computeStats.js';
 import {
   type RetrieveUserQuotaResponse,
-  VALID_GEMINI_MODELS,
+  VALID_PHILL_MODELS,
 } from 'phill-cli-core';
 
 // A more flexible and powerful StatRow component
@@ -104,7 +104,7 @@ const buildModelRows = (
       ?.filter(
         (b) =>
           b.modelId &&
-          VALID_GEMINI_MODELS.has(b.modelId) &&
+          VALID_PHILL_MODELS.has(b.modelId) &&
           !usedModelNames.has(b.modelId),
       )
       .map((bucket) => ({
@@ -487,3 +487,4 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({
     </Box>
   );
 };
+

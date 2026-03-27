@@ -26,20 +26,20 @@ const REVERSIONS = [
   { from: /PHILL_CLI_HOME/g, to: 'PHILL_CLI_HOME' },
 
   // Model-related reverts
-  { from: /DEFAULT_GEMINI_MODEL_AUTO/g, to: 'DEFAULT_GEMINI_MODEL_AUTO' },
-  { from: /DEFAULT_GEMINI_MODEL/g, to: 'DEFAULT_GEMINI_MODEL' },
-  { from: /DEFAULT_GEMINI_FLASH_MODEL/g, to: 'DEFAULT_GEMINI_FLASH_MODEL' },
-  { from: /DEFAULT_GEMINI_FLASH_LITE_MODEL/g, to: 'DEFAULT_GEMINI_FLASH_LITE_MODEL' },
-  { from: /DEFAULT_GEMINI_EMBEDDING_MODEL/g, to: 'DEFAULT_GEMINI_EMBEDDING_MODEL' },
-  { from: /PREVIEW_GEMINI_MODEL_AUTO/g, to: 'PREVIEW_GEMINI_MODEL_AUTO' },
-  { from: /PREVIEW_GEMINI_MODEL/g, to: 'PREVIEW_GEMINI_MODEL' },
-  { from: /PREVIEW_GEMINI_FLASH_MODEL/g, to: 'PREVIEW_GEMINI_FLASH_MODEL' },
-  { from: /VALID_GEMINI_MODELS/g, to: 'VALID_GEMINI_MODELS' },
-  { from: /GEMINI_MODEL_ALIAS_AUTO/g, to: 'GEMINI_MODEL_ALIAS_AUTO' },
-  { from: /GEMINI_MODEL_ALIAS_PRO/g, to: 'GEMINI_MODEL_ALIAS_PRO' },
-  { from: /GEMINI_MODEL_ALIAS_FLASH/g, to: 'GEMINI_MODEL_ALIAS_FLASH' },
-  { from: /GEMINI_MODEL_ALIAS_FLASH_LITE/g, to: 'GEMINI_MODEL_ALIAS_FLASH_LITE' },
-  { from: /isGemini2Model/g, to: 'isGemini2Model' },
+  { from: /DEFAULT_PHILL_MODEL_AUTO/g, to: 'DEFAULT_PHILL_MODEL_AUTO' },
+  { from: /DEFAULT_PHILL_MODEL/g, to: 'DEFAULT_PHILL_MODEL' },
+  { from: /DEFAULT_PHILL_FLASH_MODEL/g, to: 'DEFAULT_PHILL_FLASH_MODEL' },
+  { from: /DEFAULT_PHILL_FLASH_LITE_MODEL/g, to: 'DEFAULT_PHILL_FLASH_LITE_MODEL' },
+  { from: /DEFAULT_PHILL_EMBEDDING_MODEL/g, to: 'DEFAULT_PHILL_EMBEDDING_MODEL' },
+  { from: /PREVIEW_PHILL_MODEL_AUTO/g, to: 'PREVIEW_PHILL_MODEL_AUTO' },
+  { from: /PREVIEW_PHILL_MODEL/g, to: 'PREVIEW_PHILL_MODEL' },
+  { from: /PREVIEW_PHILL_FLASH_MODEL/g, to: 'PREVIEW_PHILL_FLASH_MODEL' },
+  { from: /VALID_PHILL_MODELS/g, to: 'VALID_PHILL_MODELS' },
+  { from: /PHILL_MODEL_ALIAS_AUTO/g, to: 'PHILL_MODEL_ALIAS_AUTO' },
+  { from: /PHILL_MODEL_ALIAS_PRO/g, to: 'PHILL_MODEL_ALIAS_PRO' },
+  { from: /PHILL_MODEL_ALIAS_FLASH/g, to: 'PHILL_MODEL_ALIAS_FLASH' },
+  { from: /PHILL_MODEL_ALIAS_FLASH_LITE/g, to: 'PHILL_MODEL_ALIAS_FLASH_LITE' },
+  { from: /isPhill2Model/g, to: 'isPhill2Model' },
   { from: /model\.startsWith\('phill-3-'\)/g, to: "model.startsWith('gemini-3-')" },
   { from: /phill-2(\.|$)/g, to: "gemini-2($1)" }, // For regex patterns
 
@@ -87,3 +87,4 @@ function processFiles() {
 console.log('Starting targeted reversion process (Phill to Gemini API/Model names and package names)...');
 processFiles();
 console.log('Reversion complete!');
+

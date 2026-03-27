@@ -25,10 +25,10 @@ import {
   makeFakeConfig,
   type GoogleApiError,
   RetryableQuotaError,
-  PREVIEW_GEMINI_MODEL,
+  PREVIEW_PHILL_MODEL,
   ModelNotFoundError,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_PHILL_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
 } from 'phill-cli-core';
 import { useQuotaAndFallback } from './useQuotaAndFallback.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
@@ -113,7 +113,7 @@ describe('useQuotaAndFallback', () => {
     it('should return null and take no action if authType is not LOGIN_WITH_GOOGLE', async () => {
       // Override the default mock from beforeEach for this specific test
       vi.spyOn(mockConfig, 'getContentGeneratorConfig').mockReturnValue({
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       });
 
       const handler = getRegisteredHandler();
@@ -455,8 +455,8 @@ To disable gemini-3-pro-preview, disable "Preview features" in /settings.`,
       let promise: Promise<FallbackIntent | null>;
       act(() => {
         promise = handler(
-          PREVIEW_GEMINI_MODEL,
-          DEFAULT_GEMINI_MODEL,
+          PREVIEW_PHILL_MODEL,
+          DEFAULT_PHILL_MODEL,
           new Error('preview model failed'),
         );
       });
@@ -491,8 +491,8 @@ To disable gemini-3-pro-preview, disable "Preview features" in /settings.`,
       let promise: Promise<FallbackIntent | null>;
       act(() => {
         promise = handler(
-          PREVIEW_GEMINI_MODEL,
-          DEFAULT_GEMINI_FLASH_MODEL,
+          PREVIEW_PHILL_MODEL,
+          DEFAULT_PHILL_FLASH_MODEL,
           new Error('preview model failed'),
         );
       });
@@ -697,3 +697,5 @@ To disable gemini-3-pro-preview, disable "Preview features" in /settings.`,
     });
   });
 });
+
+

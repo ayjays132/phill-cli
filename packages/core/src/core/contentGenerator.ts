@@ -55,8 +55,7 @@ export interface ContentGenerator {
 
 export enum AuthType {
   LOGIN_WITH_GOOGLE = 'oauth-personal',
-  USE_PHILL = 'gemini-api-key',
-  USE_GEMINI = 'gemini-api-key',
+  USE_PHILL = 'phill-api-key',
   USE_VERTEX_AI = 'vertex-ai',
   LEGACY_CLOUD_SHELL = 'cloud-shell',
   COMPUTE_ADC = 'compute-default-credentials',
@@ -136,7 +135,7 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
-  if (authType === AuthType.USE_GEMINI && geminiApiKey) {
+  if (authType === AuthType.USE_PHILL && geminiApiKey) {
     contentGeneratorConfig.apiKey = geminiApiKey;
     contentGeneratorConfig.vertexai = false;
 
@@ -310,7 +309,7 @@ export async function createContentGenerator(
 
     if (
       apiKeyAuthMechanism === 'bearer' &&
-      (config.authType === AuthType.USE_GEMINI ||
+      (config.authType === AuthType.USE_PHILL ||
         config.authType === AuthType.USE_VERTEX_AI) &&
       config.apiKey
     ) {
@@ -333,7 +332,7 @@ export async function createContentGenerator(
     }
 
     if (
-      config.authType === AuthType.USE_GEMINI ||
+      config.authType === AuthType.USE_PHILL ||
       config.authType === AuthType.USE_VERTEX_AI
     ) {
       let headers: Record<string, string> = { ...baseHeaders };
@@ -478,3 +477,4 @@ export async function createContentGenerator(
 
   return generator;
 }
+

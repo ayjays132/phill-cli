@@ -7,23 +7,23 @@
 import { describe, it, expect } from 'vitest';
 import { tokenLimit, DEFAULT_TOKEN_LIMIT } from './tokenLimits.js';
 import {
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_MODEL,
 } from '../config/models.js';
 
 describe('tokenLimit', () => {
   it('should return the correct token limit for default models', () => {
-    expect(tokenLimit(DEFAULT_GEMINI_MODEL)).toBe(1_048_576);
-    expect(tokenLimit(DEFAULT_GEMINI_FLASH_MODEL)).toBe(1_048_576);
-    expect(tokenLimit(DEFAULT_GEMINI_FLASH_LITE_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(DEFAULT_PHILL_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(DEFAULT_PHILL_FLASH_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(DEFAULT_PHILL_FLASH_LITE_MODEL)).toBe(1_048_576);
   });
 
   it('should return the correct token limit for preview models', () => {
-    expect(tokenLimit(PREVIEW_GEMINI_MODEL)).toBe(1_048_576);
-    expect(tokenLimit(PREVIEW_GEMINI_FLASH_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(PREVIEW_PHILL_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(PREVIEW_PHILL_FLASH_MODEL)).toBe(1_048_576);
   });
 
   it('should return the default token limit for an unknown model', () => {
@@ -39,3 +39,4 @@ describe('tokenLimit', () => {
     expect(DEFAULT_TOKEN_LIMIT).toBe(1_048_576);
   });
 });
+

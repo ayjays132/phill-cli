@@ -16,10 +16,10 @@ import { CodebaseInvestigatorAgent } from '../agents/codebase-investigator.js';
 import { PHILL_DIR } from '../utils/paths.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import {
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_GEMINI_MODEL,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_MODEL_AUTO,
+  DEFAULT_PHILL_MODEL,
 } from '../config/models.js';
 import { ApprovalMode } from '../policy/types.js';
 
@@ -73,8 +73,8 @@ describe('Core System Prompt (prompts.ts)', () => {
       isInteractive: vi.fn().mockReturnValue(true),
       isInteractiveShellEnabled: vi.fn().mockReturnValue(true),
       isAgentsEnabled: vi.fn().mockReturnValue(false),
-      getModel: vi.fn().mockReturnValue(DEFAULT_GEMINI_MODEL_AUTO),
-      getActiveModel: vi.fn().mockReturnValue(DEFAULT_GEMINI_MODEL),
+      getModel: vi.fn().mockReturnValue(DEFAULT_PHILL_MODEL_AUTO),
+      getActiveModel: vi.fn().mockReturnValue(DEFAULT_PHILL_MODEL),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
       getAgentRegistry: vi.fn().mockReturnValue({
         getDirectoryContext: vi.fn().mockReturnValue('Mock Agent Directory'),
@@ -127,7 +127,7 @@ describe('Core System Prompt (prompts.ts)', () => {
   });
 
   it('should use chatty system prompt for preview model', () => {
-    vi.mocked(mockConfig.getActiveModel).mockReturnValue(PREVIEW_GEMINI_MODEL);
+    vi.mocked(mockConfig.getActiveModel).mockReturnValue(PREVIEW_PHILL_MODEL);
     const prompt = getCoreSystemPrompt(mockConfig);
     expect(prompt).toContain('You are an interactive CLI agent'); // Check for core content
     expect(prompt).toContain('No Chitchat:');
@@ -136,7 +136,7 @@ describe('Core System Prompt (prompts.ts)', () => {
 
   it('should use chatty system prompt for preview flash model', () => {
     vi.mocked(mockConfig.getActiveModel).mockReturnValue(
-      PREVIEW_GEMINI_FLASH_MODEL,
+      PREVIEW_PHILL_FLASH_MODEL,
     );
     const prompt = getCoreSystemPrompt(mockConfig);
     expect(prompt).toContain('You are an interactive CLI agent'); // Check for core content
@@ -224,7 +224,7 @@ describe('Core System Prompt (prompts.ts)', () => {
         isInteractiveShellEnabled: vi.fn().mockReturnValue(false),
         isAgentsEnabled: vi.fn().mockReturnValue(false),
         getModel: vi.fn().mockReturnValue('auto'),
-        getActiveModel: vi.fn().mockReturnValue(DEFAULT_GEMINI_MODEL),
+        getActiveModel: vi.fn().mockReturnValue(DEFAULT_PHILL_MODEL),
         getPreviewFeatures: vi.fn().mockReturnValue(false),
         getAgentRegistry: vi.fn().mockReturnValue({
           getDirectoryContext: vi.fn().mockReturnValue('Mock Agent Directory'),
@@ -501,3 +501,4 @@ describe('resolvePathFromEnv helper function', () => {
     });
   });
 });
+

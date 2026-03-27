@@ -19,8 +19,8 @@ import {
   setPhillMdFilename as setServerPhillMdFilename,
   getCurrentPhillMdFilename,
   ApprovalMode,
-  DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  DEFAULT_PHILL_MODEL_AUTO,
+  DEFAULT_PHILL_EMBEDDING_MODEL,
   DEFAULT_FILE_FILTERING_OPTIONS,
   DEFAULT_MEMORY_FILE_FILTERING_OPTIONS,
   FileDiscoveryService,
@@ -35,12 +35,12 @@ import {
   loadServerHierarchicalMemory,
   WEB_FETCH_TOOL_NAME,
   getVersion,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
   type HookDefinition,
   type HookEventName,
   type OutputFormat,
   coreEvents,
-  GEMINI_MODEL_ALIAS_AUTO,
+  PHILL_MODEL_ALIAS_AUTO,
   findProjectRoot,
   type ExtensionEvents,
 } from 'phill-cli-core';
@@ -673,13 +673,13 @@ export async function loadCliConfig(
   policyEngineConfig.nonInteractive = !interactive;
 
   const defaultModel = settings.general?.previewFeatures
-    ? PREVIEW_GEMINI_3_1_MODEL_AUTO
-    : DEFAULT_GEMINI_MODEL_AUTO;
+    ? PREVIEW_PHILL_3_1_MODEL_AUTO
+    : DEFAULT_PHILL_MODEL_AUTO;
   const specifiedModel =
     argv.model || process.env['PHILL_MODEL'] || settings.model?.name;
 
   const resolvedModel =
-    specifiedModel === GEMINI_MODEL_ALIAS_AUTO
+    specifiedModel === PHILL_MODEL_ALIAS_AUTO
       ? defaultModel
       : specifiedModel || defaultModel;
   const sandboxConfig = await loadSandboxConfig(settings, argv);
@@ -703,7 +703,7 @@ export async function loadCliConfig(
   return new Config({
     sessionId,
     clientVersion: await getVersion(),
-    embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
+    embeddingModel: DEFAULT_PHILL_EMBEDDING_MODEL,
     sandbox: sandboxConfig,
     targetDir: findProjectRoot(cwd),
     includeDirectories,
@@ -847,3 +847,4 @@ function mergeExcludeTools(
   ]);
   return Array.from(allExcludeTools);
 }
+

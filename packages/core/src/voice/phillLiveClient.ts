@@ -10,7 +10,7 @@ import { EventEmitter } from 'events';
 import { debugLogger } from '../utils/debugLogger.js';
 import type { Tool } from '@google/genai';
 
-export interface GeminiLiveConfig {
+export interface PhillLiveConfig {
   apiKey?: string;
   accessToken?: string;
   model?: string;
@@ -84,7 +84,7 @@ export interface ToolResponseMessage {
   };
 }
 
-export interface GeminiLiveClientEvents {
+export interface PhillLiveClientEvents {
   connected: () => void;
   disconnected: (code: number, reason: string) => void;
   audioData: (data: Buffer) => void;
@@ -94,9 +94,9 @@ export interface GeminiLiveClientEvents {
   error: (error: Error) => void;
 }
 
-export class GeminiLiveClient extends EventEmitter {
+export class PhillLiveClient extends EventEmitter {
   private ws: any | null = null;
-  private config: GeminiLiveConfig;
+  private config: PhillLiveConfig;
   private isConnected = false;
   private resolvedModel: string | null = null;
   private readonly preferredLiveCandidates = [
@@ -105,7 +105,7 @@ export class GeminiLiveClient extends EventEmitter {
   private readonly endpoint =
     'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
-  constructor(config: GeminiLiveConfig) {
+  constructor(config: PhillLiveConfig) {
     super();
     this.config = config;
   }
@@ -598,3 +598,4 @@ export class GeminiLiveClient extends EventEmitter {
     this.removeAllListeners();
   }
 }
+

@@ -25,7 +25,7 @@ function getAuthTypeFromEnv(): AuthType | undefined {
     return AuthType.USE_VERTEX_AI;
   }
   if (process.env['PHILL_API_KEY']) {
-    return AuthType.USE_GEMINI;
+    return AuthType.USE_PHILL;
   }
   return undefined;
 }
@@ -76,3 +76,4 @@ export async function validateNonInteractiveAuth(
     }
   }
 }
+

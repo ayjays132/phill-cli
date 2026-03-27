@@ -1372,7 +1372,7 @@ describe('phill.tsx main function exit codes', () => {
       processExitSpy.mockRestore();
     }
 
-    expect(refreshAuthSpy).toHaveBeenCalledWith(AuthType.USE_GEMINI);
+    expect(refreshAuthSpy).toHaveBeenCalledWith(AuthType.USE_PHILL);
   });
 });
 
@@ -1629,3 +1629,4 @@ describe('startInteractiveUI', () => {
     writeSpy.mockRestore();
   });
 });
+

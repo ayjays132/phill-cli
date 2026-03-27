@@ -11,12 +11,12 @@ import { ConfigContext } from '../contexts/ConfigContext.js';
 import { KeypressProvider } from '../contexts/KeypressContext.js';
 import {
   AuthType,
-  DEFAULT_GEMINI_MODEL,
-  DEFAULT_GEMINI_MODEL_AUTO,
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  DEFAULT_PHILL_MODEL,
+  DEFAULT_PHILL_MODEL_AUTO,
+  DEFAULT_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
 } from 'phill-cli-core';
 import type { Config, ModelSlashCommandEvent } from 'phill-cli-core';
 
@@ -60,12 +60,12 @@ describe('<ModelDialog />', () => {
     getModel: mockGetModel,
     getPreviewFeatures: mockGetPreviewFeatures,
     getHasAccessToPreviewModel: mockGetHasAccessToPreviewModel,
-    getContentGeneratorConfig: () => ({ authType: AuthType.USE_GEMINI }),
+    getContentGeneratorConfig: () => ({ authType: AuthType.USE_PHILL }),
   };
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mockGetModel.mockReturnValue(DEFAULT_GEMINI_MODEL_AUTO);
+    mockGetModel.mockReturnValue(DEFAULT_PHILL_MODEL_AUTO);
     mockGetPreviewFeatures.mockReturnValue(false);
     mockGetHasAccessToPreviewModel.mockReturnValue(false);
 
@@ -117,15 +117,15 @@ describe('<ModelDialog />', () => {
     await waitForUpdate();
 
     // Should now show manual options
-    expect(lastFrame()).toContain(DEFAULT_GEMINI_MODEL);
-    expect(lastFrame()).toContain(DEFAULT_GEMINI_FLASH_MODEL);
-    expect(lastFrame()).toContain(DEFAULT_GEMINI_FLASH_LITE_MODEL);
+    expect(lastFrame()).toContain(DEFAULT_PHILL_MODEL);
+    expect(lastFrame()).toContain(DEFAULT_PHILL_FLASH_MODEL);
+    expect(lastFrame()).toContain(DEFAULT_PHILL_FLASH_LITE_MODEL);
   });
 
   it('renders "manual" view with preview options when preview features are enabled', async () => {
     mockGetPreviewFeatures.mockReturnValue(true);
     mockGetHasAccessToPreviewModel.mockReturnValue(true); // Must have access
-    mockGetModel.mockReturnValue(PREVIEW_GEMINI_3_1_MODEL_AUTO);
+    mockGetModel.mockReturnValue(PREVIEW_PHILL_3_1_MODEL_AUTO);
     const { lastFrame, stdin } = renderComponent();
 
     // Select "Manual" (index 2 because Preview Auto is first, then Auto (Phill 2.5))
@@ -139,7 +139,7 @@ describe('<ModelDialog />', () => {
     stdin.write('\r');
     await waitForUpdate();
 
-    expect(lastFrame()).toContain(PREVIEW_GEMINI_MODEL);
+    expect(lastFrame()).toContain(PREVIEW_PHILL_MODEL);
   });
 
   it('sets model and closes when a model is selected in "main" view', async () => {
@@ -150,7 +150,7 @@ describe('<ModelDialog />', () => {
     await waitForUpdate();
 
     expect(mockSetModel).toHaveBeenCalledWith(
-      DEFAULT_GEMINI_MODEL_AUTO,
+      DEFAULT_PHILL_MODEL_AUTO,
       true, // Session only by default
     );
     expect(mockOnClose).toHaveBeenCalled();
@@ -165,11 +165,11 @@ describe('<ModelDialog />', () => {
     stdin.write('\r');
     await waitForUpdate();
 
-    // Now in manual view. Default selection is first item (DEFAULT_GEMINI_MODEL)
+    // Now in manual view. Default selection is first item (DEFAULT_PHILL_MODEL)
     stdin.write('\r');
     await waitForUpdate();
 
-    expect(mockSetModel).toHaveBeenCalledWith(DEFAULT_GEMINI_MODEL, true);
+    expect(mockSetModel).toHaveBeenCalledWith(DEFAULT_PHILL_MODEL, true);
     expect(mockOnClose).toHaveBeenCalled();
   });
 
@@ -189,7 +189,7 @@ describe('<ModelDialog />', () => {
     await waitForUpdate();
 
     expect(mockSetModel).toHaveBeenCalledWith(
-      DEFAULT_GEMINI_MODEL_AUTO,
+      DEFAULT_PHILL_MODEL_AUTO,
       false, // Persist enabled
     );
     expect(mockOnClose).toHaveBeenCalled();
@@ -213,7 +213,7 @@ describe('<ModelDialog />', () => {
     stdin.write('\r');
     await waitForUpdate();
 
-    expect(lastFrame()).toContain(DEFAULT_GEMINI_MODEL);
+    expect(lastFrame()).toContain(DEFAULT_PHILL_MODEL);
 
     // Press Escape
     stdin.write('\u001B');
@@ -270,3 +270,5 @@ describe('<ModelDialog />', () => {
     });
   });
 });
+
+

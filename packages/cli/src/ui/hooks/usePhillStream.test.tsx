@@ -238,7 +238,7 @@ describe('usePhillStream', () => {
       model: 'test-model',
       apiKey: 'test-key',
       vertexai: false,
-      authType: AuthType.USE_GEMINI,
+      authType: AuthType.USE_PHILL,
     })),
     getContentGenerator: vi.fn(),
     isInteractive: () => false,
@@ -3234,3 +3234,4 @@ describe('usePhillStream', () => {
     });
   });
 });
+

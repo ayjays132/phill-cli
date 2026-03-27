@@ -930,8 +930,8 @@ Logging in with Google... Restarting Phill CLI to continue.
           return;
         }
 
-        const targetAuthType = authContext.apiKeyAuthType ?? AuthType.USE_GEMINI;
-        if (targetAuthType === AuthType.USE_GEMINI) {
+        const targetAuthType = authContext.apiKeyAuthType ?? AuthType.USE_PHILL;
+        if (targetAuthType === AuthType.USE_PHILL) {
           await saveApiKey(apiKey);
           await reloadApiKey();
         } else if (targetAuthType === AuthType.HUGGINGFACE) {
@@ -974,7 +974,7 @@ Logging in with Google... Restarting Phill CLI to continue.
 
   const providerApiKeyDefaultValue = useMemo(() => {
     const targetAuthType = authContext.apiKeyAuthType;
-    if (!targetAuthType || targetAuthType === AuthType.USE_GEMINI) {
+    if (!targetAuthType || targetAuthType === AuthType.USE_PHILL) {
       return apiKeyDefaultValue;
     }
 
@@ -1022,7 +1022,7 @@ Logging in with Google... Restarting Phill CLI to continue.
       // We skip validation for Phill API key here because it might be stored
       // in the keychain, which we can't check synchronously.
       // The useAuth hook handles validation for this case.
-      if (settings.merged.security.auth.selectedType === AuthType.USE_GEMINI) {
+      if (settings.merged.security.auth.selectedType === AuthType.USE_PHILL) {
         return;
       }
 
@@ -2130,7 +2130,7 @@ Logging in with Google... Restarting Phill CLI to continue.
         setBannerVisible(true);
         const authType = config.getContentGeneratorConfig()?.authType;
         if (
-          authType === AuthType.USE_GEMINI ||
+          authType === AuthType.USE_PHILL ||
           authType === AuthType.USE_VERTEX_AI
         ) {
           setDefaultBannerText(
@@ -2552,3 +2552,4 @@ Logging in with Google... Restarting Phill CLI to continue.
 
 export { detectTerminalCapabilities, FALLBACK_THEME };
 export type { TerminalCapabilities };
+

@@ -44,7 +44,7 @@ import type {
 } from './types.js';
 import { AgentTerminateMode, DEFAULT_QUERY_STRING } from './types.js';
 import { templateString } from './utils.js';
-import { DEFAULT_GEMINI_MODEL, isAutoModel } from '../config/models.js';
+import { DEFAULT_PHILL_MODEL, isAutoModel } from '../config/models.js';
 import type { RoutingContext } from '../routing/routingStrategy.js';
 import { parseThought } from '../utils/thoughtUtils.js';
 import { type z } from 'zod';
@@ -625,7 +625,7 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
     chat: PhillChat,
     prompt_id: string,
   ): Promise<void> {
-    const model = this.definition.modelConfig.model ?? DEFAULT_GEMINI_MODEL;
+    const model = this.definition.modelConfig.model ?? DEFAULT_PHILL_MODEL;
 
     const { newHistory, info } = await this.compressionService.compress(
       chat,
@@ -689,7 +689,7 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
         modelToUse = decision.model;
       } catch (error) {
         debugLogger.warn(`Error during model routing: ${error}`);
-        modelToUse = DEFAULT_GEMINI_MODEL;
+        modelToUse = DEFAULT_PHILL_MODEL;
       }
     } else {
       modelToUse = requestedModel;
@@ -1218,3 +1218,4 @@ Important Rules:
     }
   }
 }
+

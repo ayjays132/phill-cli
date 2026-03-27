@@ -39,7 +39,7 @@ interface AuthDialogProps {
 
 function authTypeRequiresApiKey(authType: AuthType): boolean {
   return (
-    authType === AuthType.USE_GEMINI ||
+    authType === AuthType.USE_PHILL ||
     authType === AuthType.HUGGINGFACE ||
     authType === AuthType.OPENAI ||
     authType === AuthType.ANTHROPIC ||
@@ -55,7 +55,7 @@ function hasApiKeyConfigured(
   const hasNonEmpty = (value: string | undefined): boolean =>
     typeof value === 'string' && value.trim().length > 0;
   switch (authType) {
-    case AuthType.USE_GEMINI:
+    case AuthType.USE_PHILL:
       return (
         hasNonEmpty(process.env['PHILL_API_KEY']) ||
         hasNonEmpty(process.env['GEMINI_API_KEY']) ||
@@ -127,8 +127,8 @@ export function AuthDialog({
         : []),
     {
       label: 'Use Gemini API Key',
-      value: AuthType.USE_GEMINI,
-      key: AuthType.USE_GEMINI,
+      value: AuthType.USE_PHILL,
+      key: AuthType.USE_PHILL,
     },
     {
       label: 'Vertex AI',
@@ -201,7 +201,7 @@ export function AuthDialog({
       process.env['GEMINI_API_KEY'] ||
       process.env['GOOGLE_API_KEY']
     ) {
-      return item.value === AuthType.USE_GEMINI;
+      return item.value === AuthType.USE_PHILL;
     }
 
     return item.value === AuthType.LOGIN_WITH_GOOGLE;
@@ -366,3 +366,4 @@ export function AuthDialog({
     </Box>
   );
 }
+

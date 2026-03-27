@@ -32,8 +32,8 @@ import type { ValidationRequiredError } from '../utils/googleQuotaErrors.js';
 import type { Config } from '../config/config.js';
 import {
   resolveModel,
-  isGemini2Model,
-  isGemini3Model,
+  isPhill2Model,
+  isPhill3Model,
   isPreviewModel,
   supportsThinking,
 } from '../config/models.js';
@@ -462,7 +462,7 @@ export class PhillChat {
             );
 
             if (
-              (isContentError && isGemini2Model(model)) ||
+              (isContentError && isPhill2Model(model)) ||
               (isRetryable && !signal.aborted)
             ) {
               // Check if we have more attempts left.
@@ -494,7 +494,7 @@ export class PhillChat {
         if (lastError) {
           if (
             lastError instanceof InvalidStreamError &&
-            isGemini2Model(model)
+            isPhill2Model(model)
           ) {
             logContentRetryFailure(
               this.config,
@@ -584,8 +584,8 @@ export class PhillChat {
 
       let contentsToUse =
         isPreviewModel(modelToUse) ||
-        isGemini2Model(modelToUse) ||
-        isGemini3Model(modelToUse)
+        isPhill2Model(modelToUse) ||
+        isPhill3Model(modelToUse)
           ? contentsForPreviewModel
           : requestContents;
 
@@ -1300,3 +1300,4 @@ export function isSchemaDepthError(errorMessage: string): boolean {
 export function isInvalidArgumentError(errorMessage: string): boolean {
   return errorMessage.includes('Request contains an invalid argument');
 }
+

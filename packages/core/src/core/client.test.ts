@@ -30,7 +30,7 @@ import {
   type ChatCompressionInfo,
 } from './turn.js';
 import { getCoreSystemPrompt } from './prompts.js';
-import { DEFAULT_GEMINI_MODEL_AUTO } from '../config/models.js';
+import { DEFAULT_PHILL_MODEL_AUTO } from '../config/models.js';
 import { FileDiscoveryService } from '../services/fileDiscoveryService.js';
 import { setSimulate429 } from '../utils/testUtils.js';
 import { tokenLimit } from './tokenLimits.js';
@@ -196,7 +196,7 @@ describe('Phill Client (client.ts)', () => {
     const contentGeneratorConfig: ContentGeneratorConfig = {
       apiKey: 'test-key',
       vertexai: false,
-      authType: AuthType.USE_GEMINI,
+      authType: AuthType.USE_PHILL,
     };
     mockConfig = {
       getContentGeneratorConfig: vi
@@ -2311,7 +2311,7 @@ ${JSON.stringify(
           },
         );
         vi.mocked(mockConfig.getModel).mockReturnValue(
-          DEFAULT_GEMINI_MODEL_AUTO,
+          DEFAULT_PHILL_MODEL_AUTO,
         );
         const stream = client.sendMessageStream(
           [{ text: 'Hi' }],
@@ -2343,7 +2343,7 @@ ${JSON.stringify(
           },
         );
         vi.mocked(mockConfig.getModel).mockReturnValue(
-          DEFAULT_GEMINI_MODEL_AUTO,
+          DEFAULT_PHILL_MODEL_AUTO,
         );
         const stream = client.sendMessageStream(
           [{ text: 'Hi' }],
@@ -3232,3 +3232,5 @@ ${JSON.stringify(
     });
   });
 });
+
+

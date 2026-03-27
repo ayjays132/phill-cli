@@ -54,7 +54,7 @@ describe('createContentGenerator', () => {
     } as unknown as Config;
     const generator = await createContentGenerator(
       {
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfigWithFake,
     );
@@ -75,7 +75,7 @@ describe('createContentGenerator', () => {
     } as unknown as Config;
     const generator = await createContentGenerator(
       {
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfigWithRecordResponses,
     );
@@ -134,7 +134,7 @@ describe('createContentGenerator', () => {
     const generator = await createContentGenerator(
       {
         apiKey: 'test-api-key',
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfig,
     );
@@ -204,7 +204,7 @@ describe('createContentGenerator', () => {
     await createContentGenerator(
       {
         apiKey: 'test-api-key',
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfig,
     );
@@ -248,7 +248,7 @@ describe('createContentGenerator', () => {
     await createContentGenerator(
       {
         apiKey: 'test-api-key',
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfig,
     );
@@ -282,7 +282,7 @@ describe('createContentGenerator', () => {
     await createContentGenerator(
       {
         apiKey: 'test-api-key',
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfig,
     );
@@ -321,7 +321,7 @@ describe('createContentGenerator', () => {
     const generator = await createContentGenerator(
       {
         apiKey: 'test-api-key',
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
       },
       mockConfig,
     );
@@ -362,7 +362,7 @@ describe('createContentGeneratorConfig', () => {
     vi.stubEnv('PHILL_API_KEY', 'env-phill-key');
     const config = await createContentGeneratorConfig(
       mockConfig,
-      AuthType.USE_GEMINI,
+      AuthType.USE_PHILL,
     );
     expect(config.apiKey).toBe('env-phill-key');
     expect(config.vertexai).toBe(false);
@@ -372,7 +372,7 @@ describe('createContentGeneratorConfig', () => {
     vi.stubEnv('PHILL_API_KEY', '');
     const config = await createContentGeneratorConfig(
       mockConfig,
-      AuthType.USE_GEMINI,
+      AuthType.USE_PHILL,
     );
     expect(config.apiKey).toBeUndefined();
     expect(config.vertexai).toBeUndefined();
@@ -383,7 +383,7 @@ describe('createContentGeneratorConfig', () => {
     vi.mocked(loadApiKey).mockResolvedValue(null);
     const config = await createContentGeneratorConfig(
       mockConfig,
-      AuthType.USE_GEMINI,
+      AuthType.USE_PHILL,
     );
     expect(config.apiKey).toBeUndefined();
     expect(config.vertexai).toBeUndefined();
@@ -442,3 +442,4 @@ describe('createContentGeneratorConfig', () => {
     );
   });
 });
+

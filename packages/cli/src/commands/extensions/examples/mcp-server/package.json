@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-example",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "Example MCP Server for Phill CLI Extension",
   "type": "module",
   "main": "example.js",

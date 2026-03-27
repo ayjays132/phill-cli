@@ -71,7 +71,7 @@ export class DiffManager {
             rightDocUri,
         });
         const diffTitle = `${path.basename(filePath)} ↔ Modified`;
-        await vscode.commands.executeCommand('setContext', 'gemini.diff.isVisible', true);
+        await vscode.commands.executeCommand('setContext', 'phill.diff.isVisible', true);
         let leftDocUri;
         try {
             await vscode.workspace.fs.stat(fileUri);
@@ -164,14 +164,14 @@ export class DiffManager {
                 }
             }
         }
-        await vscode.commands.executeCommand('setContext', 'gemini.diff.isVisible', isVisible);
+        await vscode.commands.executeCommand('setContext', 'phill.diff.isVisible', isVisible);
     }
     addDiffDocument(uri, diffInfo) {
         this.diffDocuments.set(uri.toString(), diffInfo);
     }
     async closeDiffEditor(rightDocUri) {
         const diffInfo = this.diffDocuments.get(rightDocUri.toString());
-        await vscode.commands.executeCommand('setContext', 'gemini.diff.isVisible', false);
+        await vscode.commands.executeCommand('setContext', 'phill.diff.isVisible', false);
         if (diffInfo) {
             this.diffDocuments.delete(rightDocUri.toString());
             this.diffContentProvider.deleteContent(rightDocUri);

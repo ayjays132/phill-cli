@@ -91,7 +91,7 @@ export class PhillAgent {
         description: null,
       },
       {
-        id: AuthType.USE_GEMINI,
+        id: AuthType.USE_PHILL,
         name: 'Use Phill API key',
         description:
           'Requires setting the `PHILL_API_KEY` environment variable',
@@ -1040,3 +1040,4 @@ function toAcpToolKind(kind: Kind): acp.ToolKind {
       return 'other';
   }
 }
+

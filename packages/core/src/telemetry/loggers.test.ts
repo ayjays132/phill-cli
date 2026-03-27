@@ -729,7 +729,7 @@ describe('loggers', () => {
         getTelemetryLogPromptsEnabled: () => true, // Enabled
         isInteractive: () => false,
         getContentGeneratorConfig: () => ({
-          authType: AuthType.USE_GEMINI,
+          authType: AuthType.USE_PHILL,
         }),
       } as Config;
 
@@ -870,7 +870,7 @@ describe('loggers', () => {
         isInteractive: () => false,
         getUsageStatisticsEnabled: () => true,
         getContentGeneratorConfig: () => ({
-          authType: AuthType.USE_GEMINI,
+          authType: AuthType.USE_PHILL,
         }),
       } as Config;
 
@@ -2225,3 +2225,4 @@ describe('loggers', () => {
     });
   });
 });
+

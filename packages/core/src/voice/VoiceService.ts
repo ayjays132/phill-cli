@@ -14,7 +14,7 @@ import {
   loadApiKey,
 } from '../index.js';
 import { AudioManager } from './audioManager.js';
-import { GeminiLiveClient } from './geminiLiveClient.js';
+import { PhillLiveClient } from './PhillLiveClient.js';
 import type { Tool } from '@google/genai';
 import { ideContextStore } from '../ide/ideContext.js';
 import { TTSService } from './ttsService.js';
@@ -47,13 +47,13 @@ export interface VoiceServiceOptions {
 /**
  * VOICE SERVICE (CORE)
  * Central orchestrator for PHILL's voice interaction system.
- * Manages the bridge between AudioManager and GeminiLiveClient.
+ * Manages the bridge between AudioManager and PhillLiveClient.
  */
 export class VoiceService extends EventEmitter {
   private static instance: VoiceService | null = null;
 
   private audioManager: AudioManager | null = null;
-  private client: GeminiLiveClient | null = null;
+  private client: PhillLiveClient | null = null;
   private status: VoiceServiceStatus = 'idle';
   private currentTranscript = '';
   private lastSubmittedTranscript = '';
@@ -96,7 +96,7 @@ export class VoiceService extends EventEmitter {
 
     const canUseLive =
       authType === AuthType.LOGIN_WITH_GOOGLE ||
-      authType === AuthType.USE_GEMINI ||
+      authType === AuthType.USE_PHILL ||
       authType === AuthType.USE_VERTEX_AI ||
       authType === AuthType.COMPUTE_ADC;
 
@@ -124,7 +124,7 @@ export class VoiceService extends EventEmitter {
         '';
       let accessToken = '';
 
-      if (!apiKey && authType === AuthType.USE_GEMINI) {
+      if (!apiKey && authType === AuthType.USE_PHILL) {
         apiKey = liveConfig.apiKey || '';
       }
 
@@ -161,7 +161,7 @@ ${workspaceContext}
       `.trim();
 
       // 4. Setup Client with HARDENED System Instruction
-      this.client = new GeminiLiveClient({
+      this.client = new PhillLiveClient({
         apiKey,
         accessToken,
         model: config.getModel() || 'models/gemini-2.0-flash-exp',
@@ -348,3 +348,5 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
     this.audioManager?.setOutputDevice(deviceId);
   }
 }
+
+

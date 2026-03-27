@@ -38,7 +38,7 @@ export class VisionService {
     // 1. Check for Gemini Vision (Primary)
     // If we are using a Gemini-compatible provider and a Gemini model, use native vision.
     const isGeminiAuth =
-      authType === AuthType.USE_GEMINI ||
+      authType === AuthType.USE_PHILL ||
       authType === AuthType.USE_VERTEX_AI ||
       authType === AuthType.LOGIN_WITH_GOOGLE ||
       authType === AuthType.COMPUTE_ADC;
@@ -63,3 +63,4 @@ export class VisionService {
     return this.getMoondreamService().describeImage(imageBuffer, prompt);
   }
 }
+

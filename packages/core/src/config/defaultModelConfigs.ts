@@ -7,18 +7,18 @@
 import type { ModelConfigServiceConfig } from '../index.js';
 
 import {
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_3_PRO_MODEL_ID,
-  PREVIEW_GEMINI_3_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID,
-  STABLE_GEMINI_2_5_PRO,
-  STABLE_GEMINI_2_5_FLASH,
-  STABLE_GEMINI_2_5_FLASH_LITE,
-  PREVIEW_GEMINI_3_1_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_3_PRO_MODEL_ID,
+  PREVIEW_PHILL_3_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID,
+  STABLE_PHILL_2_5_PRO,
+  STABLE_PHILL_2_5_FLASH,
+  STABLE_PHILL_2_5_FLASH_LITE,
+  PREVIEW_PHILL_3_1_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID,
   ThinkingBudget,
 } from './models.js';
 
@@ -63,25 +63,25 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'gemini-3.1-pro': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_MODEL_ID,
       },
     },
     'gemini-3.1-flash': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
       },
     },
     'gemini-3.1-flash-lite': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
       },
     },
     'gemini-3.1-flash-image': {
       extends: 'base',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID,
         generateContentConfig: {
           temperature: 1,
         },
@@ -90,19 +90,19 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'gemini-3-pro': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_PRO_MODEL_ID,
+        model: PREVIEW_PHILL_3_PRO_MODEL_ID,
       },
     },
     'gemini-3-flash': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_FLASH_MODEL_ID,
+        model: PREVIEW_PHILL_3_FLASH_MODEL_ID,
       },
     },
     'gemini-3-pro-image': {
       extends: 'base',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID,
+        model: PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID,
         generateContentConfig: {
           temperature: 1,
         },
@@ -111,97 +111,97 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'gemini-2-pro': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_MODEL,
+        model: PREVIEW_PHILL_MODEL,
       },
     },
     'gemini-2-pro-preview': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_MODEL,
+        model: PREVIEW_PHILL_MODEL,
       },
     },
     'gemini-2-flash': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_FLASH_MODEL,
+        model: PREVIEW_PHILL_FLASH_MODEL,
       },
     },
     'gemini-2-flash-preview': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_FLASH_MODEL,
+        model: PREVIEW_PHILL_FLASH_MODEL,
       },
     },
     'gemini-flash-latest': {
       extends: 'chat-base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'gemini-1.5-pro': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_PRO,
+        model: STABLE_PHILL_2_5_PRO,
       },
     },
     'gemini-1.5-flash': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'gemini-1.5-flash-lite': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
       },
     },
     'gemini-1.5-flash-base': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'gemini-2-flash-base': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'gemini-2-pro-base': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_PRO,
+        model: STABLE_PHILL_2_5_PRO,
       },
     },
     'gemini-2.5-flash-base': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'gemini-2.5-pro-base': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_PRO,
+        model: STABLE_PHILL_2_5_PRO,
       },
     },
     'gemini-3.1-flash-base': {
       extends: 'base',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
       },
     },
     'gemini-3.1-pro-base': {
       extends: 'base',
       modelConfig: {
-        model: PREVIEW_GEMINI_3_1_MODEL_ID,
+        model: PREVIEW_PHILL_3_1_MODEL_ID,
       },
     },
     classifier: {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
         generateContentConfig: {
           maxOutputTokens: 1024,
         },
@@ -210,7 +210,7 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'prompt-completion': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
         generateContentConfig: {
           temperature: 0.3,
           maxOutputTokens: 16000,
@@ -220,13 +220,13 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'edit-corrector': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
       },
     },
     'summarizer-default': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
         generateContentConfig: {
           maxOutputTokens: 2000,
         },
@@ -235,7 +235,7 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'summarizer-shell': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
         generateContentConfig: {
           maxOutputTokens: 2000,
         },
@@ -264,60 +264,60 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     'loop-detection': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'loop-detection-double-check': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_PRO,
+        model: STABLE_PHILL_2_5_PRO,
       },
     },
     'llm-edit-fixer': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'next-speaker-checker': {
       extends: 'base',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'chat-compression-pro': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_PRO,
+        model: STABLE_PHILL_2_5_PRO,
       },
     },
     'chat-compression-flash': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH,
+        model: STABLE_PHILL_2_5_FLASH,
       },
     },
     'chat-compression-flash-lite': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
       },
     },
     'chat-compression-pro-preview': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_MODEL,
+        model: PREVIEW_PHILL_MODEL,
       },
     },
     'chat-compression-flash-preview': {
       extends: 'chat-base-3',
       modelConfig: {
-        model: PREVIEW_GEMINI_FLASH_MODEL,
+        model: PREVIEW_PHILL_FLASH_MODEL,
       },
     },
     'chat-compression-default': {
       modelConfig: {
-        model: STABLE_GEMINI_2_5_FLASH_LITE,
+        model: STABLE_PHILL_2_5_FLASH_LITE,
       },
     },
   },
@@ -460,3 +460,4 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     },
   ],
 };
+

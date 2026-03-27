@@ -8,9 +8,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { applyModelSelection } from './policyHelpers.js';
 import type { Config } from '../config/config.js';
 import {
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
 } from '../config/models.js';
 import { ModelAvailabilityService } from './modelAvailabilityService.js';
 import { ModelConfigService } from '../services/modelConfigService.js';
@@ -24,8 +24,8 @@ describe('Fallback Integration', () => {
   beforeEach(() => {
     // Mocking Config because it has many dependencies
     config = {
-      getModel: () => PREVIEW_GEMINI_3_1_MODEL_AUTO,
-      getActiveModel: () => PREVIEW_GEMINI_3_1_MODEL_AUTO,
+      getModel: () => PREVIEW_PHILL_3_1_MODEL_AUTO,
+      getActiveModel: () => PREVIEW_PHILL_3_1_MODEL_AUTO,
       setActiveModel: vi.fn(),
       getPreviewFeatures: () => true, // Preview enabled for Phill 3
       getUserTier: () => undefined,
@@ -41,38 +41,39 @@ describe('Fallback Integration', () => {
 
   it('should select fallback model when primary model is terminal and config is in AUTO mode', () => {
     // 1. Simulate "Pro" failing with a terminal quota error
-    // The policy chain for PREVIEW_GEMINI_3_1_MODEL_AUTO is [PREVIEW_GEMINI_MODEL, PREVIEW_GEMINI_FLASH_MODEL]
-    availabilityService.markTerminal(PREVIEW_GEMINI_MODEL, 'quota');
+    // The policy chain for PREVIEW_PHILL_3_1_MODEL_AUTO is [PREVIEW_PHILL_MODEL, PREVIEW_PHILL_FLASH_MODEL]
+    availabilityService.markTerminal(PREVIEW_PHILL_MODEL, 'quota');
 
     // 2. Request "Pro" explicitly (as Agent would)
-    const requestedModel = PREVIEW_GEMINI_MODEL;
+    const requestedModel = PREVIEW_PHILL_MODEL;
 
     // 3. Apply model selection
     const result = applyModelSelection(config, { model: requestedModel });
 
     // 4. Expect fallback to Flash
-    expect(result.model).toBe(PREVIEW_GEMINI_FLASH_MODEL);
+    expect(result.model).toBe(PREVIEW_PHILL_FLASH_MODEL);
 
     // 5. Expect active model to be updated
     expect(config.setActiveModel).toHaveBeenCalledWith(
-      PREVIEW_GEMINI_FLASH_MODEL,
+      PREVIEW_PHILL_FLASH_MODEL,
     );
   });
 
   it('should NOT fallback if config is NOT in AUTO mode', () => {
     // 1. Config is explicitly set to Pro, not Auto
-    vi.spyOn(config, 'getModel').mockReturnValue(PREVIEW_GEMINI_MODEL);
+    vi.spyOn(config, 'getModel').mockReturnValue(PREVIEW_PHILL_MODEL);
 
     // 2. Simulate "Pro" failing
-    availabilityService.markTerminal(PREVIEW_GEMINI_MODEL, 'quota');
+    availabilityService.markTerminal(PREVIEW_PHILL_MODEL, 'quota');
 
     // 3. Request "Pro"
-    const requestedModel = PREVIEW_GEMINI_MODEL;
+    const requestedModel = PREVIEW_PHILL_MODEL;
 
     // 4. Apply model selection
     const result = applyModelSelection(config, { model: requestedModel });
 
     // 5. Expect it to stay on Pro (because single model chain)
-    expect(result.model).toBe(PREVIEW_GEMINI_MODEL);
+    expect(result.model).toBe(PREVIEW_PHILL_MODEL);
   });
 });
+

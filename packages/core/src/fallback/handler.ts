@@ -18,8 +18,8 @@ import {
   applyAvailabilityTransition,
 } from '../availability/policyHelpers.js';
 import {
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  DEFAULT_GEMINI_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_MODEL,
 } from '../config/models.js';
 
 const UPGRADE_URL_PAGE = 'https://goo.gle/set-up-gemini-code-assist';
@@ -93,8 +93,8 @@ export async function handleFallback(
   // kicks in when we'd otherwise return/throw on the same failed model.
   if (fallbackModel === failedModel && failureKind === 'not_found') {
     const emergencyCandidates = [
-      DEFAULT_GEMINI_FLASH_LITE_MODEL,
-      DEFAULT_GEMINI_MODEL,
+      DEFAULT_PHILL_FLASH_LITE_MODEL,
+      DEFAULT_PHILL_MODEL,
     ].filter((model) => model !== failedModel);
     const emergencySelection = availability.selectFirstAvailable(
       emergencyCandidates,
@@ -184,3 +184,4 @@ async function processIntent(
       );
   }
 }
+

@@ -30,7 +30,7 @@ import {
   ToolConfirmationOutcome,
   ApprovalMode,
   HookSystem,
-  PREVIEW_GEMINI_MODEL,
+  PREVIEW_PHILL_MODEL,
   PolicyDecision,
 } from 'phill-cli-core';
 import { MockTool } from 'phill-cli-core/src/test-utils/mock-tool.js';
@@ -72,7 +72,7 @@ const mockConfig = {
   getTruncateToolOutputThreshold: () => DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
   getTruncateToolOutputLines: () => DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
   getAllowedTools: vi.fn(() => []),
-  getActiveModel: () => PREVIEW_GEMINI_MODEL,
+  getActiveModel: () => PREVIEW_PHILL_MODEL,
   getContentGeneratorConfig: () => ({
     model: 'test-model',
     authType: 'oauth-personal',
@@ -1135,3 +1135,4 @@ describe('mapToDisplay', () => {
     expect(display.tools[1].renderOutputAsMarkdown).toBe(true);
   });
 });
+

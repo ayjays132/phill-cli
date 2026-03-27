@@ -31,7 +31,7 @@ export class FileService {
 
     // Only support Gemini for now
     if (
-      this.config.getAuthType() === AuthType.USE_GEMINI ||
+      this.config.getAuthType() === AuthType.USE_PHILL ||
       this.config.getAuthType() === AuthType.USE_VERTEX_AI
     ) {
       // Re-use logic from contentGenerator or similar to get API key
@@ -88,3 +88,4 @@ export class FileService {
     }
   }
 }
+

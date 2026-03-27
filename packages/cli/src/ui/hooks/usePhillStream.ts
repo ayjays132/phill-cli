@@ -14,7 +14,7 @@ import {
   GitService,
   UnauthorizedError,
   UserPromptEvent,
-  DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
   logConversationFinishedEvent,
   ConversationFinishedEvent,
   ApprovalMode,
@@ -810,7 +810,7 @@ export const usePhillStream = (
             config.getContentGeneratorConfig()?.authType,
             undefined,
             config.getModel(),
-            DEFAULT_GEMINI_FLASH_MODEL,
+            DEFAULT_PHILL_FLASH_MODEL,
           ),
         },
         userMessageTimestamp,
@@ -1283,7 +1283,7 @@ export const usePhillStream = (
                       config.getContentGeneratorConfig()?.authType,
                       undefined,
                       config.getModel(),
-                      DEFAULT_GEMINI_FLASH_MODEL,
+                      DEFAULT_PHILL_FLASH_MODEL,
                     ),
                   },
                   userMessageTimestamp,
@@ -1657,3 +1657,4 @@ export const usePhillStream = (
     retryStatus,
   };
 };
+

@@ -44,7 +44,7 @@ import {
   MOCK_TOOL_SHOULD_CONFIRM_EXECUTE,
 } from '../test-utils/mock-tool.js';
 import * as modifiableToolModule from '../tools/modifiable-tool.js';
-import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
+import { DEFAULT_PHILL_MODEL } from '../config/models.js';
 import type { PolicyEngine } from '../policy/policy-engine.js';
 import { DiscoveredMCPTool } from '../tools/mcp-tool.js';
 
@@ -276,7 +276,7 @@ function createMockConfig(overrides: Partial<Config> = {}): Config {
       DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
     getTruncateToolOutputLines: () => DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
     getToolRegistry: () => defaultToolRegistry,
-    getActiveModel: () => DEFAULT_GEMINI_MODEL,
+    getActiveModel: () => DEFAULT_PHILL_MODEL,
     getPhillClient: () => null,
     getMessageBus: () => createMockMessageBus(),
     getEnableHooks: () => false,
@@ -2135,3 +2135,4 @@ describe('CoreToolScheduler Sequential Execution', () => {
     });
   });
 });
+

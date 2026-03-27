@@ -2,7 +2,7 @@
   "name": "phill-cli-vscode-ide-companion",
   "displayName": "Phill CLI Companion",
   "description": "Enable Phill CLI with direct access to your IDE workspace.",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "publisher": "phill",
   "icon": "assets/icon.png",
   "repository": {
@@ -48,12 +48,12 @@
     ],
     "commands": [
       {
-        "command": "gemini.diff.accept",
+        "command": "phill.diff.accept",
         "title": "Phill CLI: Accept Diff",
         "icon": "$(check)"
       },
       {
-        "command": "gemini.diff.cancel",
+        "command": "phill.diff.cancel",
         "title": "Phill CLI: Close Diff Editor",
         "icon": "$(close)"
       },
@@ -69,37 +69,37 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "gemini.diff.accept",
-          "when": "gemini.diff.isVisible"
+          "command": "phill.diff.accept",
+          "when": "phill.diff.isVisible"
         },
         {
-          "command": "gemini.diff.cancel",
-          "when": "gemini.diff.isVisible"
+          "command": "phill.diff.cancel",
+          "when": "phill.diff.isVisible"
         }
       ],
       "editor/title": [
         {
-          "command": "gemini.diff.accept",
-          "when": "gemini.diff.isVisible",
+          "command": "phill.diff.accept",
+          "when": "phill.diff.isVisible",
           "group": "navigation"
         },
         {
-          "command": "gemini.diff.cancel",
-          "when": "gemini.diff.isVisible",
+          "command": "phill.diff.cancel",
+          "when": "phill.diff.isVisible",
           "group": "navigation"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "gemini.diff.accept",
+        "command": "phill.diff.accept",
         "key": "ctrl+s",
-        "when": "gemini.diff.isVisible"
+        "when": "phill.diff.isVisible"
       },
       {
-        "command": "gemini.diff.accept",
+        "command": "phill.diff.accept",
         "key": "cmd+s",
-        "when": "gemini.diff.isVisible"
+        "when": "phill.diff.isVisible"
       }
     ]
   },

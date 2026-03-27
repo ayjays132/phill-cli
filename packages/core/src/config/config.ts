@@ -116,15 +116,15 @@ import {
 import { coreEvents, CoreEvent } from '../utils/events.js';
 import { tokenLimit } from '../core/tokenLimits.js';
 import {
-  DEFAULT_GEMINI_EMBEDDING_MODEL,
-  DEFAULT_GEMINI_MODEL_AUTO,
+  DEFAULT_PHILL_EMBEDDING_MODEL,
+  DEFAULT_PHILL_MODEL_AUTO,
   isAutoModel,
   isPreviewModel,
-  PREVIEW_GEMINI_MODEL,
-  PREVIEW_GEMINI_3_1_MODEL_AUTO,
-  PREVIEW_GEMINI_3_1_MODEL_ID,
-  PREVIEW_GEMINI_3_PLUS_3_1_MODEL,
-  VALID_GEMINI_MODELS,
+  PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_3_1_MODEL_ID,
+  PREVIEW_PHILL_3_PLUS_3_1_MODEL,
+  VALID_PHILL_MODELS,
   type ModelCapabilityContext,
 } from './models.js';
 import { shouldAttemptBrowserLaunch } from '../utils/browser.js';
@@ -784,7 +784,7 @@ export class Config implements ModelCapabilityContext {
     this.sessionId = params.sessionId;
     this.clientVersion = params.clientVersion ?? 'unknown';
     this.embeddingModel =
-      params.embeddingModel ?? DEFAULT_GEMINI_EMBEDDING_MODEL;
+      params.embeddingModel ?? DEFAULT_PHILL_EMBEDDING_MODEL;
     this.fileSystemService = new StandardFileSystemService();
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
@@ -1414,7 +1414,7 @@ export class Config implements ModelCapabilityContext {
   }
 
   private isGeminiModelSelection(model: string): boolean {
-    return isAutoModel(model) || VALID_GEMINI_MODELS.has(model);
+    return isAutoModel(model) || VALID_PHILL_MODELS.has(model);
   }
 
   private getDefaultModelForAuthConfig(
@@ -1423,10 +1423,10 @@ export class Config implements ModelCapabilityContext {
   ): string | undefined {
     switch (authType) {
       case AuthType.LOGIN_WITH_GOOGLE:
-      case AuthType.USE_GEMINI:
+      case AuthType.USE_PHILL:
       case AuthType.USE_VERTEX_AI:
       case AuthType.COMPUTE_ADC:
-        return DEFAULT_GEMINI_MODEL_AUTO;
+        return DEFAULT_PHILL_MODEL_AUTO;
       case AuthType.OLLAMA:
         return contentGeneratorConfig.ollama?.model;
       case AuthType.HUGGINGFACE:
@@ -1452,8 +1452,8 @@ export class Config implements ModelCapabilityContext {
     // Vertex and Genai have incompatible encryption and sending history with
     // thoughtSignature from Genai to Vertex will fail, we need to strip them
     if (
-      this.contentGeneratorConfig?.authType === AuthType.USE_GEMINI &&
-      authMethod !== AuthType.USE_GEMINI
+      this.contentGeneratorConfig?.authType === AuthType.USE_PHILL &&
+      authMethod !== AuthType.USE_PHILL
     ) {
       // Restore the conversation history to the new client
       this.phillClient.stripThoughtsFromHistory();
@@ -1482,13 +1482,13 @@ export class Config implements ModelCapabilityContext {
     if (defaultModelForAuth) {
       const isGeminiAuth =
         authMethod === AuthType.LOGIN_WITH_GOOGLE ||
-        authMethod === AuthType.USE_GEMINI ||
+        authMethod === AuthType.USE_PHILL ||
         authMethod === AuthType.USE_VERTEX_AI ||
         authMethod === AuthType.COMPUTE_ADC;
 
       if (isGeminiAuth) {
         if (!this.isGeminiModelSelection(currentModel)) {
-          this.setModel(DEFAULT_GEMINI_MODEL_AUTO);
+          this.setModel(DEFAULT_PHILL_MODEL_AUTO);
         }
       } else {
         // For non-Gemini providers, normalize to the provider's configured/default
@@ -1526,7 +1526,7 @@ export class Config implements ModelCapabilityContext {
 
     const authType = this.contentGeneratorConfig.authType;
     if (
-      authType === AuthType.USE_GEMINI ||
+      authType === AuthType.USE_PHILL ||
       authType === AuthType.USE_VERTEX_AI
     ) {
       this.setHasAccessToPreviewModel(true);
@@ -1534,7 +1534,7 @@ export class Config implements ModelCapabilityContext {
 
     // Update model if user no longer has access to the preview model
     if (!this.hasAccessToPreviewModel && isPreviewModel(this.model)) {
-      this.setModel(DEFAULT_GEMINI_MODEL_AUTO);
+      this.setModel(DEFAULT_PHILL_MODEL_AUTO);
     }
 
     // Fetch admin controls
@@ -1786,12 +1786,12 @@ export class Config implements ModelCapabilityContext {
 
     // Case 1: Disabling preview features while on a preview model
     if (!previewFeatures && isPreviewModel(currentModel)) {
-      this.setModel(DEFAULT_GEMINI_MODEL_AUTO);
+      this.setModel(DEFAULT_PHILL_MODEL_AUTO);
     }
 
     // Case 2: Enabling preview features while on the default auto model
-    else if (previewFeatures && currentModel === DEFAULT_GEMINI_MODEL_AUTO) {
-      this.setModel(PREVIEW_GEMINI_3_1_MODEL_AUTO);
+    else if (previewFeatures && currentModel === DEFAULT_PHILL_MODEL_AUTO) {
+      this.setModel(PREVIEW_PHILL_3_1_MODEL_AUTO);
     }
   }
 
@@ -1810,7 +1810,7 @@ export class Config implements ModelCapabilityContext {
   getGemini31LaunchedSync(): boolean {
     // If we're using Gemini or Vertex AI, we assume Gemini 3.1 is available.
     const isGeminiAuth =
-      this.getAuthType() === AuthType.USE_GEMINI ||
+      this.getAuthType() === AuthType.USE_PHILL ||
       this.getAuthType() === AuthType.USE_VERTEX_AI;
     if (isGeminiAuth) return true;
 
@@ -1834,9 +1834,9 @@ export class Config implements ModelCapabilityContext {
       const hasAccess =
         quota.buckets?.some(
           (b) =>
-            b.modelId === PREVIEW_GEMINI_MODEL ||
-            b.modelId === PREVIEW_GEMINI_3_1_MODEL_ID ||
-            b.modelId === PREVIEW_GEMINI_3_PLUS_3_1_MODEL,
+            b.modelId === PREVIEW_PHILL_MODEL ||
+            b.modelId === PREVIEW_PHILL_3_1_MODEL_ID ||
+            b.modelId === PREVIEW_PHILL_3_PLUS_3_1_MODEL,
         ) ?? false;
       this.setHasAccessToPreviewModel(hasAccess);
       return quota;
@@ -2810,3 +2810,5 @@ export class Config implements ModelCapabilityContext {
     }
   }
 }
+
+

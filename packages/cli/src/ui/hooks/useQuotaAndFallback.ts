@@ -14,9 +14,9 @@ import {
   TerminalQuotaError,
   ModelNotFoundError,
   type UserTierId,
-  PREVIEW_GEMINI_MODEL,
-  DEFAULT_GEMINI_MODEL,
-  VALID_GEMINI_MODELS,
+  PREVIEW_PHILL_MODEL,
+  DEFAULT_PHILL_MODEL,
+  VALID_PHILL_MODELS,
 } from 'phill-cli-core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type UseHistoryManagerReturn } from './useHistoryManager.js';
@@ -68,8 +68,8 @@ export function useQuotaAndFallback({
       let isTerminalQuotaError = false;
       let isModelNotFoundError = false;
       const usageLimitReachedModel =
-        failedModel === DEFAULT_GEMINI_MODEL ||
-        failedModel === PREVIEW_GEMINI_MODEL
+        failedModel === DEFAULT_PHILL_MODEL ||
+        failedModel === PREVIEW_PHILL_MODEL
           ? 'all Pro models'
           : failedModel;
       if (error instanceof TerminalQuotaError) {
@@ -85,7 +85,7 @@ export function useQuotaAndFallback({
         message = messageLines.join('\n');
       } else if (
         error instanceof ModelNotFoundError &&
-        VALID_GEMINI_MODELS.has(failedModel)
+        VALID_PHILL_MODELS.has(failedModel)
       ) {
         isModelNotFoundError = true;
         const messageLines = [
@@ -225,3 +225,4 @@ function getResetTimeMessage(delayMs: number): string {
 
   return `Access resets at ${timeFormatter.format(resetDate)}.`;
 }
+

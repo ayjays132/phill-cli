@@ -82,7 +82,7 @@ export class StartSessionEvent implements BaseTelemetryEvent {
     let usePhill = false;
     let useVertex = false;
     if (generatorConfig && generatorConfig.authType) {
-      usePhill = generatorConfig.authType === AuthType.USE_GEMINI;
+      usePhill = generatorConfig.authType === AuthType.USE_PHILL;
       useVertex = generatorConfig.authType === AuthType.USE_VERTEX_AI;
     }
 
@@ -2004,3 +2004,4 @@ export class HookCallEvent implements BaseTelemetryEvent {
     return `Hook call ${hookId} ${status} in ${this.duration_ms}ms`;
   }
 }
+

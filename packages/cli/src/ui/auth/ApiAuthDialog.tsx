@@ -28,7 +28,7 @@ export function ApiAuthDialog({
   onCancel,
   error,
   defaultValue = '',
-  authType = AuthType.USE_GEMINI,
+  authType = AuthType.USE_PHILL,
 }: ApiAuthDialogProps): React.JSX.Element {
   const { terminalWidth } = useUIState();
   const viewportWidth = terminalWidth - 8;
@@ -62,7 +62,7 @@ export function ApiAuthDialog({
   };
 
   const handleClear = () => {
-    if (authType !== AuthType.USE_GEMINI) {
+    if (authType !== AuthType.USE_PHILL) {
       buffer.setText('');
       return Promise.resolve();
     }
@@ -112,16 +112,16 @@ export function ApiAuthDialog({
       width="100%"
     >
       <Text bold color={theme.text.primary}>
-        Enter {authType === AuthType.USE_GEMINI ? 'Phill' : 'Provider'} API Key
+        Enter {authType === AuthType.USE_PHILL ? 'Phill' : 'Provider'} API Key
       </Text>
       <Box marginTop={1} flexDirection="column">
         <Text color={theme.text.primary}>
-          Please enter your {authType === AuthType.USE_GEMINI ? 'Phill' : 'provider'} API key.
-          {authType === AuthType.USE_GEMINI
+          Please enter your {authType === AuthType.USE_PHILL ? 'Phill' : 'provider'} API key.
+          {authType === AuthType.USE_PHILL
             ? ' It will be securely stored in your system keychain.'
             : ' It will be stored in your user settings.'}
         </Text>
-        {authType === AuthType.USE_GEMINI && (
+        {authType === AuthType.USE_PHILL && (
           <Text color={theme.text.secondary}>
             You can get an API key from{' '}
             <Text color={theme.text.link}>
@@ -152,7 +152,7 @@ export function ApiAuthDialog({
       )}
       <Box marginTop={1}>
         <Text color={theme.text.secondary}>
-          {authType === AuthType.USE_GEMINI
+          {authType === AuthType.USE_PHILL
             ? '(Press Enter to submit, Esc to cancel, Ctrl+C to clear stored key)'
             : '(Press Enter to submit, Esc to cancel, Ctrl+C to clear input)'}
         </Text>
@@ -160,3 +160,4 @@ export function ApiAuthDialog({
     </Box>
   );
 }
+

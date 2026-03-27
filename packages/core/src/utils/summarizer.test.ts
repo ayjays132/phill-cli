@@ -18,7 +18,7 @@ import type {
   ModelConfigService,
   ResolvedModelConfig,
 } from '../services/modelConfigService.js';
-import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
+import { DEFAULT_PHILL_MODEL } from '../config/models.js';
 import { debugLogger } from './debugLogger.js';
 
 // Mock PhillClient and Config constructor
@@ -71,7 +71,7 @@ describe('summarizers', () => {
       const shortText = 'This is a short text.';
       const result = await summarizeToolOutput(
         mockConfigInstance,
-        { model: DEFAULT_GEMINI_MODEL },
+        { model: DEFAULT_PHILL_MODEL },
         shortText,
         mockPhillClient,
         abortSignal,
@@ -84,7 +84,7 @@ describe('summarizers', () => {
       const emptyText = '';
       const result = await summarizeToolOutput(
         mockConfigInstance,
-        { model: DEFAULT_GEMINI_MODEL },
+        { model: DEFAULT_PHILL_MODEL },
         emptyText,
         mockPhillClient,
         abortSignal,
@@ -101,7 +101,7 @@ describe('summarizers', () => {
       });
       const result = await summarizeToolOutput(
         mockConfigInstance,
-        { model: DEFAULT_GEMINI_MODEL },
+        { model: DEFAULT_PHILL_MODEL },
         longText,
         mockPhillClient,
         abortSignal,
@@ -118,7 +118,7 @@ describe('summarizers', () => {
 
       const result = await summarizeToolOutput(
         mockConfigInstance,
-        { model: DEFAULT_GEMINI_MODEL },
+        { model: DEFAULT_PHILL_MODEL },
         longText,
         mockPhillClient,
         abortSignal,
@@ -241,3 +241,4 @@ Return the summary string which should first contain an overall summarization of
     });
   });
 });
+

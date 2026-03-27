@@ -61,7 +61,7 @@ describe('useAuth', () => {
       } as LoadedSettings;
 
       const error = validateAuthMethodWithSettings(
-        AuthType.USE_GEMINI,
+        AuthType.USE_PHILL,
         settings,
       );
       expect(error).toContain('Authentication is enforced to be oauth');
@@ -95,7 +95,7 @@ describe('useAuth', () => {
       } as LoadedSettings;
 
       const error = validateAuthMethodWithSettings(
-        AuthType.USE_GEMINI,
+        AuthType.USE_PHILL,
         settings,
       );
       expect(error).toBeNull();
@@ -175,7 +175,7 @@ describe('useAuth', () => {
     it('should transition to AwaitingApiKeyInput if USE_PHILL and no key found', async () => {
       mockLoadApiKey.mockResolvedValue(null);
       const { result } = renderHook(() =>
-        useAuthCommand(createSettings(AuthType.USE_GEMINI), mockConfig),
+        useAuthCommand(createSettings(AuthType.USE_PHILL), mockConfig),
       );
 
       await waitFor(() => {
@@ -186,12 +186,12 @@ describe('useAuth', () => {
     it('should authenticate if USE_PHILL and key is found', async () => {
       mockLoadApiKey.mockResolvedValue('stored-key');
       const { result } = renderHook(() =>
-        useAuthCommand(createSettings(AuthType.USE_GEMINI), mockConfig),
+        useAuthCommand(createSettings(AuthType.USE_PHILL), mockConfig),
       );
 
       await waitFor(() => {
         expect(mockConfig.refreshAuth).toHaveBeenCalledWith(
-          AuthType.USE_GEMINI,
+          AuthType.USE_PHILL,
         );
         expect(result.current.authState).toBe(AuthState.Authenticated);
         expect(result.current.apiKeyDefaultValue).toBe('stored-key');
@@ -202,12 +202,12 @@ describe('useAuth', () => {
       mockLoadApiKey.mockResolvedValue(null);
       process.env['PHILL_API_KEY'] = 'env-key';
       const { result } = renderHook(() =>
-        useAuthCommand(createSettings(AuthType.USE_GEMINI), mockConfig),
+        useAuthCommand(createSettings(AuthType.USE_PHILL), mockConfig),
       );
 
       await waitFor(() => {
         expect(mockConfig.refreshAuth).toHaveBeenCalledWith(
-          AuthType.USE_GEMINI,
+          AuthType.USE_PHILL,
         );
         expect(result.current.authState).toBe(AuthState.Authenticated);
         expect(result.current.apiKeyDefaultValue).toBe('env-key');
@@ -218,12 +218,12 @@ describe('useAuth', () => {
       mockLoadApiKey.mockResolvedValue('stored-key');
       process.env['PHILL_API_KEY'] = 'env-key';
       const { result } = renderHook(() =>
-        useAuthCommand(createSettings(AuthType.USE_GEMINI), mockConfig),
+        useAuthCommand(createSettings(AuthType.USE_PHILL), mockConfig),
       );
 
       await waitFor(() => {
         expect(mockConfig.refreshAuth).toHaveBeenCalledWith(
-          AuthType.USE_GEMINI,
+          AuthType.USE_PHILL,
         );
         expect(result.current.authState).toBe(AuthState.Authenticated);
         // The environment key should take precedence
@@ -286,3 +286,4 @@ describe('useAuth', () => {
     });
   });
 });
+

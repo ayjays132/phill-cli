@@ -46,6 +46,14 @@ junit.xml
 Phillbook/
 phillbook-npm-tool/
 phill-cli-site/
+evmbench_test/
+python-wrapper/
+tools/
+Voices/
+.phill/
+temp_test/
+walkthroughs/
+scripts/force-version.cjs
 
 ################################
 # 🖥 OS Files

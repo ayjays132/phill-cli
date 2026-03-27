@@ -138,7 +138,7 @@ describe('Settings Repro', () => {
       },
       security: {
         auth: {
-          selectedType: 'gemini-api-key',
+          selectedType: 'phill-api-key',
         },
         folderTrust: {
           enabled: true,
@@ -202,3 +202,4 @@ describe('Settings Repro', () => {
     expect(typeof settings.merged.model?.name).not.toBe('object');
   });
 });
+

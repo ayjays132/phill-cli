@@ -928,7 +928,7 @@ function getGenAiProvider(authType?: string): GenAiProviderName {
     case AuthType.COMPUTE_ADC:
     case AuthType.LOGIN_WITH_GOOGLE:
       return GenAiProviderName.GCP_VERTEX_AI;
-    case AuthType.USE_GEMINI:
+    case AuthType.USE_PHILL:
     default:
       return GenAiProviderName.GCP_GEN_AI;
   }
@@ -1225,3 +1225,4 @@ export function recordHookCallMetrics(
   hookCallCounter.add(1, metricAttributes);
   hookCallLatencyHistogram.record(durationMs, metricAttributes);
 }
+

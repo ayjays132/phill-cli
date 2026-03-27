@@ -11,9 +11,9 @@ import {
   CompressionStatus,
   type Config,
   debugLogger,
-  DEFAULT_GEMINI_FLASH_LITE_MODEL,
-  DEFAULT_GEMINI_FLASH_MODEL,
-  DEFAULT_GEMINI_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_MODEL,
   estimateTokenCountSync,
   formatTruncatedToolOutput,
   getCompressionPrompt,
@@ -23,8 +23,8 @@ import {
   makeChatCompressionEvent,
   type PhillChat,
   PreCompressTrigger,
-  PREVIEW_GEMINI_FLASH_MODEL,
-  PREVIEW_GEMINI_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_MODEL,
   saveTruncatedToolOutput,
   tokenLimit,
   VectorService,
@@ -104,15 +104,15 @@ export function findCompressSplitPoint(
 
 export function modelStringToModelConfigAlias(model: string): string {
   switch (model) {
-    case PREVIEW_GEMINI_MODEL:
+    case PREVIEW_PHILL_MODEL:
       return 'chat-compression-pro-preview';
-    case PREVIEW_GEMINI_FLASH_MODEL:
+    case PREVIEW_PHILL_FLASH_MODEL:
       return 'chat-compression-flash-preview';
-    case DEFAULT_GEMINI_MODEL:
+    case DEFAULT_PHILL_MODEL:
       return 'chat-compression-pro';
-    case DEFAULT_GEMINI_FLASH_MODEL:
+    case DEFAULT_PHILL_FLASH_MODEL:
       return 'chat-compression-flash';
-    case DEFAULT_GEMINI_FLASH_LITE_MODEL:
+    case DEFAULT_PHILL_FLASH_LITE_MODEL:
       return 'chat-compression-flash-lite';
     default:
       return 'chat-compression-default';
@@ -433,3 +433,4 @@ export class ChatCompressionService {
     }
   }
 }
+

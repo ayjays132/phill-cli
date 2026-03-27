@@ -13,8 +13,8 @@ import {
 } from '../tools/tool-names.js';
 import {
   DEFAULT_THINKING_BUDGET,
-  DEFAULT_GEMINI_MODEL,
-  PREVIEW_GEMINI_FLASH_MODEL,
+  DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_FLASH_MODEL,
   isPreviewModel,
   ThinkingLevel,
 } from '../config/models.js';
@@ -54,8 +54,8 @@ export const CodebaseInvestigatorAgent = (
   // Use Preview Flash model if the main model is any of the preview models.
   // If the main model is not a preview model, use the default pro model.
   const model = isPreviewModel(config.getModel())
-    ? PREVIEW_GEMINI_FLASH_MODEL
-    : DEFAULT_GEMINI_MODEL;
+    ? PREVIEW_PHILL_FLASH_MODEL
+    : DEFAULT_PHILL_MODEL;
 
   return {
     name: 'codebase_investigator',
@@ -185,3 +185,4 @@ When you are finished, you **MUST** call the \`complete_task\` tool. The \`repor
     },
   };
 };
+

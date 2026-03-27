@@ -25,7 +25,7 @@ const PrivacyNoticeText = ({
   const authType = config.getContentGeneratorConfig()?.authType;
 
   switch (authType) {
-    case AuthType.USE_GEMINI:
+    case AuthType.USE_PHILL:
       return <PhillPrivacyNotice onExit={onExit} />;
     case AuthType.USE_VERTEX_AI:
       return <CloudPaidPrivacyNotice onExit={onExit} />;
@@ -40,3 +40,4 @@ export const PrivacyNotice = ({ onExit, config }: PrivacyNoticeProps) => (
     <PrivacyNoticeText config={config} onExit={onExit} />
   </Box>
 );
+

@@ -276,7 +276,7 @@ describe('ClearcutLogger', () => {
     it('logs default metadata', () => {
       // Define expected values
       const session_id = 'my-session-id';
-      const auth_type = AuthType.USE_GEMINI;
+      const auth_type = AuthType.USE_PHILL;
       const google_accounts = 123;
       const surface = 'ide-1234';
       const cli_version = CLI_VERSION;
@@ -1318,3 +1318,4 @@ describe('ClearcutLogger', () => {
     });
   });
 });
+

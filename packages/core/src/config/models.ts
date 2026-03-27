@@ -7,61 +7,61 @@
 import type { ModelConfigService } from '../services/modelConfigService.js';
 
 // Gemini 3.x Preview Series (Verified Available)
-export const PREVIEW_GEMINI_3_1_MODEL_ID = 'gemini-3.1-pro-preview';
-export const PREVIEW_GEMINI_3_1_FLASH_MODEL_ID = 'gemini-3-flash-preview'; // Aligned to user availability
-export const PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID = 'gemini-3.1-flash-lite-preview';
-export const PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview';
+export const PREVIEW_PHILL_3_1_MODEL_ID = 'gemini-3.1-pro-preview';
+export const PREVIEW_PHILL_3_1_FLASH_MODEL_ID = 'gemini-3-flash-preview'; // Aligned to user availability
+export const PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID = 'gemini-3.1-flash-lite-preview';
+export const PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview';
 
 // Gemini 3.0 model family (Legacy Preview)
-export const PREVIEW_GEMINI_3_PRO_MODEL_ID = 'gemini-3-pro-preview';
-export const PREVIEW_GEMINI_3_FLASH_MODEL_ID = 'gemini-3-flash-preview';
-export const PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID = 'gemini-3-pro-image-preview';
+export const PREVIEW_PHILL_3_PRO_MODEL_ID = 'gemini-3-pro-preview';
+export const PREVIEW_PHILL_3_FLASH_MODEL_ID = 'gemini-3-flash-preview';
+export const PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID = 'gemini-3-pro-image-preview';
 
 // Stable Gemini (Current Verified Production)
-export const STABLE_GEMINI_2_5_PRO = 'gemini-2.5-pro';
-export const STABLE_GEMINI_2_5_FLASH = 'gemini-2.5-flash';
-export const STABLE_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
+export const STABLE_PHILL_2_5_PRO = 'gemini-2.5-pro';
+export const STABLE_PHILL_2_5_FLASH = 'gemini-2.5-flash';
+export const STABLE_PHILL_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
 
-export const STABLE_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
-export const PREVIEW_GEMINI_EMBEDDING_MODEL = 'gemini-embedding-2-preview';
+export const STABLE_PHILL_EMBEDDING_MODEL = 'gemini-embedding-001';
+export const PREVIEW_PHILL_EMBEDDING_MODEL = 'gemini-embedding-2-preview';
 
-export const DEFAULT_GEMINI_MODEL = STABLE_GEMINI_2_5_PRO;
-export const DEFAULT_GEMINI_FLASH_MODEL = STABLE_GEMINI_2_5_FLASH;
-export const DEFAULT_GEMINI_FLASH_LITE_MODEL = STABLE_GEMINI_2_5_FLASH_LITE;
-export const DEFAULT_GEMINI_EMBEDDING_MODEL = PREVIEW_GEMINI_EMBEDDING_MODEL;
+export const DEFAULT_PHILL_MODEL = STABLE_PHILL_2_5_PRO;
+export const DEFAULT_PHILL_FLASH_MODEL = STABLE_PHILL_2_5_FLASH;
+export const DEFAULT_PHILL_FLASH_LITE_MODEL = STABLE_PHILL_2_5_FLASH_LITE;
+export const DEFAULT_PHILL_EMBEDDING_MODEL = PREVIEW_PHILL_EMBEDDING_MODEL;
 
-export const PREVIEW_GEMINI_MODEL = PREVIEW_GEMINI_3_1_MODEL_ID;
-export const PREVIEW_GEMINI_FLASH_MODEL = PREVIEW_GEMINI_3_1_FLASH_MODEL_ID;
+export const PREVIEW_PHILL_MODEL = PREVIEW_PHILL_3_1_MODEL_ID;
+export const PREVIEW_PHILL_FLASH_MODEL = PREVIEW_PHILL_3_1_FLASH_MODEL_ID;
 // Back-compat aliases retained for older imports.
-export const PREVIEW_GEMINI_MODEL_ID = PREVIEW_GEMINI_MODEL;
-export const PREVIEW_GEMINI_FLASH_MODEL_ID = PREVIEW_GEMINI_FLASH_MODEL;
+export const PREVIEW_PHILL_MODEL_ID = PREVIEW_PHILL_MODEL;
+export const PREVIEW_PHILL_FLASH_MODEL_ID = PREVIEW_PHILL_FLASH_MODEL;
 
 // Gemini 3+ 3.1 (High-Tier Reasoning / Deep Think)
-export const PREVIEW_GEMINI_3_DEEP_THINK_MODEL = 'gemini-3-deep-think-preview';
-export const PREVIEW_GEMINI_3_PLUS_3_1_MODEL = PREVIEW_GEMINI_3_1_MODEL_ID;
-export const PREVIEW_GEMINI_3_PLUS_3_1_FLASH_MODEL = PREVIEW_GEMINI_3_1_FLASH_MODEL_ID;
+export const PREVIEW_PHILL_3_DEEP_THINK_MODEL = 'gemini-3-deep-think-preview';
+export const PREVIEW_PHILL_3_PLUS_3_1_MODEL = PREVIEW_PHILL_3_1_MODEL_ID;
+export const PREVIEW_PHILL_3_PLUS_3_1_FLASH_MODEL = PREVIEW_PHILL_3_1_FLASH_MODEL_ID;
 
 // Veo Video Generation Models
 export const PREVIEW_VEO_3_1_MODEL = 'veo-3.1-generate-preview';
 export const PREVIEW_VEO_3_1_FAST_MODEL = 'veo-3.1-fast-generate-preview';
 export const STABLE_VEO_2_MODEL = 'veo-2.0-generate-001';
 
-export const VALID_GEMINI_MODELS = new Set([
-  PREVIEW_GEMINI_3_1_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID,
-  PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID,
-  PREVIEW_GEMINI_3_PRO_MODEL_ID,
-  PREVIEW_GEMINI_3_FLASH_MODEL_ID,
-  PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID,
-  PREVIEW_GEMINI_3_DEEP_THINK_MODEL,
+export const VALID_PHILL_MODELS = new Set([
+  PREVIEW_PHILL_3_1_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID,
+  PREVIEW_PHILL_3_PRO_MODEL_ID,
+  PREVIEW_PHILL_3_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID,
+  PREVIEW_PHILL_3_DEEP_THINK_MODEL,
   // Stable
-  STABLE_GEMINI_2_5_PRO,
-  STABLE_GEMINI_2_5_FLASH,
-  STABLE_GEMINI_2_5_FLASH_LITE,
+  STABLE_PHILL_2_5_PRO,
+  STABLE_PHILL_2_5_FLASH,
+  STABLE_PHILL_2_5_FLASH_LITE,
   // Embedding
-  STABLE_GEMINI_EMBEDDING_MODEL,
-  PREVIEW_GEMINI_EMBEDDING_MODEL,
+  STABLE_PHILL_EMBEDDING_MODEL,
+  PREVIEW_PHILL_EMBEDDING_MODEL,
   // Legacy support
   'gemini-2.5-pro',
   'gemini-2.5-flash',
@@ -72,17 +72,17 @@ export const VALID_GEMINI_MODELS = new Set([
   STABLE_VEO_2_MODEL,
 ]);
 
-export const PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO = 'auto-gemini-deep-think';
-export const PREVIEW_GEMINI_MODEL_AUTO = 'auto-gemini-3';
-export const PREVIEW_GEMINI_3_1_MODEL_AUTO = 'auto-gemini-3.1';
-export const PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO = 'auto-gemini-3plus-3.1';
-export const DEFAULT_GEMINI_MODEL_AUTO = 'auto-gemini-3.1-stable';
+export const PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO = 'auto-gemini-deep-think';
+export const PREVIEW_PHILL_MODEL_AUTO = 'auto-gemini-3';
+export const PREVIEW_PHILL_3_1_MODEL_AUTO = 'auto-gemini-3.1';
+export const PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO = 'auto-gemini-3plus-3.1';
+export const DEFAULT_PHILL_MODEL_AUTO = 'auto-gemini-3.1-stable';
 
 // Model aliases for user convenience.
-export const GEMINI_MODEL_ALIAS_AUTO = 'auto';
-export const GEMINI_MODEL_ALIAS_PRO = 'pro';
-export const GEMINI_MODEL_ALIAS_FLASH = 'flash';
-export const GEMINI_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
+export const PHILL_MODEL_ALIAS_AUTO = 'auto';
+export const PHILL_MODEL_ALIAS_PRO = 'pro';
+export const PHILL_MODEL_ALIAS_FLASH = 'flash';
+export const PHILL_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
 
 /** Context provided during model resolution. */
 export interface ModelCapabilityContext {
@@ -117,30 +117,30 @@ export function resolveModel(
   // Fast-path / Fallback for procedural resolution
   const normalizedRequestedModel = requestedModel.toLowerCase();
   switch (normalizedRequestedModel) {
-    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO:
-      return PREVIEW_GEMINI_3_DEEP_THINK_MODEL;
-    case PREVIEW_GEMINI_3_1_MODEL_AUTO:
+    case PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO:
+      return PREVIEW_PHILL_3_DEEP_THINK_MODEL;
+    case PREVIEW_PHILL_3_1_MODEL_AUTO:
       return (previewFeaturesEnabled && hasAccessToPreview) 
-        ? PREVIEW_GEMINI_3_1_MODEL_ID 
-        : STABLE_GEMINI_2_5_PRO;
-    case PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO:
-      return PREVIEW_GEMINI_3_1_MODEL_ID;
-    case DEFAULT_GEMINI_MODEL_AUTO:
-      return DEFAULT_GEMINI_MODEL;
-    case GEMINI_MODEL_ALIAS_PRO:
+        ? PREVIEW_PHILL_3_1_MODEL_ID 
+        : STABLE_PHILL_2_5_PRO;
+    case PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO:
+      return PREVIEW_PHILL_3_1_MODEL_ID;
+    case DEFAULT_PHILL_MODEL_AUTO:
+      return DEFAULT_PHILL_MODEL;
+    case PHILL_MODEL_ALIAS_PRO:
       return (previewFeaturesEnabled && hasAccessToPreview)
-        ? PREVIEW_GEMINI_MODEL
-        : DEFAULT_GEMINI_MODEL;
-    case GEMINI_MODEL_ALIAS_FLASH:
+        ? PREVIEW_PHILL_MODEL
+        : DEFAULT_PHILL_MODEL;
+    case PHILL_MODEL_ALIAS_FLASH:
       return (previewFeaturesEnabled && hasAccessToPreview)
-        ? PREVIEW_GEMINI_FLASH_MODEL
-        : DEFAULT_GEMINI_FLASH_MODEL;
-    case GEMINI_MODEL_ALIAS_FLASH_LITE:
-      return DEFAULT_GEMINI_FLASH_LITE_MODEL;
-    case GEMINI_MODEL_ALIAS_AUTO:
+        ? PREVIEW_PHILL_FLASH_MODEL
+        : DEFAULT_PHILL_FLASH_MODEL;
+    case PHILL_MODEL_ALIAS_FLASH_LITE:
+      return DEFAULT_PHILL_FLASH_LITE_MODEL;
+    case PHILL_MODEL_ALIAS_AUTO:
       return (previewFeaturesEnabled && hasAccessToPreview)
-        ? PREVIEW_GEMINI_MODEL
-        : DEFAULT_GEMINI_MODEL;
+        ? PREVIEW_PHILL_MODEL
+        : DEFAULT_PHILL_MODEL;
     default:
       return requestedModel;
   }
@@ -167,12 +167,12 @@ export function resolveClassifierModel(
 
   if (
     previewFeaturesEnabled ||
-    requestedModel === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
-    requestedModel === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO
+    requestedModel === PREVIEW_PHILL_3_1_MODEL_AUTO ||
+    requestedModel === PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO
   ) {
-    return PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID;
+    return PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID;
   }
-  return DEFAULT_GEMINI_FLASH_LITE_MODEL;
+  return DEFAULT_PHILL_FLASH_LITE_MODEL;
 }
 
 /**
@@ -189,41 +189,41 @@ export function getDisplayString(
   }
 
   switch (model) {
-    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO:
+    case PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO:
       return 'Auto (Deep Think)';
-    case PREVIEW_GEMINI_3_1_MODEL_AUTO:
+    case PREVIEW_PHILL_3_1_MODEL_AUTO:
       return 'Auto (Phill 3.1)';
-    case PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO:
+    case PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO:
       return 'Auto (Phill 3+ 3.1)';
-    case STABLE_GEMINI_2_5_PRO:
+    case STABLE_PHILL_2_5_PRO:
       return 'Phill 2.5 Pro';
-    case STABLE_GEMINI_2_5_FLASH:
+    case STABLE_PHILL_2_5_FLASH:
       return 'Phill 2.5 Flash';
-    case STABLE_GEMINI_2_5_FLASH_LITE:
+    case STABLE_PHILL_2_5_FLASH_LITE:
       return 'Phill 2.5 Flash-Lite';
-    case PREVIEW_GEMINI_3_1_MODEL_ID:
+    case PREVIEW_PHILL_3_1_MODEL_ID:
       return 'Phill 3.1 Pro Preview';
-    case PREVIEW_GEMINI_3_1_FLASH_MODEL_ID:
+    case PREVIEW_PHILL_3_1_FLASH_MODEL_ID:
       return 'Phill 3 Flash Preview';
-    case PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID:
+    case PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID:
       return 'Phill 3.1 Flash-Lite Preview';
-    case PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID:
+    case PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID:
       return 'Phill 3.1 Flash-Image Preview';
-    case PREVIEW_GEMINI_3_PRO_MODEL_ID:
+    case PREVIEW_PHILL_3_PRO_MODEL_ID:
       return 'Phill 3 Pro Preview';
-    case PREVIEW_GEMINI_3_FLASH_MODEL_ID:
+    case PREVIEW_PHILL_3_FLASH_MODEL_ID:
       return 'Phill 3 Flash Preview';
-    case PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID:
+    case PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID:
       return 'Nano Banana 2 (Image)';
-    case PREVIEW_GEMINI_3_DEEP_THINK_MODEL:
+    case PREVIEW_PHILL_3_DEEP_THINK_MODEL:
       return 'Phill 3 Deep Think';
-    case DEFAULT_GEMINI_MODEL_AUTO:
+    case DEFAULT_PHILL_MODEL_AUTO:
       return 'Auto (Phill Stable)';
-    case GEMINI_MODEL_ALIAS_PRO:
+    case PHILL_MODEL_ALIAS_PRO:
       return 'Pro Tier (Adaptive)';
-    case GEMINI_MODEL_ALIAS_FLASH:
+    case PHILL_MODEL_ALIAS_FLASH:
       return 'Flash Tier (Adaptive)';
-    case GEMINI_MODEL_ALIAS_FLASH_LITE:
+    case PHILL_MODEL_ALIAS_FLASH_LITE:
       return 'Flash-Lite (Stable)';
     default:
       return model;
@@ -235,11 +235,11 @@ export function getDisplayString(
  */
 export function isAutoModel(model: string): boolean {
   return (
-    model === PREVIEW_GEMINI_3_1_MODEL_AUTO ||
-    model === PREVIEW_GEMINI_3_PLUS_3_1_MODEL_AUTO ||
-    model === DEFAULT_GEMINI_MODEL_AUTO ||
-    model === PREVIEW_GEMINI_3_DEEP_THINK_MODEL_AUTO ||
-    model === GEMINI_MODEL_ALIAS_AUTO
+    model === PREVIEW_PHILL_3_1_MODEL_AUTO ||
+    model === PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO ||
+    model === DEFAULT_PHILL_MODEL_AUTO ||
+    model === PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO ||
+    model === PHILL_MODEL_ALIAS_AUTO
   );
 }
 
@@ -248,28 +248,28 @@ export function isAutoModel(model: string): boolean {
  */
 export function isPreviewModel(model: string): boolean {
   return (
-    model === PREVIEW_GEMINI_3_1_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_1_FLASH_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_1_FLASH_LITE_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_1_FLASH_IMAGE_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_PRO_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_FLASH_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_PRO_IMAGE_MODEL_ID ||
-    model === PREVIEW_GEMINI_3_DEEP_THINK_MODEL
+    model === PREVIEW_PHILL_3_1_MODEL_ID ||
+    model === PREVIEW_PHILL_3_1_FLASH_MODEL_ID ||
+    model === PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID ||
+    model === PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID ||
+    model === PREVIEW_PHILL_3_PRO_MODEL_ID ||
+    model === PREVIEW_PHILL_3_FLASH_MODEL_ID ||
+    model === PREVIEW_PHILL_3_PRO_IMAGE_MODEL_ID ||
+    model === PREVIEW_PHILL_3_DEEP_THINK_MODEL
   );
 }
 
 /**
  * Returns whether the given model is a 'gemini-2' model.
  */
-export function isGemini2Model(model: string): boolean {
+export function isPhill2Model(model: string): boolean {
   return model.includes('gemini-2');
 }
 
 /**
  * Returns whether the given model is a 'gemini-3' model.
  */
-export function isGemini3Model(model: string): boolean {
+export function isPhill3Model(model: string): boolean {
   return model.includes('gemini-3');
 }
 
@@ -280,7 +280,7 @@ export function supportsMultimodalFunctionResponse(model: string, config?: Model
   if (config?.modelConfigService) {
     return config.modelConfigService.getModelDefinition(model)?.features?.multimodalToolUse ?? false;
   }
-  return isGemini3Model(model) || model.includes('gemini-2.5');
+  return isPhill3Model(model) || model.includes('gemini-2.5');
 }
 
 /**
@@ -323,3 +323,4 @@ export enum ThinkingLevel {
 
 export const DEFAULT_THINKING_BUDGET = ThinkingBudget.MEDIUM;
 export const DEFAULT_THINKING_MODE = ThinkingLevel.MEDIUM;
+

@@ -2399,7 +2399,7 @@ describe('AppContainer State Management', () => {
     it('should render placeholder banner text for USE_PHILL auth type', async () => {
       const config = makeFakeConfig();
       vi.spyOn(config, 'getContentGeneratorConfig').mockReturnValue({
-        authType: AuthType.USE_GEMINI,
+        authType: AuthType.USE_PHILL,
         apiKey: 'fake-key',
       });
       let unmount: () => void;
@@ -2567,3 +2567,4 @@ describe('AppContainer State Management', () => {
     });
   });
 });
+

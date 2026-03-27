@@ -42,14 +42,14 @@ describe('validateAuthMethod', () => {
     },
     {
       description: 'should return null for USE_PHILL if PHILL_API_KEY is set',
-      authType: AuthType.USE_GEMINI,
+      authType: AuthType.USE_PHILL,
       envs: { PHILL_API_KEY: 'test-key' },
       expected: null,
     },
     {
       description:
         'should return an error message for USE_PHILL if PHILL_API_KEY is not set',
-      authType: AuthType.USE_GEMINI,
+      authType: AuthType.USE_PHILL,
       envs: {},
       expected:
         'When using Phill API, you must specify the PHILL_API_KEY environment variable.\n' +
@@ -97,3 +97,4 @@ describe('validateAuthMethod', () => {
     expect(validateAuthMethod(authType)).toBe(expected);
   });
 });
+

@@ -20,7 +20,7 @@ export function validateAuthMethod(authMethod: string): string | null {
     return null;
   }
 
-  if (authMethod === AuthType.USE_GEMINI) {
+  if (authMethod === AuthType.USE_PHILL) {
     if (!geminiApiKey) {
       return (
         'When using Phill API, you must specify one of: PHILL_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY.\n' +
@@ -76,3 +76,4 @@ export function validateAuthMethod(authMethod: string): string | null {
 
   return 'Invalid auth method selected.';
 }
+

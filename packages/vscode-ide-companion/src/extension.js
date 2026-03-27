@@ -9,9 +9,9 @@ import semver from 'semver';
 import { DiffContentProvider, DiffManager } from './diff-manager.js';
 import { createLogger } from './utils/logger.js';
 import { detectIdeFromEnv, IDE_DEFINITIONS, } from 'phill-cli-core/src/ide/detect-ide.js';
-const CLI_IDE_COMPANION_IDENTIFIER = 'Google.gemini-cli-vscode-ide-companion';
+const CLI_IDE_COMPANION_IDENTIFIER = 'phill.phill-cli-vscode-ide-companion';
 const INFO_MESSAGE_SHOWN_KEY = 'phillCliInfoMessageShown';
-export const DIFF_SCHEME = 'gemini-diff';
+export const DIFF_SCHEME = 'phill-diff';
 /**
  * In these environments the companion extension is installed and managed by the IDE instead of the user.
  */
@@ -86,14 +86,14 @@ export async function activate(context) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             diffManager.cancelDiff(doc.uri);
         }
-    }), vscode.workspace.registerTextDocumentContentProvider(DIFF_SCHEME, diffContentProvider), (vscode.commands.registerCommand('gemini.diff.accept', (uri) => {
+    }), vscode.workspace.registerTextDocumentContentProvider(DIFF_SCHEME, diffContentProvider), (vscode.commands.registerCommand('phill.diff.accept', (uri) => {
         const docUri = uri ?? vscode.window.activeTextEditor?.document.uri;
         if (docUri && docUri.scheme === DIFF_SCHEME) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             diffManager.acceptDiff(docUri);
         }
     }),
-        vscode.commands.registerCommand('gemini.diff.cancel', (uri) => {
+        vscode.commands.registerCommand('phill.diff.cancel', (uri) => {
             const docUri = uri ?? vscode.window.activeTextEditor?.document.uri;
             if (docUri && docUri.scheme === DIFF_SCHEME) {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises

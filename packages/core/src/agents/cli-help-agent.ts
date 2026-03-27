@@ -5,7 +5,7 @@
  */
 
 import type { AgentDefinition } from './types.js';
-import { GEMINI_MODEL_ALIAS_FLASH } from '../config/models.js';
+import { PHILL_MODEL_ALIAS_FLASH } from '../config/models.js';
 import { z } from 'zod';
 import type { Config } from '../config/config.js';
 import { GetInternalDocsTool } from '../tools/get-internal-docs.js';
@@ -52,7 +52,7 @@ export const CliHelpAgent = (
   processOutput: (output) => JSON.stringify(output, null, 2),
 
   modelConfig: {
-    model: GEMINI_MODEL_ALIAS_FLASH,
+    model: PHILL_MODEL_ALIAS_FLASH,
     generateContentConfig: {
       temperature: 0.1,
       topP: 0.95,
@@ -92,3 +92,4 @@ export const CliHelpAgent = (
       'You MUST call `complete_task` with a JSON report containing your `answer` and the `sources` you used.',
   },
 });
+

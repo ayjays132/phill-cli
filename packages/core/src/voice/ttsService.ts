@@ -8,7 +8,7 @@ import { debugLogger } from '../utils/debugLogger.js';
 import { Config } from '../config/config.js';
 import { AuthType } from '../core/contentGenerator.js';
 import type { ITTSProvider, ProsodyOptions } from './ttsProvider.js';
-import { GeminiLiveTTS } from './geminiLiveTTS.js';
+import { PhillLiveTTS } from './PhillLiveTTS.js';
 import { OpenAITTS } from './openAiTTS.js';
 import { BrowserTTS } from './browserTTS.js';
 import { PocketTTS } from './pocketTTS.js';
@@ -80,11 +80,11 @@ export class TTSService {
 
     const resolveAuthDefaultProvider = (): ITTSProvider => {
       switch (authType) {
-        case AuthType.USE_GEMINI:
+        case AuthType.USE_PHILL:
         case AuthType.USE_VERTEX_AI:
           if (canUseGeminiProvider) {
             debugLogger.log('TTS Routing: Selecting Gemini Live TTS');
-            return new GeminiLiveTTS(this.config);
+            return new PhillLiveTTS(this.config);
           }
           debugLogger.log(
             'TTS Routing: Gemini auth detected without API key, using Pocket TTS fallback',
@@ -94,7 +94,7 @@ export class TTSService {
           debugLogger.log(
             'TTS Routing: Login with Google detected, preferring Gemini TTS (with fallback chain).',
           );
-          return new GeminiLiveTTS(this.config);
+          return new PhillLiveTTS(this.config);
         case AuthType.OPENAI:
         case AuthType.OPENAI_BROWSER:
           debugLogger.log('TTS Routing: Selecting OpenAI TTS');
@@ -114,7 +114,7 @@ export class TTSService {
     if (
       explicitProvider === 'pocket' &&
       preferAuthTtsProvider &&
-      (authType === AuthType.USE_GEMINI ||
+      (authType === AuthType.USE_PHILL ||
         authType === AuthType.USE_VERTEX_AI ||
         authType === AuthType.LOGIN_WITH_GOOGLE ||
         authType === AuthType.OPENAI ||
@@ -145,7 +145,7 @@ export class TTSService {
     if (explicitProvider === 'gemini') {
       if (canUseGeminiProvider) {
         debugLogger.log('TTS Routing: Selecting Gemini TTS (explicit)');
-        return new GeminiLiveTTS(this.config);
+        return new PhillLiveTTS(this.config);
       }
       debugLogger.log(
         'TTS Routing: Gemini selected but no API key or OAuth auth, falling back to Pocket TTS',
@@ -195,7 +195,7 @@ export class TTSService {
     const genConfig = this.config.getContentGeneratorConfig();
     const authType = this.config.getAuthType();
 
-    if (provider instanceof GeminiLiveTTS) {
+    if (provider instanceof PhillLiveTTS) {
       const hasGeminiApiKey = Boolean(
         voice.geminiApiKey?.trim() ||
           genConfig?.apiKey ||
@@ -331,7 +331,7 @@ export class TTSService {
 
       // Unified fallback chain across all providers:
       // chosen provider -> Gemini -> OpenAI -> ElevenLabs -> Pocket -> Browser
-      pushUnique(new GeminiLiveTTS(this.config));
+      pushUnique(new PhillLiveTTS(this.config));
       pushUnique(new OpenAITTS(this.config));
       pushUnique(new ElevenLabsTTS(this.config));
       pushUnique(new PocketTTS(this.config));
@@ -367,3 +367,5 @@ export class TTSService {
     }
   }
 }
+
+
