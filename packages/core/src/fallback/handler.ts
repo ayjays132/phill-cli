@@ -20,6 +20,7 @@ import {
 import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_MODEL,
+  isAutoModel,
 } from '../config/models.js';
 
 const UPGRADE_URL_PAGE = 'https://goo.gle/set-up-gemini-code-assist';
@@ -30,6 +31,10 @@ export async function handleFallback(
   authType?: string,
   error?: unknown,
 ): Promise<string | boolean | null> {
+  if (authType !== AuthType.LOGIN_WITH_GOOGLE) {
+    return null;
+  }
+
   const chain = resolvePolicyChain(config);
   const { failedPolicy, candidates } = buildFallbackPolicyContext(
     chain,
@@ -71,7 +76,7 @@ export async function handleFallback(
     // failureKind is already declared and calculated above
     const action = resolvePolicyAction(failureKind, selectedPolicy);
 
-    if (action === 'silent' || authType !== AuthType.LOGIN_WITH_GOOGLE) {
+    if (action === 'silent') {
       applyAvailabilityTransition(getAvailabilityContext, failureKind);
       return processIntent(config, 'retry_always', fallbackModel);
     }
@@ -96,9 +101,8 @@ export async function handleFallback(
       DEFAULT_PHILL_FLASH_LITE_MODEL,
       DEFAULT_PHILL_MODEL,
     ].filter((model) => model !== failedModel);
-    const emergencySelection = availability.selectFirstAvailable(
-      emergencyCandidates,
-    );
+    const emergencySelection =
+      availability.selectFirstAvailable(emergencyCandidates);
     const emergencyModel = emergencySelection.selectedModel;
     if (emergencyModel && emergencyModel !== failedModel) {
       fallbackModel = emergencyModel;
@@ -158,7 +162,13 @@ async function processIntent(
     case 'retry_always':
       // TODO(telemetry): Implement generic fallback event logging. Existing
       // logFlashFallback is specific to a single Model.
-      config.activateFallbackMode(fallbackModel);
+      if (isAutoModel(config.getModel())) {
+        // Preserve auto mode so subsequent turns continue cycling through the
+        // auto policy chain instead of collapsing to the concrete fallback.
+        config.setActiveModel(fallbackModel);
+      } else {
+        config.activateFallbackMode(fallbackModel);
+      }
       return true;
 
     case 'retry_once':
@@ -184,4 +194,3 @@ async function processIntent(
       );
   }
 }
-

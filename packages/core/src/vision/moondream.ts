@@ -4,24 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  AutoProcessor,
-  AutoTokenizer,
-  AutoModelForVision2Seq,
-  env,
-} from '@huggingface/transformers';
+// Types are loaded dynamically in this module; the static type-only imports were unused.
 import * as nodePath from 'node:path';
 import * as nodeFs from 'node:fs';
 import type { Buffer } from 'node:buffer';
-
-// Set a local-first caching strategy. Will be overridden per-instance.
-env.allowRemoteModels = true;
-env.allowLocalModels = true;
 
 /** Minimal interface for the Config object we need at construction time. */
 interface VisionConfig {
   storage: { getProjectTempDir(): string };
 }
+
+type TransformersModule = typeof import('@huggingface/transformers');
 
 export class MoondreamVisionProcessor {
   private static instance: MoondreamVisionProcessor;
@@ -35,13 +28,24 @@ export class MoondreamVisionProcessor {
   private classifierId = 'onnx-community/mobilenetv2_050.lamb_in1k';
 
   private initializationFailed = false;
+  private transformersPromise: Promise<TransformersModule> | null = null;
 
   private constructor(config: VisionConfig) {
     this.modelsPath = nodePath.join(
       config.storage.getProjectTempDir(),
       'models',
     );
-    env.cacheDir = this.modelsPath;
+  }
+
+  private async getTransformers(): Promise<TransformersModule> {
+    if (!this.transformersPromise) {
+      this.transformersPromise = import('@huggingface/transformers');
+    }
+    const transformers = await this.transformersPromise;
+    transformers.env.allowRemoteModels = true;
+    transformers.env.allowLocalModels = true;
+    transformers.env.cacheDir = this.modelsPath;
+    return transformers;
   }
 
   static getInstance(config: VisionConfig): MoondreamVisionProcessor {
@@ -66,6 +70,8 @@ export class MoondreamVisionProcessor {
     const dtype = 'fp32';
 
     // Transformer options — HuggingFace types vary, cast through unknown
+    const { AutoProcessor, AutoTokenizer, AutoModelForVision2Seq } =
+      await this.getTransformers();
     type PretrainedOpts = Parameters<
       typeof AutoModelForVision2Seq.from_pretrained
     >[1];
@@ -117,8 +123,7 @@ export class MoondreamVisionProcessor {
 
     // Load MobileNetV2 classifier for tag-team context (optional)
     try {
-      const { AutoModelForImageClassification } =
-        await import('@huggingface/transformers');
+      const { AutoModelForImageClassification } = await this.getTransformers();
       this.classifierProcessor = await AutoProcessor.from_pretrained(
         this.classifierId,
         {} as Parameters<typeof AutoProcessor.from_pretrained>[1],
@@ -142,7 +147,7 @@ export class MoondreamVisionProcessor {
 
     try {
       // Dynamically import RawImage at runtime to read the image buffer
-      const tfModule = await import('@huggingface/transformers');
+      const tfModule = await this.getTransformers();
       const RawImageCtor = (tfModule as Record<string, unknown>)[
         'RawImage'
       ] as {

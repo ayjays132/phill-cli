@@ -26,7 +26,7 @@ import {
   GitService,
 } from 'phill-cli-core';
 
-import { logger } from '../utils/logger.js';
+import { logger } from '../index.js';
 import type { Settings } from './settings.js';
 import { type AgentSettings, CoderAgentEvent } from '../types.js';
 
@@ -148,7 +148,7 @@ export async function loadConfig(
     );
   } else if (process.env['PHILL_API_KEY']) {
     logger.info('[Config] Using Phill API Key');
-    await config.refreshAuth(AuthType.USE_GEMINI);
+    await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
   } else {
     const errorMessage =
       '[Config] Unable to set GeneratorConfig. Please provide a PHILL_API_KEY or set USE_CCPA.';

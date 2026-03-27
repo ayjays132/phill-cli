@@ -5,10 +5,10 @@
  */
 
 import { debugLogger } from '../utils/debugLogger.js';
-import { Config } from '../config/config.js';
+import type { Config } from '../config/config.js';
 import { AuthType } from '../core/contentGenerator.js';
 import type { ITTSProvider, ProsodyOptions } from './ttsProvider.js';
-import { PhillLiveTTS } from './PhillLiveTTS.js';
+import { PhillLiveTTS } from './phillLiveTTS.js';
 import { OpenAITTS } from './openAiTTS.js';
 import { BrowserTTS } from './browserTTS.js';
 import { PocketTTS } from './pocketTTS.js';
@@ -34,21 +34,21 @@ export class TTSService {
     this.provider = this.resolveProvider();
   }
 
-  public static getInstance(config: Config): TTSService {
+  static getInstance(config: Config): TTSService {
     if (!TTSService.instance) {
       TTSService.instance = new TTSService(config);
     }
     return TTSService.instance;
   }
 
-  public stop(): void {
+  stop(): void {
     if (!this.getIsSpeaking()) {
       return;
     }
     debugLogger.log('Stopping TTS playback.');
     this.isSpeaking = false;
     this.speakingSuppressionUntilMs = 0;
-    
+
     // 1. Stop the current provider's specific playback instance
     try {
       this.provider.stop();
@@ -69,9 +69,9 @@ export class TTSService {
     const hasGeminiApiKey = Boolean(
       voice.geminiApiKey?.trim() ||
       genConfig?.apiKey ||
-        process.env['PHILL_API_KEY'] ||
-        process.env['GEMINI_API_KEY'] ||
-        process.env['GOOGLE_API_KEY'],
+      process.env['PHILL_API_KEY'] ||
+      process.env['GEMINI_API_KEY'] ||
+      process.env['GOOGLE_API_KEY'],
     );
     const canUseGeminiWithOauth =
       authType === AuthType.LOGIN_WITH_GOOGLE ||
@@ -100,8 +100,14 @@ export class TTSService {
           debugLogger.log('TTS Routing: Selecting OpenAI TTS');
           return new OpenAITTS(this.config);
         case AuthType.GROQ:
-          debugLogger.log('TTS Routing: Groq active, checking for OpenAI TTS availability for speech...');
-          if (Boolean(voice.openAiApiKey?.trim() || this.config.openAI?.apiKey || process.env['OPENAI_API_KEY'])) {
+          debugLogger.log(
+            'TTS Routing: Groq active, checking for OpenAI TTS availability for speech...',
+          );
+          if (
+            voice.openAiApiKey?.trim() ||
+              this.config.openAI?.apiKey ||
+              process.env['OPENAI_API_KEY']
+          ) {
             return new OpenAITTS(this.config);
           }
           return new PocketTTS(this.config);
@@ -152,11 +158,11 @@ export class TTSService {
       );
       return new PocketTTS(this.config);
     }
-    
+
     return resolveAuthDefaultProvider();
   }
 
-  public getIsSpeaking(): boolean {
+  getIsSpeaking(): boolean {
     return (
       this.isSpeaking ||
       AudioManager.getIsAnyPlaybackActive() ||
@@ -164,16 +170,16 @@ export class TTSService {
     );
   }
 
-  public getLastSpokenText(): string | null {
+  getLastSpokenText(): string | null {
     return this.lastSpokenText;
   }
 
-  public updateProsody(options: Partial<ProsodyOptions>): void {
+  updateProsody(options: Partial<ProsodyOptions>): void {
     this.provider.updateProsody(options);
     debugLogger.log('TTS Prosody updated:', options);
   }
 
-  public wasRecentlySpoken(text: string, withinMs: number = 15000): boolean {
+  wasRecentlySpoken(text: string, withinMs: number = 15000): boolean {
     const normalized = text.trim().replace(/\s+/g, ' ').toLowerCase();
     if (!normalized || !this.lastSpokenText) {
       return false;
@@ -198,10 +204,10 @@ export class TTSService {
     if (provider instanceof PhillLiveTTS) {
       const hasGeminiApiKey = Boolean(
         voice.geminiApiKey?.trim() ||
-          genConfig?.apiKey ||
-          process.env['PHILL_API_KEY'] ||
-          process.env['GEMINI_API_KEY'] ||
-          process.env['GOOGLE_API_KEY'],
+        genConfig?.apiKey ||
+        process.env['PHILL_API_KEY'] ||
+        process.env['GEMINI_API_KEY'] ||
+        process.env['GOOGLE_API_KEY'],
       );
       const hasOauth =
         authType === AuthType.LOGIN_WITH_GOOGLE ||
@@ -212,10 +218,10 @@ export class TTSService {
     if (provider instanceof OpenAITTS) {
       return Boolean(
         voice.openAiApiKey?.trim() ||
-          this.config.openAI?.apiKey ||
-          this.config.groq?.apiKey || // Allow using Groq key if endpoint is overridden for Groq TTS
-          process.env['OPENAI_API_KEY'] ||
-          process.env['GROQ_API_KEY']
+        this.config.openAI?.apiKey ||
+        this.config.groq?.apiKey || // Allow using Groq key if endpoint is overridden for Groq TTS
+        process.env['OPENAI_API_KEY'] ||
+        process.env['GROQ_API_KEY'],
       );
     }
 
@@ -270,16 +276,14 @@ export class TTSService {
       this.stickyProviderName = providerName;
       return true;
     } catch (error) {
-      const isCritical = this.getFailureCooldownMs(error) === this.providerHardFailureCooldownMs;
+      const isCritical =
+        this.getFailureCooldownMs(error) === this.providerHardFailureCooldownMs;
       if (isCritical) {
         debugLogger.warn(
           `TTS provider ${providerName} reported a critical configuration or billing error. Switching to fallback chain.`,
         );
       } else {
-        debugLogger.error(
-          `TTS execution failed (${providerName}):`,
-          error,
-        );
+        debugLogger.error(`TTS execution failed (${providerName}):`, error);
       }
       this.providerFailureUntilMs.set(
         providerName,
@@ -308,12 +312,16 @@ export class TTSService {
       this.lastSpokenText === normalized &&
       now - this.lastSpokenAtMs < this.duplicateSpeakWindowMs
     ) {
-      debugLogger.debug('Skipping duplicate TTS utterance inside dedupe window.');
+      debugLogger.debug(
+        'Skipping duplicate TTS utterance inside dedupe window.',
+      );
       return;
     }
 
     if (this.isSpeaking) {
-      debugLogger.debug('Skipping TTS request while another utterance is active.');
+      debugLogger.debug(
+        'Skipping TTS request while another utterance is active.',
+      );
       return;
     }
 
@@ -367,5 +375,3 @@ export class TTSService {
     }
   }
 }
-
-

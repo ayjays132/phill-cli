@@ -48,7 +48,7 @@ export function resolvePolicyChain(
     modelFromConfig,
     config.getPreviewFeatures(),
     false,
-    config.getHasAccessToPreviewModel(),
+    config.getHasAccessToPreviewModel?.() ?? true,
     config,
   );
   const isAutoPreferred = preferredModel ? isAutoModel(preferredModel) : false;
@@ -242,4 +242,3 @@ export function applyAvailabilityTransition(
     context.service.markRetryOncePerTurn(context.policy.model);
   }
 }
-

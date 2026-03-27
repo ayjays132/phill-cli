@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { env } from '@huggingface/transformers';
-
 /**
  * Silences ONNX Runtime and Transformers.js verbose logging.
  * This prevents graph cleanup warnings from cluttering the CLI.
  */
-export function silenceOnnxLogging() {
+export async function silenceOnnxLogging() {
+  const { env } = await import('@huggingface/transformers');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (env as any).logLevel = 'error';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

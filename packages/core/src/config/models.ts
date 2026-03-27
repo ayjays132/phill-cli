@@ -9,8 +9,10 @@ import type { ModelConfigService } from '../services/modelConfigService.js';
 // Gemini 3.x Preview Series (Verified Available)
 export const PREVIEW_PHILL_3_1_MODEL_ID = 'gemini-3.1-pro-preview';
 export const PREVIEW_PHILL_3_1_FLASH_MODEL_ID = 'gemini-3-flash-preview'; // Aligned to user availability
-export const PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID = 'gemini-3.1-flash-lite-preview';
-export const PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID = 'gemini-3.1-flash-image-preview';
+export const PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID =
+  'gemini-3.1-flash-lite-preview';
+export const PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID =
+  'gemini-3.1-flash-image-preview';
 
 // Gemini 3.0 model family (Legacy Preview)
 export const PREVIEW_PHILL_3_PRO_MODEL_ID = 'gemini-3-pro-preview';
@@ -32,6 +34,12 @@ export const DEFAULT_PHILL_EMBEDDING_MODEL = PREVIEW_PHILL_EMBEDDING_MODEL;
 
 export const PREVIEW_PHILL_MODEL = PREVIEW_PHILL_3_1_MODEL_ID;
 export const PREVIEW_PHILL_FLASH_MODEL = PREVIEW_PHILL_3_1_FLASH_MODEL_ID;
+export const DEFAULT_GEMINI_MODEL = DEFAULT_PHILL_MODEL;
+export const DEFAULT_GEMINI_FLASH_MODEL = DEFAULT_PHILL_FLASH_MODEL;
+export const DEFAULT_GEMINI_FLASH_LITE_MODEL = DEFAULT_PHILL_FLASH_LITE_MODEL;
+export const DEFAULT_GEMINI_EMBEDDING_MODEL = DEFAULT_PHILL_EMBEDDING_MODEL;
+export const PREVIEW_GEMINI_MODEL = PREVIEW_PHILL_MODEL;
+export const PREVIEW_GEMINI_FLASH_MODEL = PREVIEW_PHILL_FLASH_MODEL;
 // Back-compat aliases retained for older imports.
 export const PREVIEW_PHILL_MODEL_ID = PREVIEW_PHILL_MODEL;
 export const PREVIEW_PHILL_FLASH_MODEL_ID = PREVIEW_PHILL_FLASH_MODEL;
@@ -39,7 +47,8 @@ export const PREVIEW_PHILL_FLASH_MODEL_ID = PREVIEW_PHILL_FLASH_MODEL;
 // Gemini 3+ 3.1 (High-Tier Reasoning / Deep Think)
 export const PREVIEW_PHILL_3_DEEP_THINK_MODEL = 'gemini-3-deep-think-preview';
 export const PREVIEW_PHILL_3_PLUS_3_1_MODEL = PREVIEW_PHILL_3_1_MODEL_ID;
-export const PREVIEW_PHILL_3_PLUS_3_1_FLASH_MODEL = PREVIEW_PHILL_3_1_FLASH_MODEL_ID;
+export const PREVIEW_PHILL_3_PLUS_3_1_FLASH_MODEL =
+  PREVIEW_PHILL_3_1_FLASH_MODEL_ID;
 
 // Veo Video Generation Models
 export const PREVIEW_VEO_3_1_MODEL = 'veo-3.1-generate-preview';
@@ -105,11 +114,13 @@ export function resolveModel(
   config?: ModelCapabilityContext,
 ): string {
   // If we have the full capability context, use the declarative resolution engine.
-  if (config?.modelConfigService) {
+  if (config?.modelConfigService?.resolveModelId) {
     return config.modelConfigService.resolveModelId(requestedModel, {
-      useGemini3_1: previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
+      useGemini3_1:
+        previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
       useCustomTools: useCustomToolModel,
-      hasAccessToPreview: hasAccessToPreview && (config.getHasAccessToPreviewModel?.() ?? true),
+      hasAccessToPreview:
+        hasAccessToPreview && (config.getHasAccessToPreviewModel?.() ?? true),
       requestedModel,
     });
   }
@@ -120,25 +131,25 @@ export function resolveModel(
     case PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO:
       return PREVIEW_PHILL_3_DEEP_THINK_MODEL;
     case PREVIEW_PHILL_3_1_MODEL_AUTO:
-      return (previewFeaturesEnabled && hasAccessToPreview) 
-        ? PREVIEW_PHILL_3_1_MODEL_ID 
+      return previewFeaturesEnabled && hasAccessToPreview
+        ? PREVIEW_PHILL_3_1_MODEL_ID
         : STABLE_PHILL_2_5_PRO;
     case PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO:
       return PREVIEW_PHILL_3_1_MODEL_ID;
     case DEFAULT_PHILL_MODEL_AUTO:
       return DEFAULT_PHILL_MODEL;
     case PHILL_MODEL_ALIAS_PRO:
-      return (previewFeaturesEnabled && hasAccessToPreview)
+      return previewFeaturesEnabled && hasAccessToPreview
         ? PREVIEW_PHILL_MODEL
         : DEFAULT_PHILL_MODEL;
     case PHILL_MODEL_ALIAS_FLASH:
-      return (previewFeaturesEnabled && hasAccessToPreview)
+      return previewFeaturesEnabled && hasAccessToPreview
         ? PREVIEW_PHILL_FLASH_MODEL
         : DEFAULT_PHILL_FLASH_MODEL;
     case PHILL_MODEL_ALIAS_FLASH_LITE:
       return DEFAULT_PHILL_FLASH_LITE_MODEL;
     case PHILL_MODEL_ALIAS_AUTO:
-      return (previewFeaturesEnabled && hasAccessToPreview)
+      return previewFeaturesEnabled && hasAccessToPreview
         ? PREVIEW_PHILL_MODEL
         : DEFAULT_PHILL_MODEL;
     default:
@@ -159,9 +170,10 @@ export function resolveClassifierModel(
       'flash', // Classifiers typically use the flash tier
       requestedModel,
       {
-        useGemini3_1: previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
+        useGemini3_1:
+          previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
         hasAccessToPreview: config.getHasAccessToPreviewModel?.() ?? true,
-      }
+      },
     );
   }
 
@@ -276,9 +288,15 @@ export function isPhill3Model(model: string): boolean {
 /**
  * Returns whether the given model supports multi-modal function responses.
  */
-export function supportsMultimodalFunctionResponse(model: string, config?: ModelCapabilityContext): boolean {
+export function supportsMultimodalFunctionResponse(
+  model: string,
+  config?: ModelCapabilityContext,
+): boolean {
   if (config?.modelConfigService) {
-    return config.modelConfigService.getModelDefinition(model)?.features?.multimodalToolUse ?? false;
+    return (
+      config.modelConfigService.getModelDefinition(model)?.features
+        ?.multimodalToolUse ?? false
+    );
   }
   return isPhill3Model(model) || model.includes('gemini-2.5');
 }
@@ -286,13 +304,19 @@ export function supportsMultimodalFunctionResponse(model: string, config?: Model
 /**
  * Returns whether the given model supports the 'Thinking' feature.
  */
-export function supportsThinking(model: string, config?: ModelCapabilityContext): boolean {
+export function supportsThinking(
+  model: string,
+  config?: ModelCapabilityContext,
+): boolean {
   if (config?.modelConfigService) {
-    return config.modelConfigService.getModelDefinition(model)?.features?.thinking ?? false;
+    return (
+      config.modelConfigService.getModelDefinition(model)?.features?.thinking ??
+      false
+    );
   }
   // Gemini 3.x models support thinking.
   if (
-    model.includes('gemini-3.1-pro') || 
+    model.includes('gemini-3.1-pro') ||
     model.includes('gemini-3-flash') ||
     model.includes('gemini-3.1-flash-lite') ||
     model.includes('gemini-3.1-flash-image')
@@ -323,4 +347,3 @@ export enum ThinkingLevel {
 
 export const DEFAULT_THINKING_BUDGET = ThinkingBudget.MEDIUM;
 export const DEFAULT_THINKING_MODE = ThinkingLevel.MEDIUM;
-

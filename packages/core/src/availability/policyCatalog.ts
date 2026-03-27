@@ -85,32 +85,38 @@ const PREVIEW_CHAIN: ModelPolicyChain = [
 const GEMINI_3_1_CHAIN: ModelPolicyChain = [
   // 1. Primary High-Performance (3.1 Pro)
   definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
-  
-  // 2. High-Fidelity Multi-modal Fallback (3.1 Flash-Image)
-  definePolicy({ model: PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID, actions: SILENT_ACTIONS }),
-  
-  // 3. Ultra-Fast Agentic Fallback (3.1 Flash)
-  definePolicy({ model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID, actions: SILENT_ACTIONS }),
-  
-  // 4. Stable Core Fallback (2.5 Pro)
-  definePolicy({ model: STABLE_PHILL_2_5_PRO, actions: SILENT_ACTIONS }),
-  
-  // 5. Cost-Optimized / High-Availability Fallback (3.1 Flash-Lite)
-  definePolicy({ model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID, actions: SILENT_ACTIONS }),
-  
-  // 6. Last Resort (Absolute Stability - 2.5 Flash)
+  // 2. Ultra-Fast Agentic Fallback (3.1 Flash)
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
+  // 3. Cost-Optimized / High-Availability Fallback (3.1 Flash-Lite)
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
+  // 4. Last Resort (Absolute Stability - 2.5 Flash)
   definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
 ];
 
 const GEMINI_3_PLUS_3_1_CHAIN: ModelPolicyChain = [
   // 1. Premium Tier (3.1 Pro)
-  definePolicy({ model: PREVIEW_PHILL_3_PLUS_3_1_MODEL, actions: SILENT_ACTIONS }),
-  
+  definePolicy({
+    model: PREVIEW_PHILL_3_PLUS_3_1_MODEL,
+    actions: SILENT_ACTIONS,
+  }),
+
   // 2. High-Speed Premium Fallback (3.1 Flash)
-  definePolicy({ model: PREVIEW_PHILL_3_PLUS_3_1_FLASH_MODEL, actions: SILENT_ACTIONS }),
-  
+  definePolicy({
+    model: PREVIEW_PHILL_3_PLUS_3_1_FLASH_MODEL,
+    actions: SILENT_ACTIONS,
+  }),
+
   // 3. Multimodal Premium Fallback (3.1 Flash-Image)
-  definePolicy({ model: PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
 
   // 4. Stable Last Resort (2.5 Flash)
   definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
@@ -133,11 +139,32 @@ const FLASH_LITE_CHAIN: ModelPolicyChain = [
 ];
 
 const GEMINI_3_CHAIN: ModelPolicyChain = [
+  // Gemini 3 family: preview and 3.1 variants first, then stable 2.5 fallbacks.
   definePolicy({ model: PREVIEW_PHILL_MODEL_ID, actions: SILENT_ACTIONS }),
   definePolicy({
     model: PREVIEW_PHILL_FLASH_MODEL_ID,
-    isLastResort: true,
+    actions: SILENT_ACTIONS,
   }),
+  definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
+  definePolicy({ model: PREVIEW_PHILL_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: PREVIEW_PHILL_FLASH_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
+  definePolicy({
+    model: PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO,
+    actions: SILENT_ACTIONS,
+  }),
+  definePolicy({ model: STABLE_PHILL_2_5_PRO, actions: SILENT_ACTIONS }),
+  definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
 ];
 
 /**
@@ -229,4 +256,3 @@ function clonePolicy(policy: ModelPolicy): ModelPolicy {
 function cloneChain(chain: ModelPolicyChain): ModelPolicyChain {
   return chain.map(clonePolicy);
 }
-

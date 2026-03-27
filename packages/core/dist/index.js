@@ -183,7 +183,7 @@ export * from './utils/stdio.js';
 export * from './utils/terminal.js';
 // Export voice infrastructure
 export { AudioManager } from './voice/audioManager.js';
-export { GeminiLiveClient } from './voice/geminiLiveClient.js';
+export { PhillLiveClient } from './voice/phillLiveClient.js';
 export { VoiceService, } from './voice/VoiceService.js';
 export { DeviceManager } from './voice/deviceManager.js';
 export { TTSService } from './voice/ttsService.js';
@@ -200,7 +200,7 @@ export { getExperiments } from './code_assist/experiments/experiments.js';
 export * from './utils/extensionLoader.js';
 export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';
-//# sourceMappingURL=index.js.map
 export * from './config/models.js';
 export * from './config/defaultModelConfigs.js';
 export * from './config/config.js';
+//# sourceMappingURL=index.js.map

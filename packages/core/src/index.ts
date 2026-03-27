@@ -219,7 +219,7 @@ export * from './utils/terminal.js';
 
 // Export voice infrastructure
 export { AudioManager } from './voice/audioManager.js';
-export { PhillLiveClient } from './voice/PhillLiveClient.js';
+export { PhillLiveClient } from './voice/phillLiveClient.js';
 export {
   VoiceService,
   type VoiceServiceStatus,
@@ -229,7 +229,7 @@ export type { AudioConfig } from './voice/audioManager.js';
 export type {
   PhillLiveConfig,
   PhillLiveClientEvents,
-} from './voice/PhillLiveClient.js';
+} from './voice/phillLiveClient.js';
 export { DeviceManager } from './voice/deviceManager.js';
 export type { AudioDevice } from './voice/deviceManager.js';
 export { TTSService } from './voice/ttsService.js';
@@ -254,6 +254,6 @@ export { getExperiments } from './code_assist/experiments/experiments.js';
 export * from './utils/extensionLoader.js';
 export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';
-export * from './config/models';
-export * from './config/defaultModelConfigs';
-export * from './config/config';
+export * from './config/models.js';
+export * from './config/defaultModelConfigs.js';
+export * from './config/config.js';

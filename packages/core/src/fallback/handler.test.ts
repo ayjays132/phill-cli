@@ -221,11 +221,7 @@ describe('handleFallback', () => {
       });
       policyHandler.mockResolvedValue('retry_once');
 
-      await handleFallback(
-        policyConfig,
-        DEFAULT_PHILL_FLASH_MODEL,
-        AUTH_OAUTH,
-      );
+      await handleFallback(policyConfig, DEFAULT_PHILL_FLASH_MODEL, AUTH_OAUTH);
 
       expect(availability.selectFirstAvailable).not.toHaveBeenCalled();
       expect(policyHandler).toHaveBeenCalledWith(
@@ -258,6 +254,8 @@ describe('handleFallback', () => {
       expect(result).toBe(true);
       expect(availability.selectFirstAvailable).toHaveBeenCalledWith([
         PREVIEW_PHILL_FLASH_MODEL,
+        'gemini-3.1-flash-lite-preview',
+        'gemini-2.5-flash',
       ]);
     });
 
@@ -393,9 +391,8 @@ describe('handleFallback', () => {
       );
 
       expect(result).toBe(true);
-      expect(policyConfig.activateFallbackMode).toHaveBeenCalledWith(
-        FALLBACK_MODEL,
-      );
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(FALLBACK_MODEL);
+      expect(policyConfig.activateFallbackMode).not.toHaveBeenCalled();
       // TODO: add logging expect statement
     });
 
@@ -427,5 +424,3 @@ describe('handleFallback', () => {
     });
   });
 });
-
-

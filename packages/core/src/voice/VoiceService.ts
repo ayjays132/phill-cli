@@ -4,17 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import type {
+  Config} from '../index.js';
 import {
   getOauthClient,
   AuthType,
-  Config,
   debugLogger,
   getDirectoryContextString,
   loadApiKey,
 } from '../index.js';
 import { AudioManager } from './audioManager.js';
-import { PhillLiveClient } from './PhillLiveClient.js';
+import { PhillLiveClient } from './phillLiveClient.js';
 import type { Tool } from '@google/genai';
 import { ideContextStore } from '../ide/ideContext.js';
 import { TTSService } from './ttsService.js';
@@ -33,6 +34,14 @@ export interface VoiceServiceEvents {
   outputVolume: (volume: number) => void;
   emotionChange: (emotion: string) => void;
   error: (error: Error) => void;
+}
+
+interface VoiceToolCallPayload {
+  function_calls?: Array<{
+    name: string;
+    args: Record<string, unknown>;
+    id: string;
+  }>;
 }
 
 export interface VoiceServiceOptions {
@@ -64,14 +73,14 @@ export class VoiceService extends EventEmitter {
     super();
   }
 
-  public static getInstance(): VoiceService {
+  static getInstance(): VoiceService {
     if (!VoiceService.instance) {
       VoiceService.instance = new VoiceService();
     }
     return VoiceService.instance;
   }
 
-  public getStatus(): VoiceServiceStatus {
+  getStatus(): VoiceServiceStatus {
     return this.status;
   }
 
@@ -86,7 +95,7 @@ export class VoiceService extends EventEmitter {
   /**
    * Orchestrate connection to Gemini Live and Audio Capture
    */
-  public async connect(options: VoiceServiceOptions): Promise<void> {
+  async connect(options: VoiceServiceOptions): Promise<void> {
     if (this.isConnecting || this.client) return;
 
     const { config, tools, onToolCall } = options;
@@ -216,7 +225,7 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
     }
   }
 
-  public disconnect(): void {
+  disconnect(): void {
     debugLogger.log('VoiceService: Disconnecting...');
 
     if (this.client) {
@@ -267,7 +276,7 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
       this.setStatus('listening');
     });
 
-    this.client.on('toolCall', async (toolCall: any) => {
+    this.client.on('toolCall', async (toolCall: VoiceToolCallPayload) => {
       if (!onToolCall || !toolCall.function_calls || !this.client) return;
       for (const call of toolCall.function_calls) {
         try {
@@ -340,13 +349,11 @@ Example Output: [Neutral] Can you refactor the VoiceService to use the singleton
 
   // --- External Setters (Bridged to AudioManager) ---
 
-  public setInputDevice(deviceId: string) {
+  setInputDevice(deviceId: string) {
     this.audioManager?.setInputDevice(deviceId);
   }
 
-  public setOutputDevice(deviceId: string) {
+  setOutputDevice(deviceId: string) {
     this.audioManager?.setOutputDevice(deviceId);
   }
 }
-
-

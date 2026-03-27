@@ -1,151 +1,77 @@
-# 🦅 Phill CLI (v1.1.2)
+# Phill CLI v1.1.4
 
 [![Phill CLI CI](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ayjays132/phill-cli/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-1.1.2--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
+[![Version](https://img.shields.io/badge/version-1.1.4--Apex-blue?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/phill-cli)
 [![License](https://img.shields.io/github/license/ayjays132/phill-cli?style=for-the-badge&logo=git)](https://github.com/ayjays132/phill-cli/blob/main/LICENSE)
 
-![Phill CLI Banner](./docs/assets/phill-screenshot.png)
+![Phill CLI banner](./docs/assets/phill-screenshot.png)
 
-### The Command-Line Power of Phill, Refined with AGI-Like Autonomy. 
+Phill CLI is a terminal-first AI agent for coding, automation, and fast
+iteration. It combines interactive chat, shell access, file operations, memory,
+tools, and model routing in a single workflow built for daily use.
 
-Phill CLI is a **state-of-the-art AI agent** that brings Phill's intelligence
-directly to your terminal. Built for surgical precision and total autonomy, it
-provides a premium developer experience with advanced cognitive capabilities
-tracking towards AGI principles.
-
-> 🌟 **Multi-Provider Support**: Works with Google Gemini, Anthropic Claude,
-> OpenAI, Groq, Ollama (local), HuggingFace, and more! Choose your preferred AI
-> provider.
-
-[**Explore the Docs**](https://phillcli.com/docs/) •
-[**Quickstart**](#-quick-install) • [**Features**](#-key-features) •
-[**Roadmap**](./ROADMAP.md)
+[Quick install](#installation) • [Features](#features) •
+[Authentication](#authentication) • [Contributing](#contributing)
 
 ---
 
-## 🆕 What's New (v1.1.2 - The Apex Breakthrough)
+## Release Highlights
 
-### 🧠 Apex Cognitive Pipeline & Gemini 3.1 Alignment
+### Auto mode with family-aware cycling
 
-- **Native Gemini 3.1 Support**: Full integration with `gemini-3.1-pro`,
-  `gemini-3.1-flash`, and `gemini-3.1-flash-lite`.
-- **Advanced Tiered Auto-Mode**: The system now implements **Round-Robin Tiered
-  Recovery**. When hitting rate limits, the agent intelligently cycles through
-  available tiers (Pro -> Flash-Image -> Flash -> Lite) to ensure zero downtime.
-- **Multimodal Embedding v2**: Upgraded to high-fidelity v2 embeddings with
-  verified self-healing fallback to v1 for maximum RAG reliability.
+- Gemini 3 auto mode now stays in the Gemini 3 family instead of collapsing to a
+  single fallback.
+- The runtime can cycle through preview and stable models in a controlled order
+  when a rate limit or transient failure occurs.
+- Auto mode now preserves the selected family across retries instead of forcing
+  a manual model switch prompt too early.
 
-### 🧬 Semantic Sieve & DLR-Style History Truncation
+### Release metadata aligned for npm and GitHub
 
-- **Weighted History Retention**: Uses `VectorService` to identify and retain
-  high-importance conversation threads while compressing noisy tool outputs.
-- **Surgical DLR Truncation**: Automatically summarizes massive data blocks
-  (keeping top 10/bottom 20 lines) to preserve terminal context and minimize
-  token burn.
-- **Zero-Latency Live-Sync**: Background `fs.watch` integration maintains a
-  perfect semantic map of your codebase with 0ms reasoning scan latency.
+- Root version updated to `1.1.4`.
+- Repository metadata and release badge now match the current version.
+- Sandbox image tag updated to the same release line for consistency.
 
-### 🎭 Premium "Fluid OS" UI Architecture
+### Build and packaging cleanup
 
-- **Single-Line Rounded Borders**: Stripped legacy ASCII layers for a sleek,
-  modern app-like aesthetic (`╭`, `╰`, `─`, `│`).
-- **Animated Skill Forge**: Active skills (like `activate_skill`) now feature a
-  distinct **Brain Icon (🧠)** and animated gradients during neural
-  recalibration.
-- **Micro-Stutter Eliminated**: Memoized React rendering pipeline for
-  zero-latency streaming of massive text/code blocks.
-- **Automated Dependency Resolver**: New `/browser setup` and `/voice setup`
-  commands provide one-click initialization for local browsers and TTS models.
+- Core exports were normalized so the bundle resolves the expected model
+  constants.
+- Compatibility aliases remain available for existing downstream imports.
+- Release build and test flow now pass cleanly.
 
 ---
 
-## 🚀 Why Phill CLI?
+## What Phill CLI is good at
 
-- 🎯 **Free tier**: 60 requests/min and 1,000 requests/day with personal Google
-  account
-- 🧠 **Powerful Phill 3 models**: Access to improved reasoning and 1M token
-  context window
-- 🤖 **AGI-like capabilities**: Advanced memory, self-reflection, autonomous
-  exploration, and skill creation
-- 🔧 **Built-in tools**: Google Search grounding, file operations, shell
-  commands, web fetching
-- 🔌 **Extensible**: MCP (Model Context Protocol) support for custom
-  integrations
-- 🌐 **10 AI providers supported**: Google, Anthropic, OpenAI, Groq, Ollama,
-  HuggingFace, and more
-- 💻 **Terminal-first**: Designed for developers who live in the command line
-- 🛡️ **Open source**: Apache 2.0 licensed
-- ⚡ **Lightning fast**: Optimized for speed and efficiency
+- Interactive AI-assisted coding in the terminal
+- Shell, file, and workspace operations
+- Model-aware routing with fallback behavior
+- Long-running sessions with memory and context handling
+- Extensible tool and MCP-style integrations
+- Local and cloud-backed workflows depending on your setup
 
 ---
 
-## 📦 Installation
+## Installation
 
-### Pre-requisites
+### Requirements
 
-- Node.js version 20 or higher
+- Node.js 20 or newer
 - macOS, Linux, or Windows
 
-### Quick Install
-
-#### ⚡ Run instantly with npx (no installation required)
-
-```bash
-npx phill-cli
-```
-
-#### 📦 Install globally with npm
+### Install globally from npm
 
 ```bash
 npm install -g phill-cli
 ```
 
-#### 🍺 Install globally with Homebrew (macOS/Linux)
+### Run without installing
 
 ```bash
-brew install phill-cli
+npx phill-cli
 ```
 
----
-
-## ✨ Core Features & AGI-like Capabilities
-
-### 🧠 Advanced Cognitive Functions
-
-#### **Memory Management**
-
-- **Long-term Memory**: Store and retrieve specific facts, preferences, and
-  important information across sessions
-- **Memory Commands**: `save_memory`, `recall_memory`, `ingest_memory`
-- **Persistent Knowledge**: Maintains personalized context and learns from every
-  interaction
-
-#### **Autonomous Exploration**
-
-- **Proactive Optimization**: When idle, automatically looks for system
-  optimizations
-- **Bug Discovery**: Identifies potential issues and proposes fixes
-- **Capability Expansion**: Discovers new ways to enhance performance
-
-#### **Skill Creation (Meta-Learning)**
-
-- **Dynamic Skill Generation**: Creates new specialized skills on the fly
-- **Self-Extension**: Expands own capabilities based on user needs
-- **Adaptive Tooling**: Addresses repetitive tasks with custom solutions
-
----
-
-## 🔐 Authentication Options
-
-Phill CLI supports multiple AI providers and authentication methods. Choose the
-one that best fits your needs:
-
-### 🥇 Recommended: Option 1 - Login with Google
-
-**✨ Best for:** Individual developers and anyone with a Phill Code Assist
-License.
-
-#### Start Phill CLI, then choose _Login with Google_ and follow the browser authentication flow when prompted
+### Start the CLI
 
 ```bash
 phill
@@ -153,13 +79,27 @@ phill
 
 ---
 
-## 🔧 Configuration Example
+## Authentication
 
-Your `~/.phill/settings.json` might look like:
+Phill CLI supports Google login and API-key-based workflows depending on your
+environment and configuration.
+
+Recommended start:
+
+1. Run `phill`
+2. Choose the authentication method that matches your account setup
+3. Follow the prompts in the browser or terminal
+
+If you are using a personal or team workspace, make sure your model access and
+provider settings match the account you intend to use.
+
+---
+
+## Configuration Example
 
 ```json
 {
-  "model": "gemini-3.1-flash",
+  "model": "auto-gemini-3.1-stable",
   "memory": {
     "enabled": true,
     "longTerm": true
@@ -174,32 +114,84 @@ Your `~/.phill/settings.json` might look like:
 
 ---
 
-## 🛡️ Security & Privacy
+## Features
 
-- **MOLT-GUARD ACTIVE**: Built-in alignment and security monitoring
-- **Trusted Folders**: Control execution policies by directory
-- **Sandboxing**: Safe execution environments for untrusted code
-- **Privacy First**: Your code and data stay private
+### Model routing
+
+- Automatic routing between supported model tiers
+- Preview and stable family-aware behavior
+- Retry and fallback handling for rate limits and transient failures
+
+### Terminal workflow
+
+- Interactive chat sessions
+- File editing and workspace navigation
+- Shell execution and command orchestration
+- Streaming output optimized for terminal use
+
+### Memory and context
+
+- Session memory for recurring projects
+- Context compression and summarization helpers
+- Support for long-running work across multiple turns
+
+### Extensibility
+
+- Tooling designed for custom workflows
+- MCP-compatible integrations
+- Workspace-aware configuration and automation hooks
 
 ---
 
-## 🙏 Acknowledgments
+## Build From Source
 
-Phill CLI is built on the shoulders of giants. Special thanks to:
+```bash
+git clone https://github.com/ayjays132/phill-cli.git
+cd phill-cli
+npm install
+npm run build
+```
 
-- The Google Gemini CLI team for the base architecture.
-- The Anthropic team for Claude's advanced reasoning.
-- The open-source community and early adopters.
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Before opening a pull request:
+
+1. Read the contribution guide
+2. Open or link an issue for the change
+3. Keep the PR focused on one concern
+4. Run the project checks before submitting
+5. Update documentation when the user experience changes
+
+The project uses pull requests for review. Clear commit messages, focused diffs,
+and documentation updates make reviews faster and reduce merge risk.
+
+For full details, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+---
+
+## Security & Privacy
+
+- Trusted folder controls for workspace safety
+- Sandboxing support for untrusted execution
+- Privacy-focused defaults for local development
+- Model and provider settings you can tune to your environment
+
+---
+
+## Acknowledgments
+
+Phill CLI builds on a broader ecosystem of open-source tooling and model
+infrastructure. The project also benefits from community contributions, issue
+reports, and release testing.
 
 ---
 
 <p align="center">
-  <strong>Built with ❤️ by developers, for developers</strong><br>
-  <sub>Pushing the boundaries of what AI can do in the terminal</sub>
-</p>
-
-<p align="center">
-  <a href="https://github.com/ayjays132/phill-cli">⭐ Star us on GitHub</a> •
-  <a href="https://github.com/ayjays132/phill-cli/issues/new">🐛 Report a Bug</a> •
-  <a href="https://github.com/ayjays132/phill-cli/issues/new">💡 Request a Feature</a>
+  <a href="https://github.com/ayjays132/phill-cli">GitHub repository</a> •
+  <a href="https://www.npmjs.com/package/phill-cli">npm package</a> •
+  <a href="https://github.com/ayjays132/phill-cli/issues">Issues</a>
 </p>
