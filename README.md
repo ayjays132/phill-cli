@@ -6,7 +6,7 @@
 
 ![Phill CLI Banner](./docs/assets/phill-screenshot.png)
 
-### The Command-Line Power of Phill, Refined with AGI-Like Autonomy.
+### The Command-Line Power of Phill, Refined with AGI-Like Autonomy. 
 
 Phill CLI is a **state-of-the-art AI agent** that brings Phill's intelligence
 directly to your terminal. Built for surgical precision and total autonomy, it
