@@ -256,3 +256,4 @@ export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';
 export * from './config/models';
 export * from './config/defaultModelConfigs';
+export * from './config/config';
