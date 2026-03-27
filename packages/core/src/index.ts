@@ -254,4 +254,5 @@ export { getExperiments } from './code_assist/experiments/experiments.js';
 export * from './utils/extensionLoader.js';
 export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';
-
+export * from './config/models';
+export * from './config/defaultModelConfigs';
