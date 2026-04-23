@@ -195,8 +195,8 @@ export const Composer = ({ isFocused = true }: { isFocused?: boolean }) => {
         )}
 
         {!settings.merged.ui.hideFooter && !isScreenReaderEnabled && (
-          <Box marginTop={1}>
-            <Footer />
+          <Box marginTop={0}>
+            <Footer compact />
           </Box>
         )}
       </Box>

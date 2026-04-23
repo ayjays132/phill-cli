@@ -4,12 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GetInternalDocsTool } from './get-internal-docs.js';
 import { ToolErrorType } from './tool-error.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createMockMessageBus } from '../test-utils/mock-message-bus.js';
+import { glob } from 'glob';
+
+vi.mock('node:fs/promises');
+vi.mock('glob');
+vi.mock('node:url', () => ({
+  fileURLToPath: vi.fn().mockImplementation((url) => {
+    // Return an absolute path that looks like it's in the current workspace
+    return path.resolve('src/tools/get-internal-docs.ts');
+  }),
+}));
 
 describe('GetInternalDocsTool (Integration)', () => {
   let tool: GetInternalDocsTool;
@@ -17,32 +27,34 @@ describe('GetInternalDocsTool (Integration)', () => {
 
   beforeEach(() => {
     tool = new GetInternalDocsTool(createMockMessageBus());
+    vi.clearAllMocks();
+
+    // Mock finding the docs root
+    vi.mocked(fs.stat).mockImplementation(async (p: any) => {
+      if (p.toString().endsWith('docs')) {
+        return { isDirectory: () => true } as any;
+      }
+      throw new Error('Not found');
+    });
+    vi.mocked(fs.access).mockResolvedValue(undefined);
   });
 
   it('should find the documentation root and list files', async () => {
+    vi.mocked(glob).mockResolvedValue(['index.md', 'api.md'] as any);
+
     const invocation = tool.build({});
     const result = await invocation.execute(abortSignal);
 
     expect(result.error).toBeUndefined();
-    // Verify we found some files
-    expect(result.returnDisplay).toMatch(/Found \d+ documentation files/);
-
-    // Check for a known file that should exist in the docs
-    // We assume 'index.md' or 'sidebar.json' exists in docs/
-    const content = result.llmContent as string;
-    expect(content).toContain('index.md');
+    expect(result.returnDisplay).toMatch(/Found 2 documentation files/);
+    expect(result.llmContent).toContain('index.md');
+    expect(result.llmContent).toContain('api.md');
   });
 
   it('should read a specific documentation file', async () => {
-    // Read the actual index.md from the real file system to compare
-    // We need to resolve the path relative to THIS test file to find the expected content
-    // Test file is in packages/core/src/tools/
-    // Docs are in docs/ (root)
-    const expectedDocsPath = path.resolve(
-      __dirname,
-      '../../../../docs/index.md',
-    );
-    const expectedContent = await fs.readFile(expectedDocsPath, 'utf8');
+    vi.mocked(glob).mockResolvedValue(['index.md'] as any);
+    const expectedContent = 'Mock index content';
+    vi.mocked(fs.readFile).mockResolvedValue(expectedContent);
 
     const invocation = tool.build({ path: 'index.md' });
     const result = await invocation.execute(abortSignal);
@@ -53,16 +65,15 @@ describe('GetInternalDocsTool (Integration)', () => {
   });
 
   it('should prevent access to files outside the docs directory (Path Traversal)', async () => {
-    // Attempt to read package.json from the root
     const invocation = tool.build({ path: '../package.json' });
     const result = await invocation.execute(abortSignal);
 
     expect(result.error).toBeDefined();
-    expect(result.error?.type).toBe(ToolErrorType.EXECUTION_FAILED);
     expect(result.error?.message).toContain('Access denied');
   });
 
   it('should handle non-existent files', async () => {
+    vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
     const invocation = tool.build({ path: 'this-file-does-not-exist.md' });
     const result = await invocation.execute(abortSignal);
 

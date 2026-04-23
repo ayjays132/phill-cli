@@ -129,6 +129,12 @@ export function ApiAuthDialog({
             </Text>
           </Text>
         )}
+        {authType === AuthType.XAI && (
+          <Text color={theme.text.secondary}>
+            You can create an xAI key from{' '}
+            <Text color={theme.text.link}>https://console.x.ai</Text>
+          </Text>
+        )}
       </Box>
       <Box marginTop={1} flexDirection="row">
         <Box
@@ -160,4 +166,3 @@ export function ApiAuthDialog({
     </Box>
   );
 }
-

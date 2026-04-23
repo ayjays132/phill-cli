@@ -9,10 +9,12 @@ import type { Config } from '../config/config.js';
 import {
   addMemory,
   listMemoryFiles,
+  memoryStatus,
   refreshMemory,
   showMemory,
 } from './memory.js';
 import * as memoryDiscovery from '../utils/memoryDiscovery.js';
+import { MemoryVault } from '../cognitive-engine/memory-vault.js';
 
 vi.mock('../utils/memoryDiscovery.js', () => ({
   refreshServerHierarchicalMemory: vi.fn(),
@@ -33,6 +35,12 @@ describe('memory commands', () => {
         .fn()
         .mockResolvedValue(undefined),
     } as unknown as Config;
+    vi.spyOn(MemoryVault.prototype, 'getStats').mockReturnValue({
+      memoryCount: 4,
+      summaryCount: 1,
+      latchCount: 3,
+      activeLatchCount: 2,
+    });
   });
 
   afterEach(() => {
@@ -199,6 +207,29 @@ describe('memory commands', () => {
       if (result.type === 'message') {
         expect(result.messageType).toBe('info');
         expect(result.content).toBe('No PHILL.md files in use.');
+      }
+    });
+  });
+
+  describe('memoryStatus', () => {
+    it('should include cognitive vault statistics', async () => {
+      vi.mocked(mockConfig.getUserMemory).mockReturnValue('hello');
+      vi.mocked(mockConfig.getPhillMdFileCount).mockReturnValue(2);
+      vi.mocked(mockConfig.getPhillMdFilePaths).mockReturnValue([
+        '/tmp/PHILL.md',
+      ]);
+
+      const result = await memoryStatus(mockConfig);
+
+      expect(result.type).toBe('message');
+      if (result.type === 'message') {
+        expect(result.content).toContain('- Loaded chars: 5');
+        expect(result.content).toContain(
+          '- Cognitive vault entries: 4 (1 summaries)',
+        );
+        expect(result.content).toContain(
+          '- Cognitive vault active latches: 2/3',
+        );
       }
     });
   });

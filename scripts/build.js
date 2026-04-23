@@ -18,12 +18,42 @@
 // limitations under the License.
 
 import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
+const workspaceDirs = [
+  'packages/core',
+  'packages/cli',
+  'packages/a2a-server',
+  'packages/test-utils',
+  'packages/vscode-ide-companion',
+];
+
+function removeTestArtifacts(dir) {
+  if (!existsSync(dir)) {
+    return;
+  }
+
+  for (const entry of readdirSync(dir)) {
+    const entryPath = join(dir, entry);
+    const stat = statSync(entryPath);
+
+    if (stat.isDirectory()) {
+      removeTestArtifacts(entryPath);
+      continue;
+    }
+
+    if (
+      /\.test\.(js|d\.ts|js\.map)$/.test(entry) ||
+      /\.spec\.(js|d\.ts|js\.map)$/.test(entry)
+    ) {
+      rmSync(entryPath, { force: true });
+    }
+  }
+}
 
 // npm install if node_modules was removed (e.g. via npm run clean or scripts/clean.js)
 if (!existsSync(join(root, 'node_modules'))) {
@@ -32,9 +62,16 @@ if (!existsSync(join(root, 'node_modules'))) {
 
 // build all workspaces/packages
 execSync('npm run generate', { stdio: 'inherit', cwd: root });
-// Build typescript in parallel using project references
-execSync('npx tsc -b tsconfig.build.json', { stdio: 'inherit', cwd: root });
+// Build typescript in parallel using project references.
+// Force rebuild so project references recover cleanly if prior dist artifacts changed.
+execSync('npx tsc -b tsconfig.build.json --force', {
+  stdio: 'inherit',
+  cwd: root,
+});
 execSync('npm run build --workspaces', { stdio: 'inherit', cwd: root });
+for (const workspaceDir of workspaceDirs) {
+  removeTestArtifacts(join(root, workspaceDir, 'dist'));
+}
 
 // also build container image if sandboxing is enabled
 // skip (-s) npm install + build since we did that above

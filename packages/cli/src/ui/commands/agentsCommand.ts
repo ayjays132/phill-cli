@@ -44,6 +44,30 @@ const agentsListCommand: SlashCommand = {
       displayName: def.displayName,
       description: def.description,
       kind: def.kind,
+      model:
+        def.kind === 'local'
+          ? def.modelConfig?.model ?? 'inherit'
+          : 'remote',
+      maxTurns: def.kind === 'local' ? def.runConfig?.maxTurns : undefined,
+      toolCount:
+        def.kind === 'local' && def.toolConfig?.tools
+          ? def.toolConfig.tools.length
+          : undefined,
+      capabilities:
+        def.kind === 'local' && def.toolConfig?.tools
+          ? def.toolConfig.tools
+              .map((tool) => {
+                if (typeof tool === 'string') {
+                  return tool;
+                }
+                if ('name' in tool && typeof tool.name === 'string') {
+                  return tool.name;
+                }
+                return undefined;
+              })
+              .filter((toolName): toolName is string => Boolean(toolName))
+          : undefined,
+      experimental: def.experimental,
     }));
 
     const agentsListItem: HistoryItemAgentsList = {

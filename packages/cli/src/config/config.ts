@@ -123,7 +123,7 @@ export async function parseArguments(
           alias: 'm',
           type: 'string',
           nargs: 1,
-          description: `Specify the neural model to use (e.g., 'gemini-2.0-flash', 'ollama/llama3', 'openai/gpt-4o', 'anthropic/claude-3-5-sonnet', or 'huggingface/gpt2')`,
+          description: `Specify the neural model to use (e.g., 'gemini-2.5-flash', 'ollama/llama3', 'openai/gpt-5.4', 'anthropic/claude-sonnet-4-20250514', 'xai/grok-4-20', or 'huggingface/meta-llama/Llama-3.1-8B-Instruct:cerebras')`,
         })
         .option('prompt', {
           alias: 'p',
@@ -718,6 +718,7 @@ export async function loadCliConfig(
     openAI: settings.openAI,
     anthropic: settings.anthropic,
     groq: settings.groq,
+    xai: settings.xai,
     customApi: settings.customApi,
     coreTools: settings.tools?.core || undefined,
     allowedTools: allowedTools.length > 0 ? allowedTools : undefined,
@@ -847,4 +848,3 @@ function mergeExcludeTools(
   ]);
   return Array.from(allExcludeTools);
 }
-

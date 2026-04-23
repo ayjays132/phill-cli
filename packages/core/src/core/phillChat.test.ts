@@ -99,6 +99,8 @@ vi.mock('../services/ethicalGuardService.js', () => ({
   EthicalGuardService: {
     getInstance: vi.fn(() => ({
       getEthicalScaffolding: () => '',
+      hallucinationCheck: vi.fn().mockResolvedValue({ isHallucination: false }),
+      getConfidence: vi.fn().mockReturnValue({ alignment: 1, risk: 0 }),
     })),
   },
 }));
@@ -165,6 +167,9 @@ describe('PhillChat', () => {
       getQuotaErrorOccurred: vi.fn().mockReturnValue(false),
       setQuotaErrorOccurred: vi.fn(),
       flashFallbackHandler: undefined,
+      getVoice: vi.fn().mockReturnValue(undefined),
+      getBiologicalDrives: vi.fn().mockReturnValue(undefined),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
       getProjectRoot: vi.fn().mockReturnValue('/test/project/root'),
       storage: {
         getProjectTempDir: vi.fn().mockReturnValue('/test/temp'),
@@ -193,6 +198,8 @@ describe('PhillChat', () => {
             },
           };
         }),
+        resolveChain: vi.fn().mockReturnValue(undefined),
+        getModelChain: vi.fn().mockReturnValue(undefined),
       },
       isInteractive: vi.fn().mockReturnValue(false),
       getEnableHooks: vi.fn().mockReturnValue(false),

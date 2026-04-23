@@ -65,6 +65,7 @@ export enum AuthType {
   OPENAI_BROWSER = 'openai-browser',
   ANTHROPIC = 'anthropic',
   GROQ = 'groq',
+  XAI = 'xai',
   CUSTOM_API = 'custom-api',
 }
 
@@ -76,6 +77,11 @@ export type ContentGeneratorConfig = {
   ollama?: {
     endpoint: string;
     model: string;
+    num_ctx?: number;
+    num_gpu?: number;
+    low_vram?: boolean;
+    concurrency_limit?: number;
+    keep_alive?: string;
   };
   huggingFace?: {
     endpoint?: string;
@@ -97,6 +103,11 @@ export type ContentGeneratorConfig = {
     apiKey?: string;
     model: string;
   };
+  xai?: {
+    endpoint: string;
+    apiKey?: string;
+    model: string;
+  };
   customApi?: {
     endpoint: string;
     apiKey?: string;
@@ -108,14 +119,9 @@ export async function createContentGeneratorConfig(
   config: Config,
   authType: AuthType | undefined,
 ): Promise<ContentGeneratorConfig> {
-  const geminiApiKey =
-    process.env['PHILL_API_KEY'] ||
-    process.env['GEMINI_API_KEY'] ||
-    process.env['GOOGLE_API_KEY'] ||
-    (await loadApiKey()) ||
-    undefined;
-  const googleApiKey =
-    process.env['GOOGLE_API_KEY'] || process.env['GEMINI_API_KEY'] || undefined;
+  const phillApiKey =
+    process.env['PHILL_API_KEY'] || (await loadApiKey()) || undefined;
+  const googleApiKey = process.env['GOOGLE_API_KEY'] || undefined;
   const googleCloudProject =
     process.env['GOOGLE_CLOUD_PROJECT'] ||
     process.env['GOOGLE_CLOUD_PROJECT_ID'] ||
@@ -135,8 +141,8 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
-  if (authType === AuthType.USE_PHILL && geminiApiKey) {
-    contentGeneratorConfig.apiKey = geminiApiKey;
+  if (authType === AuthType.USE_PHILL && phillApiKey) {
+    contentGeneratorConfig.apiKey = phillApiKey;
     contentGeneratorConfig.vertexai = false;
 
     return contentGeneratorConfig;
@@ -163,6 +169,11 @@ export async function createContentGeneratorConfig(
     contentGeneratorConfig.ollama = {
       endpoint: ollamaEndpoint,
       model: ollamaModel,
+      num_ctx: config.ollama?.num_ctx ? Number(config.ollama.num_ctx) : (process.env['OLLAMA_NUM_CTX'] ? Number(process.env['OLLAMA_NUM_CTX']) : 8192),
+      num_gpu: config.ollama?.num_gpu ? Number(config.ollama.num_gpu) : (process.env['OLLAMA_NUM_GPU'] ? Number(process.env['OLLAMA_NUM_GPU']) : undefined),
+      low_vram: config.ollama?.low_vram ?? (process.env['OLLAMA_LOW_VRAM'] === 'true' || undefined),
+      concurrency_limit: config.ollama?.concurrency_limit ? Number(config.ollama.concurrency_limit) : (process.env['OLLAMA_CONCURRENCY_LIMIT'] ? Number(process.env['OLLAMA_CONCURRENCY_LIMIT']) : 1),
+      keep_alive: config.ollama?.keep_alive || process.env['OLLAMA_KEEP_ALIVE'] || undefined,
     };
 
     return contentGeneratorConfig;
@@ -174,11 +185,13 @@ export async function createContentGeneratorConfig(
       process.env['HUGGINGFACE_ENDPOINT'] ||
       'https://router.huggingface.co';
     const hfApiKey =
-      config.huggingFace?.apiKey || process.env['HUGGINGFACE_API_KEY'];
+      config.huggingFace?.apiKey ||
+      process.env['HUGGINGFACE_API_KEY'] ||
+      process.env['HF_TOKEN'];
     const hfModel =
       config.huggingFace?.model ||
       process.env['HUGGINGFACE_MODEL'] ||
-      'meta-llama/Llama-2-7b-chat-hf';
+      'meta-llama/Llama-3.1-8B-Instruct:cerebras';
 
     contentGeneratorConfig.huggingFace = {
       endpoint: hfEndpoint,
@@ -217,7 +230,7 @@ export async function createContentGeneratorConfig(
         authType === AuthType.OPENAI_BROWSER
           ? openAiToken
           : openAiApiKey,
-      model: config.openAI?.model || process.env['OPENAI_MODEL'] || 'gpt-4o',
+      model: config.openAI?.model || process.env['OPENAI_MODEL'] || 'gpt-5.4',
     };
     return contentGeneratorConfig;
   }
@@ -232,7 +245,7 @@ export async function createContentGeneratorConfig(
       model:
         config.anthropic?.model ||
         process.env['ANTHROPIC_MODEL'] ||
-        'claude-sonnet-4-6',
+        'claude-sonnet-4-20250514',
     };
     return contentGeneratorConfig;
   }
@@ -253,6 +266,29 @@ export async function createContentGeneratorConfig(
         config.groq?.model ||
         process.env['GROQ_MODEL'] ||
         'deepseek-r1-distill-llama-70b',
+    };
+    return contentGeneratorConfig;
+  }
+
+  if (authType === AuthType.XAI) {
+    const xaiKey =
+      config.xai?.apiKey ||
+      process.env['XAI_API_KEY'] ||
+      process.env['GROK_API_KEY'];
+
+    if (!xaiKey) {
+      throw new Error(
+        'xAI API key not found. Set XAI_API_KEY, GROK_API_KEY, or configure xai.apiKey in settings.',
+      );
+    }
+
+    contentGeneratorConfig.xai = {
+      endpoint:
+        config.xai?.endpoint ||
+        process.env['XAI_ENDPOINT'] ||
+        'https://api.x.ai/v1',
+      apiKey: xaiKey?.trim(),
+      model: config.xai?.model || process.env['XAI_MODEL'] || 'grok-4-20',
     };
     return contentGeneratorConfig;
   }
@@ -292,7 +328,7 @@ export async function createContentGenerator(
       gcConfig.getModel(),
       gcConfig.getPreviewFeatures(),
       false,
-      gcConfig.getHasAccessToPreviewModel(),
+      gcConfig.getHasAccessToPreviewModel?.() ?? true,
       gcConfig,
     );
     const customHeadersEnv =
@@ -363,6 +399,7 @@ export async function createContentGenerator(
           config.ollama.endpoint,
           config.ollama.model,
           gcConfig,
+          config.ollama,
         ),
         gcConfig,
       );
@@ -450,6 +487,22 @@ export async function createContentGenerator(
       );
     }
 
+    if (config.authType === AuthType.XAI) {
+      if (!config.xai) {
+        throw new Error('xAI configuration is missing');
+      }
+      return new LoggingContentGenerator(
+        new OpenAICompatibleContentGenerator(
+          config.xai.endpoint,
+          config.xai.model,
+          config.xai.apiKey,
+          undefined,
+          gcConfig,
+        ),
+        gcConfig,
+      );
+    }
+
     if (config.authType === AuthType.CUSTOM_API) {
       if (!config.customApi) {
         throw new Error('Custom API configuration is missing');
@@ -477,4 +530,3 @@ export async function createContentGenerator(
 
   return generator;
 }
-

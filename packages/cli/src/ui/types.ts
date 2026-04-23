@@ -230,7 +230,13 @@ export type HistoryItemSkillsList = HistoryItemBase & {
 export type AgentDefinitionJson = Pick<
   AgentDefinition,
   'name' | 'displayName' | 'description' | 'kind'
->;
+> & {
+  model?: string;
+  maxTurns?: number;
+  toolCount?: number;
+  capabilities?: string[];
+  experimental?: boolean;
+};
 
 export type HistoryItemAgentsList = HistoryItemBase & {
   type: 'agents_list';

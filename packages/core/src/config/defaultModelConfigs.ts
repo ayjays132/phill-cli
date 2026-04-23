@@ -22,6 +22,20 @@ import {
   ThinkingBudget,
 } from './models.js';
 
+const SILENT_ACTIONS = {
+  terminal: 'silent' as const,
+  transient: 'silent' as const,
+  not_found: 'silent' as const,
+  unknown: 'silent' as const,
+};
+
+const DEFAULT_STATE = {
+  terminal: 'cool_off' as const,
+  transient: 'sticky_retry' as const,
+  not_found: 'cool_off' as const,
+  unknown: 'cool_off' as const,
+};
+
 /**
  * The default model configs. We use `base` as the parent for all of our model
  * configs, while `chat-base`, a child of `base`, is the parent of the models
@@ -403,6 +417,18 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         },
       ],
     },
+    'auto-gemini-3.1': {
+      default: 'gemini-3.1-pro-preview',
+      contexts: [
+        {
+          condition: { hasAccessToPreview: false },
+          target: 'gemini-2.5-pro',
+        },
+      ],
+    },
+    'auto-gemini-3.1-stable': {
+      default: 'gemini-2.5-pro',
+    },
     'auto-gemini-2.5': {
       default: 'gemini-2.5-pro',
     },
@@ -449,6 +475,37 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
       ],
     },
   },
+  modelChains: {
+    'auto-gemini-3.1': [
+      { model: 'gemini-3.1-pro-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-3-flash-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-3.1-flash-lite-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-pro', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash-lite', isLastResort: true, actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE }
+    ],
+    'auto-gemini-3': [
+      { model: 'gemini-3.1-pro-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-3-flash-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-3.1-flash-lite-preview', isLastResort: true, actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE }
+    ],
+    'auto-gemini-2.5': [
+      { model: 'gemini-2.5-pro', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash-lite', isLastResort: true, actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE }
+    ],
+    'default': [
+      { model: 'gemini-2.5-pro', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash-lite', isLastResort: true, actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE }
+    ],
+    'lite': [
+      { model: 'gemini-3.1-flash-lite-preview', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash-lite', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-flash', actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE },
+      { model: 'gemini-2.5-pro', isLastResort: true, actions: SILENT_ACTIONS, stateTransitions: DEFAULT_STATE }
+    ]
+  },
   overrides: [
     {
       match: { model: 'chat-base', isRetry: true },
@@ -460,4 +517,3 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
     },
   ],
 };
-

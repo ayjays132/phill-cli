@@ -50,7 +50,7 @@ import {
   GcpMetricExporter,
   GcpLogExporter,
 } from './gcp-exporters.js';
-import { TelemetryTarget } from './index.js';
+import { TelemetryTarget } from './types.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import { authEvents } from '../code_assist/oauth2.js';
 

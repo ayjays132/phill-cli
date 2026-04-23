@@ -10,6 +10,7 @@ import type { Config } from '../config/config.js';
 import {
   PREVIEW_PHILL_MODEL,
   PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
   PREVIEW_PHILL_3_1_MODEL_AUTO,
 } from '../config/models.js';
 import { ModelAvailabilityService } from './modelAvailabilityService.js';
@@ -41,7 +42,8 @@ describe('Fallback Integration', () => {
 
   it('should select fallback model when primary model is terminal and config is in AUTO mode', () => {
     // 1. Simulate "Pro" failing with a terminal quota error
-    // The policy chain for PREVIEW_PHILL_3_1_MODEL_AUTO is [PREVIEW_PHILL_MODEL, PREVIEW_PHILL_FLASH_MODEL]
+    // The policy chain for PREVIEW_PHILL_3_1_MODEL_AUTO is
+    // [PREVIEW_PHILL_MODEL, PREVIEW_PHILL_FLASH_MODEL, PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID, ...stable fallbacks]
     availabilityService.markTerminal(PREVIEW_PHILL_MODEL, 'quota');
 
     // 2. Request "Pro" explicitly (as Agent would)
@@ -56,6 +58,18 @@ describe('Fallback Integration', () => {
     // 5. Expect active model to be updated
     expect(config.setActiveModel).toHaveBeenCalledWith(
       PREVIEW_PHILL_FLASH_MODEL,
+    );
+  });
+
+  it('should keep falling through the preview chain before stable fallbacks', () => {
+    availabilityService.markTerminal(PREVIEW_PHILL_MODEL, 'quota');
+    availabilityService.markTerminal(PREVIEW_PHILL_FLASH_MODEL, 'capacity');
+
+    const result = applyModelSelection(config, { model: PREVIEW_PHILL_MODEL });
+
+    expect(result.model).toBe(PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID);
+    expect(config.setActiveModel).toHaveBeenCalledWith(
+      PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
     );
   });
 
@@ -76,4 +90,3 @@ describe('Fallback Integration', () => {
     expect(result.model).toBe(PREVIEW_PHILL_MODEL);
   });
 });
-

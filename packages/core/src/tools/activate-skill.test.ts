@@ -123,8 +123,8 @@ describe('ActivateSkillTool', () => {
     expect(result.llmContent).toContain('Mock folder structure');
     expect(result.llmContent).toContain('</available_resources>');
     expect(result.llmContent).toContain('</activated_skill>');
-    expect(result.returnDisplay).toContain('Skill **test-skill** activated');
-    expect(result.returnDisplay).toContain('Mock folder structure');
+    expect(result.returnDisplay).toContain('ACTIVATION SEQUENCE INITIATED');
+    expect(result.returnDisplay).toContain('test-skill');
   });
 
   it('should throw error if skill is not in enum', async () => {

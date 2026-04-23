@@ -83,6 +83,17 @@ describe('Core System Prompt (prompts.ts)', () => {
         getSkills: vi.fn().mockReturnValue([]),
       }),
       getApprovalMode: vi.fn().mockReturnValue(ApprovalMode.DEFAULT),
+      getVoice: vi.fn().mockReturnValue({ enabled: false }),
+      getBiologicalDrives: vi.fn().mockReturnValue({
+        dopamine_level: 0.5,
+        boredom_level: 0.2,
+        prime_directive: 'Protect humanity',
+      }),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
+      modelConfigService: {
+        resolveModelId: vi.fn().mockImplementation((m) => m),
+        getModelDefinition: vi.fn().mockReturnValue({}),
+      },
     } as unknown as Config;
   });
 
@@ -231,6 +242,17 @@ describe('Core System Prompt (prompts.ts)', () => {
         }),
         getSkillManager: vi.fn().mockReturnValue({
           getSkills: vi.fn().mockReturnValue([]),
+        }),
+        getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
+        modelConfigService: {
+          resolveModelId: vi.fn().mockImplementation((m) => m),
+          getModelDefinition: vi.fn().mockReturnValue({}),
+        },
+        getVoice: vi.fn().mockReturnValue({ enabled: false }),
+        getBiologicalDrives: vi.fn().mockReturnValue({
+          dopamine_level: 0.5,
+          boredom_level: 0.2,
+          prime_directive: 'Protect humanity',
         }),
       } as unknown as Config;
 

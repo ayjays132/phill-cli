@@ -15,6 +15,7 @@ interface PremiumFrameProps {
   height?: number;
   title?: string;
   subtitle?: string;
+  footer?: React.ReactNode;
   borderColor?: string;
   accentColor?: string;
   animated?: boolean;
@@ -37,6 +38,7 @@ export const PremiumFrame: React.FC<PremiumFrameProps> = ({
   height,
   title,
   subtitle,
+  footer,
   borderColor,
   accentColor,
 }) => {
@@ -89,9 +91,21 @@ export const PremiumFrame: React.FC<PremiumFrameProps> = ({
       </Box>
 
       {/* Bottom Border */}
-      <Box flexDirection="row">
+      <Box flexDirection="row" width={width}>
         <Text color={edgeColor}>{borderGlyphs.bottomLeft}</Text>
-        <Text color={frameBorderColor}>{borderGlyphs.horizontal.repeat(edgeRunWidth)}</Text>
+        <Box flexGrow={1} flexDirection="row" alignItems="center">
+          {footer ? (
+            <Box flexDirection="row" alignItems="center" flexGrow={1}>
+              <Text color={frameBorderColor}>{borderGlyphs.horizontal.repeat(2)}</Text>
+              {footer}
+              <Box flexGrow={1}>
+                 <Text color={frameBorderColor}>{borderGlyphs.horizontal.repeat(Math.max(0, edgeRunWidth - 2))}</Text>
+              </Box>
+            </Box>
+          ) : (
+            <Text color={frameBorderColor}>{borderGlyphs.horizontal.repeat(edgeRunWidth)}</Text>
+          )}
+        </Box>
         <Text color={edgeColor}>{borderGlyphs.bottomRight}</Text>
       </Box>
     </Box>

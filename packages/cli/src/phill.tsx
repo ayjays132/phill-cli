@@ -69,6 +69,8 @@ import {
   ValidationRequiredError,
   type FetchAdminControlsResponse,
   ContinuityVault,
+  SignalService,
+  ProprioceptionService,
 } from 'phill-cli-core';
 import {
   initializeApp,
@@ -204,6 +206,16 @@ export async function startInteractiveUI(
 
   const version = await getVersion();
   setWindowTitle(basename(workspaceRoot), settings);
+
+  // --- Signal Service Setup ---
+  const signalService = SignalService.getInstance(config);
+  signalService.initialize().catch((err) => debugLogger.error('[SIGNAL] Init failed:', err));
+  registerCleanup(() => signalService.shutdown());
+
+  // --- Proprioception Setup ---
+  const proprio = ProprioceptionService.getInstance(config);
+  proprio.startHeartbeat().catch((err) => debugLogger.error('[PULSE] Init failed:', err));
+  registerCleanup(() => proprio.stopHeartbeat());
 
   const consolePatcher = new ConsolePatcher({
     onNewMessage: (msg) => {
@@ -742,6 +754,17 @@ export async function main() {
     }
 
     await config.initialize();
+
+    // --- Signal Service Setup (Non-Interactive) ---
+    const signalService = SignalService.getInstance(config);
+    await signalService.initialize();
+    registerCleanup(() => signalService.shutdown());
+
+    // --- Proprioception Setup (Non-Interactive) ---
+    const proprio = ProprioceptionService.getInstance(config);
+    await proprio.startHeartbeat();
+    registerCleanup(() => proprio.stopHeartbeat());
+
     startupProfiler.flush(config);
 
     // --- CONTINUITY HANDSHAKE ---

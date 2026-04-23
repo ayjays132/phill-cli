@@ -195,8 +195,13 @@ export class ActivateSkillTool extends BaseDeclarativeTool<
     const skills = config.getSkillManager().getSkills();
     const skillNames = skills.map((s) => s.name);
 
+    const nameSchema =
+      skillNames.length > 0
+        ? z.enum(skillNames as [string, ...string[]])
+        : z.string().min(1);
+
     const schema = z.object({
-      name: z.string().describe('The name of the skill to activate.'),
+      name: nameSchema.describe('The name of the skill to activate.'),
     });
 
     const availableSkillsHint =

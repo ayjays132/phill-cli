@@ -41,6 +41,13 @@ if (packageName === 'core') {
     cpSync(docsSource, docsTarget, { recursive: true, dereference: true });
     console.log('Copied documentation to dist/docs');
   }
+
+  const logosSource = join(process.cwd(), 'src', 'logos', 'vendor');
+  const logosTarget = join(process.cwd(), 'dist', 'logos', 'vendor');
+  if (existsSync(logosSource)) {
+    cpSync(logosSource, logosTarget, { recursive: true, dereference: true });
+    console.log('Copied LOGOS vendor assets to dist/logos/vendor');
+  }
 }
 
 // touch dist/.last_build

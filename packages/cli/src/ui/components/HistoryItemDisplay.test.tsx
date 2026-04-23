@@ -81,11 +81,18 @@ describe('<HistoryItemDisplay />', () => {
           displayName: 'Local Agent',
           description: '  Local agent description.\n    Second line.',
           kind: 'local',
+          model: 'gemini-3.1-pro-preview',
+          maxTurns: 10,
+          toolCount: 2,
+          capabilities: ['read_file', 'edit_file'],
         },
         {
           name: 'remote_agent',
           description: 'Remote agent description.',
           kind: 'remote',
+          model: 'remote',
+          capabilities: ['a2a'],
+          experimental: true,
         },
       ],
     };

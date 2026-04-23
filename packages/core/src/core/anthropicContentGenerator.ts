@@ -208,19 +208,17 @@ export class AnthropicContentGenerator implements ContentGenerator {
   }
 
   private mapModelName(model: string): string {
-    // Futuristic and latest models support
     if (
-      model === 'claude-opus-4-6' ||
-      model === 'claude-sonnet-4-6' ||
-      model === 'claude-haiku-4-5' ||
-      model.includes('claude-4') ||
-      model.includes('claude-5')
+      model.startsWith('claude-opus-4') ||
+      model.startsWith('claude-sonnet-4') ||
+      model.startsWith('claude-3-7') ||
+      model.startsWith('claude-3-5') ||
+      model.startsWith('claude-3-')
     ) {
       return model;
     }
 
     // Utility model translations (Gemini -> Claude)
-    // Map Flash models to Claude Haiku 4.5
     if (
       model === 'gemini-2.5-flash-lite' ||
       model === 'gemini-2.5-flash' ||
@@ -228,10 +226,9 @@ export class AnthropicContentGenerator implements ContentGenerator {
       model === 'gemini-1.5-flash' ||
       model === 'gemini-3.1-flash'
     ) {
-      return 'claude-haiku-4-5';
+      return 'claude-3-5-haiku-20241022';
     }
 
-    // Map Pro models to Claude Sonnet 4.6 or Opus 4.6
     if (
       model === 'gemini-2.5-pro' ||
       model === 'gemini-2.0-pro' ||
@@ -239,8 +236,7 @@ export class AnthropicContentGenerator implements ContentGenerator {
       model === 'gemini-3-pro' ||
       model === 'gemini-3.1-pro'
     ) {
-      // Use Sonnet 4.6 as the high-intelligence workhorse for Pro tasks
-      return 'claude-sonnet-4-6';
+      return 'claude-sonnet-4-20250514';
     }
 
     // Default prefix stripping if any

@@ -1,192 +1,158 @@
-/**
- * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import * as os from 'node:os';
-import * as fs from 'node:fs/promises';
-import {
-  getGlobalMemoryFilePath,
-  computeNewContent,
-  VITALS_SECTION_HEADER,
-  debugLogger,
-  type Config,
-} from '../index.js';
-
-import { PhysicalPerceptionService } from './physicalPerceptionService.js';
-import type { PhysicalVisionData } from './physicalPerceptionService.js';
+import os from 'node:os';
+import process from 'node:process';
+import { debugLogger } from '../utils/debugLogger.js';
+import type { Config } from '../config/config.js';
+import { coreEvents, CoreEvent } from '../utils/events.js';
+import { LogosService } from './logosService.js';
+import { NexusService } from './nexusService.js';
+import { ContinuityVault } from '../utils/continuityVault.js';
 
 export interface SystemVitals {
-  cpuUsage: number;
-  memoryUsage: number;
-  totalMemory: number;
-  freeMemory: number;
+  cpu: {
+    cores: number;
+    loadAvg: number[];
+  };
+  memory: {
+    total: number;
+    free: number;
+    processUsed: number;
+  };
   uptime: number;
-  loadAverage: number[];
-  platform: string;
-  arch: string;
-  pulse: number; // A calculated health/stress index (0-100)
-  physicalVision?: PhysicalVisionData;
+  neural: {
+    coherence: number;
+    dimension: string;
+    target: string;
+  };
+  timestamp: string;
 }
 
+/**
+ * ProprioceptionService manages Phill's internal "Heartbeat" and self-awareness.
+ * It ensures the reasoning manifold is stable and manages auto-vaulting for continuity.
+ */
 export class ProprioceptionService {
   private static instance: ProprioceptionService;
   private config: Config | null = null;
-  private lastCpuUsage: { user: number; system: number; time: number } | null =
-    null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private logosService: LogosService;
+  private nexusService: NexusService;
 
   private constructor(config?: Config) {
-    this.config = config || null;
+    if (config) this.config = config;
+    this.logosService = LogosService.getInstance();
+    this.nexusService = NexusService.getInstance();
   }
 
   static getInstance(config?: Config): ProprioceptionService {
     if (!ProprioceptionService.instance) {
       ProprioceptionService.instance = new ProprioceptionService(config);
+    } else if (config) {
+      ProprioceptionService.instance.config = config;
     }
     return ProprioceptionService.instance;
   }
 
   /**
-   * Calculates a "pulse" index based on current load and resource pressure.
-   * 0 = Idle, 100 = Maximum Stress.
-   */
-  private calculatePulse(cpu: number, mem: number): number {
-    // Weight: 60% CPU, 40% Memory pressure
-    const pulse = cpu * 0.6 + mem * 0.4;
-    return Math.min(Math.round(pulse), 100);
-  }
-
-  /**
-   * Gets current system vitals.
+   * Retrieves full system and neural vitals.
    */
   async getVitals(): Promise<SystemVitals> {
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const memUsage = ((totalMem - freeMem) / totalMem) * 100;
-
-    // CPU usage calculation
-    const currentCpu = this.getCpuUsage();
-    const cpuUsage = currentCpu;
-
-    const uptime = os.uptime();
-    const loadAverage = os.loadavg();
-    const platform = os.platform();
-    const arch = os.arch();
-
-    let physicalVision: PhysicalVisionData | undefined;
-    if (this.config) {
-      physicalVision = await PhysicalPerceptionService.getInstance(
-        this.config,
-      ).getSnapshot();
-    }
+    const nexusSnap = this.nexusService.getSnapshot();
+    const reasoningInput = `NexusState: ${nexusSnap.lastPipeline} | Depth: ${nexusSnap.historyLength}`;
+    const logosSignal = await this.logosService.analyze(reasoningInput);
 
     return {
-      cpuUsage: Math.round(cpuUsage),
-      memoryUsage: Math.round(memUsage),
-      totalMemory: totalMem,
-      freeMemory: freeMem,
-      uptime,
-      loadAverage,
-      platform,
-      arch,
-      pulse: this.calculatePulse(cpuUsage, memUsage),
-      physicalVision,
+      cpu: {
+        cores: os.cpus().length,
+        loadAvg: os.loadavg(),
+      },
+      memory: {
+        total: os.totalmem(),
+        free: os.freemem(),
+        processUsed: process.memoryUsage().rss,
+      },
+      uptime: process.uptime(),
+      neural: {
+        coherence: logosSignal.dimensions.temporalCoherence,
+        dimension: logosSignal.dominantDimension,
+        target: nexusSnap.lastPipeline,
+      },
+      timestamp: new Date().toISOString(),
     };
   }
 
-  private getCpuUsage(): number {
-    const cpus = os.cpus();
-    let user = 0;
-    let system = 0;
-    let idle = 0;
-
-    for (const cpu of cpus) {
-      user += cpu.times.user;
-      system += cpu.times.sys;
-      idle += cpu.times.idle;
-    }
-
-    const total = user + system + idle;
-
-    // Simple point-in-time calculation if no history
-    if (!this.lastCpuUsage) {
-      this.lastCpuUsage = { user, system, time: total };
-      return ((user + system) / total) * 100;
-    }
-
-    const diffUser = user - this.lastCpuUsage.user;
-    const diffSystem = system - this.lastCpuUsage.system;
-    const diffTotal = total - this.lastCpuUsage.time;
-
-    this.lastCpuUsage = { user, system, time: total };
-
-    if (diffTotal === 0) return 0;
-    return ((diffUser + diffSystem) / diffTotal) * 100;
-  }
-
   /**
-   * Formats vitals for LLM consumption.
+   * Formats vitals into a user-friendly string for the CLI.
    */
   formatVitals(vitals: SystemVitals): string {
+    const memTotalGB = (vitals.memory.total / (1024 ** 3)).toFixed(1);
+    const memUsedGB = (vitals.memory.processUsed / (1024 ** 3)).toFixed(2);
+    const coherencePct = (vitals.neural.coherence * 100).toFixed(0);
+
     return [
-      `System Status: ${vitals.platform} (${vitals.arch})`,
-      `CPU: ${vitals.cpuUsage}% | Memory: ${vitals.memoryUsage}%`,
-      `Pulse: ${vitals.pulse}/100 [${this.getPulseDescription(vitals.pulse)}]`,
-      `Uptime: ${(vitals.uptime / 3600).toFixed(2)} hours`,
+      `[Neural Pulse] ${vitals.neural.dimension.toUpperCase()} Manifold | Coherence: ${coherencePct}%`,
+      `[Host] CPU: ${vitals.cpu.cores} Cores | Load: ${vitals.cpu.loadAvg[0].toFixed(2)}`,
+      `[Host] Memory: ${memUsedGB}GB used / ${memTotalGB}GB total`,
+      `[Host] Uptime: ${Math.floor(vitals.uptime / 60)} minutes`,
+      `[State] Active Pipeline: ${vitals.neural.target || 'idle'}`
     ].join('\n');
   }
 
-  private getPulseDescription(pulse: number): string {
-    if (pulse < 20) return 'Relaxed - Deep Cycles Available';
-    if (pulse < 50) return 'Steady - Normal Operation';
-    if (pulse < 80) return 'Active - Significant Load';
-    return 'Hyper-Focused - Maximum Resource Pressure';
+  /**
+   * Starts the periodic reasoning heartbeat.
+   */
+  async startHeartbeat(intervalMs: number = 30000): Promise<void> {
+    if (this.heartbeatInterval) return;
+
+    debugLogger.debug(`[PULSE] Proprioception Heartbeat started (${intervalMs}ms).`);
+
+    this.heartbeatInterval = setInterval(async () => {
+      await this.pulse();
+    }, intervalMs);
   }
 
   /**
-   * Logs current vitals to the PHILL.md memory file.
+   * Performs a single reasoning pulse.
    */
-  async logCurrentVitals(): Promise<void> {
+  private async pulse(): Promise<void> {
     try {
       const vitals = await this.getVitals();
-      const statusLine = `[${new Date().toISOString()}] Pulse: ${vitals.pulse}/100 | CPU: ${vitals.cpuUsage}% | MEM: ${vitals.memoryUsage}%`;
+      
+      // Emit the Heartbeat for the system
+      coreEvents.emit(CoreEvent.Heartbeat, {
+        timestamp: vitals.timestamp,
+        coherence: vitals.neural.coherence,
+        dominantDimension: vitals.neural.dimension,
+        activeTask: vitals.neural.target || "Active Reasoning Pipeline",
+      });
 
-      const memoryPath = getGlobalMemoryFilePath();
-      let currentContent = '';
-      try {
-        currentContent = await fs.readFile(memoryPath, 'utf-8');
-      } catch (_e) {
-        // File might not exist yet
+      // Continuity: Auto-Vaulting
+      if (vitals.neural.coherence > 0.6 && this.config) {
+        await ContinuityVault.snapshot(
+          this.config,
+          `Proprioception Pulse [${vitals.neural.dimension}]`,
+          "Continue reasoning cycle",
+          vitals.neural.dimension,
+          'in_progress'
+        );
       }
 
-      const newContent = computeNewContent(
-        currentContent,
-        statusLine,
-        VITALS_SECTION_HEADER,
-      );
-      await fs.writeFile(memoryPath, newContent, 'utf-8');
+      // Automatic Refinement
+      if (vitals.neural.coherence < 0.3) {
+        const nexusSnap = this.nexusService.getSnapshot();
+        const reasoningInput = `NexusState: ${nexusSnap.lastPipeline} | Depth: ${nexusSnap.historyLength}`;
+        debugLogger.debug(`[PULSE] Low coherence detected. Attempting manifold refinement...`);
+        await this.logosService.refineManifestation(reasoningInput, 5);
+      }
 
-      // debugLogger.debug('Proprioception: System Vitals logged to memory.');
-    } catch (error) {
-      debugLogger.error('Failed to log vitals to memory:', error);
+    } catch (e: unknown) {
+      debugLogger.debug(`[PULSE] Heartbeat missed a beat: ${e}`);
     }
   }
 
-  /**
-   * Starts a background heartbeat that logs vitals periodically.
-   * Default is every 5 minutes.
-   */
-  startHeartbeat(intervalMs: number = 5 * 60 * 1000): NodeJS.Timeout {
-    // Initial log
-    this.logCurrentVitals().catch((err) =>
-      debugLogger.error('Failed initial heartbeat:', err),
-    );
-
-    return setInterval(() => {
-      this.logCurrentVitals().catch((err) =>
-        debugLogger.error('Failed heartbeat:', err),
-      );
-    }, intervalMs);
+  stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 }

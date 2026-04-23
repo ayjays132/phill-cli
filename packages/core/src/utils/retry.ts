@@ -265,7 +265,7 @@ export async function retryWithBackoff<T>(
       if (classifiedError instanceof RetryableQuotaError || is500) {
         // Breakthrough: If we have a persistent 429 handler, try falling back IMMEDIATELY on any quota error
         // rather than wasting multiple 10-30s wait cycles on a model that is clearly exhausted.
-        if (classifiedError instanceof RetryableQuotaError && onPersistent429) {
+        if ((classifiedError instanceof RetryableQuotaError || is500) && onPersistent429) {
           try {
             const fallbackModel = await onPersistent429(authType, classifiedError);
             if (fallbackModel) {

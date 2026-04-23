@@ -25,7 +25,7 @@ export class DefaultStrategy implements TerminalStrategy {
       config.getModel(),
       config.getPreviewFeatures(),
       false,
-      config.getHasAccessToPreviewModel(),
+      config.getHasAccessToPreviewModel?.() ?? true,
       config,
     );
     return {

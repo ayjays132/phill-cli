@@ -430,9 +430,20 @@ export interface BrowserConfig {
   viewport?: { width: number; height: number };
 }
 
+export interface SignalConfig {
+  enabled?: boolean;
+  account?: string;
+  trustedNumbers?: string[];
+}
+
 export interface OllamaConfig {
   endpoint: string;
   model: string;
+  num_ctx?: number;
+  num_gpu?: number;
+  low_vram?: boolean;
+  concurrency_limit?: number;
+  keep_alive?: string;
 }
 
 export interface HuggingFaceConfig {
@@ -454,6 +465,12 @@ export interface AnthropicConfig {
 }
 
 export interface GroqConfig {
+  endpoint: string;
+  apiKey?: string;
+  model: string;
+}
+
+export interface XaiConfig {
   endpoint: string;
   apiKey?: string;
   model: string;
@@ -497,7 +514,9 @@ export interface ConfigParameters {
   openAI?: OpenAIConfig;
   anthropic?: AnthropicConfig;
   groq?: GroqConfig;
+  xai?: XaiConfig;
   customApi?: CustomApiConfig;
+  signal?: SignalConfig;
 
   coreTools?: string[];
   allowedTools?: string[];
@@ -642,7 +661,9 @@ export class Config implements ModelCapabilityContext {
   readonly openAI: OpenAIConfig | undefined;
   readonly anthropic: AnthropicConfig | undefined;
   readonly groq: GroqConfig | undefined;
+  readonly xai: XaiConfig | undefined;
   readonly customApi: CustomApiConfig | undefined;
+  readonly signal: SignalConfig | undefined;
 
   private readonly coreTools: string[] | undefined;
   private readonly allowedTools: string[] | undefined;
@@ -798,7 +819,10 @@ export class Config implements ModelCapabilityContext {
     this.openAI = params.openAI;
     this.anthropic = params.anthropic;
     this.groq = params.groq;
+    this.xai = params.xai;
     this.customApi = params.customApi;
+    this.signal = params.signal;
+    this.coreTools = params.coreTools;
 
     this.coreTools = params.coreTools;
     this.allowedTools = params.allowedTools;
@@ -1438,6 +1462,8 @@ export class Config implements ModelCapabilityContext {
         return contentGeneratorConfig.anthropic?.model;
       case AuthType.GROQ:
         return contentGeneratorConfig.groq?.model;
+      case AuthType.XAI:
+        return contentGeneratorConfig.xai?.model;
       case AuthType.CUSTOM_API:
         return contentGeneratorConfig.customApi?.model;
       default:
@@ -2810,5 +2836,4 @@ export class Config implements ModelCapabilityContext {
     }
   }
 }
-
 

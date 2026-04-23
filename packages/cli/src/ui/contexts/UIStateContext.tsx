@@ -27,6 +27,7 @@ import {
   type AgentDefinition,
   type AuthType,
   CognitiveLineState,
+  type HeartbeatPulse,
 } from 'phill-cli-core';
 import type { DOMElement } from 'ink';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
@@ -173,6 +174,8 @@ export interface UIState {
   isForgeOpen: boolean;
   cognitiveLineState: CognitiveLineState;
   cognitiveLineSuggestion?: string;
+  pulse?: HeartbeatPulse;
+  signalConnected: boolean;
   groundingState: GroundingState;
   nexusPipeline: string;
   nexusConfidence: number;

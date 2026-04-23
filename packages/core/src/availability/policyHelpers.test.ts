@@ -15,6 +15,8 @@ import type { Config } from '../config/config.js';
 import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_MODEL_AUTO,
+  PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
 } from '../config/models.js';
 
 const createMockConfig = (overrides: Partial<Config> = {}): Config =>
@@ -50,7 +52,7 @@ describe('policyHelpers', () => {
       });
       const chain = resolvePolicyChain(config);
 
-      // Expect default chain [Pro, Flash]
+      // Expect default stable-family chain [Pro, Flash]
       expect(chain).toHaveLength(2);
       expect(chain[0]?.model).toBe('gemini-2.5-pro');
       expect(chain[1]?.model).toBe('gemini-2.5-flash');
@@ -115,6 +117,20 @@ describe('policyHelpers', () => {
       expect(chain).toHaveLength(2);
       expect(chain[0]?.model).toBe('gemini-2.5-flash');
       expect(chain[1]?.model).toBe('gemini-2.5-pro');
+    });
+
+    it('uses the latest preview auto chain for gemini 3.1 auto mode', () => {
+      const config = createMockConfig({
+        getModel: () => PREVIEW_PHILL_3_1_MODEL_AUTO,
+        getPreviewFeatures: () => true,
+      });
+      const chain = resolvePolicyChain(config);
+
+      expect(chain.map((policy) => policy.model)).toEqual([
+        'gemini-3.1-pro-preview',
+        'gemini-3-flash-preview',
+        PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+      ]);
     });
   });
 
@@ -265,4 +281,3 @@ describe('policyHelpers', () => {
     });
   });
 });
-

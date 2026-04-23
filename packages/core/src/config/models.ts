@@ -8,6 +8,7 @@ import type { ModelConfigService } from '../services/modelConfigService.js';
 
 // Gemini 3.x Preview Series (Verified Available)
 export const PREVIEW_PHILL_3_1_MODEL_ID = 'gemini-3.1-pro-preview';
+export const PREVIEW_PHILL_3_1_CUSTOM_TOOLS_MODEL = 'gemini-3.1-pro-preview-customtools';
 export const PREVIEW_PHILL_3_1_FLASH_MODEL_ID = 'gemini-3-flash-preview'; // Aligned to user availability
 export const PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID =
   'gemini-3.1-flash-lite-preview';
@@ -57,6 +58,7 @@ export const STABLE_VEO_2_MODEL = 'veo-2.0-generate-001';
 
 export const VALID_PHILL_MODELS = new Set([
   PREVIEW_PHILL_3_1_MODEL_ID,
+  PREVIEW_PHILL_3_1_CUSTOM_TOOLS_MODEL,
   PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
   PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
   PREVIEW_PHILL_3_1_FLASH_IMAGE_MODEL_ID,
@@ -115,7 +117,7 @@ export function resolveModel(
 ): string {
   // If we have the full capability context, use the declarative resolution engine.
   if (config?.modelConfigService?.resolveModelId) {
-    return config.modelConfigService.resolveModelId(requestedModel, {
+    const resolved = config.modelConfigService.resolveModelId(requestedModel, {
       useGemini3_1:
         previewFeaturesEnabled || config.getGemini31LaunchedSync?.() || false,
       useCustomTools: useCustomToolModel,
@@ -123,6 +125,18 @@ export function resolveModel(
         hasAccessToPreview && (config.getHasAccessToPreviewModel?.() ?? true),
       requestedModel,
     });
+    
+    if (!hasAccessToPreview && isPreviewModel(resolved)) {
+      if (resolved.includes('flash-lite')) {
+        return DEFAULT_PHILL_FLASH_LITE_MODEL;
+      }
+      if (resolved.includes('flash')) {
+        return DEFAULT_PHILL_FLASH_MODEL;
+      }
+      return DEFAULT_PHILL_MODEL;
+    }
+    
+    return resolved;
   }
 
   // Fast-path / Fallback for procedural resolution
@@ -132,10 +146,10 @@ export function resolveModel(
       return PREVIEW_PHILL_3_DEEP_THINK_MODEL;
     case PREVIEW_PHILL_3_1_MODEL_AUTO:
       return previewFeaturesEnabled && hasAccessToPreview
-        ? PREVIEW_PHILL_3_1_MODEL_ID
+        ? (useCustomToolModel ? PREVIEW_PHILL_3_1_CUSTOM_TOOLS_MODEL : PREVIEW_PHILL_3_1_MODEL_ID)
         : STABLE_PHILL_2_5_PRO;
     case PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO:
-      return PREVIEW_PHILL_3_1_MODEL_ID;
+      return useCustomToolModel ? PREVIEW_PHILL_3_1_CUSTOM_TOOLS_MODEL : PREVIEW_PHILL_3_1_MODEL_ID;
     case DEFAULT_PHILL_MODEL_AUTO:
       return DEFAULT_PHILL_MODEL;
     case PHILL_MODEL_ALIAS_PRO:

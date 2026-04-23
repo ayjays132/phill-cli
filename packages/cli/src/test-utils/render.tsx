@@ -28,7 +28,8 @@ import { type HistoryItemToolGroup, StreamingState } from '../ui/types.js';
 import { ToolActionsProvider } from '../ui/contexts/ToolActionsContext.js';
 import { AskUserActionsProvider } from '../ui/contexts/AskUserActionsContext.js';
 
-import { makeFakeConfig, type Config } from 'phill-cli-core';
+import type { Config } from 'phill-cli-core';
+import { makeFakeConfig } from 'phill-cli-core/src/test-utils/config.js';
 import { FakePersistentState } from './persistentStateFake.js';
 import { AppContext, type AppState } from '../ui/contexts/AppContext.js';
 

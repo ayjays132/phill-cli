@@ -5,9 +5,9 @@
  */
 
 import {
-  CountTokensResponse,
   FinishReason,
   GenerateContentResponse,
+  type CountTokensResponse,
   type CountTokensParameters,
   type EmbedContentParameters,
   type EmbedContentResponse,
@@ -20,10 +20,25 @@ import { toContents } from '../code_assist/converter.js';
 import type { Config } from '../config/config.js';
 import { runLocalTextGenerationWithTransformers } from './localTransformersFallback.js';
 import { getOpenAIBrowserAccessToken } from './openAiBrowserAuth.js';
+import { createProviderHttpError } from './providerHttpError.js';
 
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+}
+
+interface TextPartLike {
+  text?: string;
+}
+
+interface ToolFunctionDeclarationLike {
+  name?: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface ToolDefinitionLike {
+  functionDeclarations?: ToolFunctionDeclarationLike[];
 }
 
 interface OpenAIChatRequest {
@@ -45,19 +60,43 @@ interface OpenAIChatRequest {
 
 interface OpenAIChatResponse {
   choices: Array<{
-    message?: { content?: string };
+    message?: {
+      content?: string;
+      tool_calls?: Array<{
+        id?: string;
+        type?: 'function';
+        function?: {
+          name?: string;
+          arguments?: string;
+        };
+      }>;
+    };
     finish_reason?: string | null;
   }>;
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
     total_tokens?: number;
+    prompt_tokens_details?: {
+      cached_tokens?: number;
+    };
   };
 }
 
 interface OpenAIStreamChunk {
   choices: Array<{
-    delta?: { content?: string };
+    delta?: {
+      content?: string;
+      tool_calls?: Array<{
+        index?: number;
+        id?: string;
+        type?: 'function';
+        function?: {
+          name?: string;
+          arguments?: string;
+        };
+      }>;
+    };
     finish_reason?: string | null;
   }>;
 }
@@ -80,23 +119,28 @@ interface OpenAIResponsesRequest {
 interface OpenAIResponsesResponse {
   output_text?: string;
   output?: Array<{
+    type?: string;
+    name?: string;
+    arguments?: string;
     content?: Array<{
       type?: string;
       text?: string;
     }>;
   }>;
+  usage?: OpenAIChatResponse['usage'];
 }
 
 const OPENAI_MODEL_ALIASES: Record<string, string> = {
   // Latest-style aliases
-  'openai/latest': 'gpt-5',
-  'gpt-latest': 'gpt-5',
-  'codex-latest': 'codex-mini-latest',
-  codex: 'codex-mini-latest',
-  'openai/codex': 'codex-mini-latest',
+  'openai/latest': 'gpt-5.5',
+  'chatgpt/latest': 'gpt-5.5',
+  'gpt-latest': 'gpt-5.5',
+  'codex-latest': 'gpt-5.5',
+  codex: 'gpt-5.5',
+  'openai/codex': 'gpt-5.5',
   // Stable convenience aliases
-  gpt: 'gpt-4o',
-  'gpt-mini': 'gpt-4o-mini',
+  gpt: 'gpt-5.5',
+  'gpt-mini': 'gpt-5.4-mini',
 };
 
 export class OpenAICompatibleContentGenerator implements ContentGenerator {
@@ -127,7 +171,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     const model = this.mapModelName(request.model || this.model);
     const nativeTooling = this.buildNativeTooling(request);
     const messages = this.toMessages(request, nativeTooling.canUseNativeTools);
-    if (this.shouldUseResponsesApi(model)) {
+    if (this.shouldUseResponsesApi(model, request)) {
       return this.generateContentViaResponsesApi(
         model,
         messages,
@@ -171,22 +215,9 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       }
       if (response.ok) {
         const data = (await response.json()) as OpenAIChatResponse;
-        const text = data.choices[0]?.message?.content ?? '';
-
-        const result = new GenerateContentResponse();
-        result.candidates = [
-          {
-            content: { role: 'model', parts: [{ text }] },
-            finishReason: this.mapFinishReason(data.choices[0]?.finish_reason),
-            index: 0,
-          },
-        ];
+        const result = this.buildChatResponse(data);
         if (data.usage) {
-          result.usageMetadata = {
-            promptTokenCount: data.usage.prompt_tokens,
-            candidatesTokenCount: data.usage.completion_tokens,
-            totalTokenCount: data.usage.total_tokens,
-          };
+          result.usageMetadata = this.buildUsageMetadata(data.usage);
         }
         return result;
       }
@@ -198,28 +229,17 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       ) {
         return this.generateWithLocalTransformers(messages, model, request);
       }
-      throw new Error(
-        `OpenAI-compatible API error: ${response.statusText} - ${errorText}`,
+      throw createProviderHttpError(
+        'OpenAI-compatible API error',
+        response,
+        errorText,
       );
     }
 
     const data = (await response.json()) as OpenAIChatResponse;
-    const text = data.choices[0]?.message?.content ?? '';
-
-    const result = new GenerateContentResponse();
-    result.candidates = [
-      {
-        content: { role: 'model', parts: [{ text }] },
-        finishReason: this.mapFinishReason(data.choices[0]?.finish_reason),
-        index: 0,
-      },
-    ];
+    const result = this.buildChatResponse(data);
     if (data.usage) {
-      result.usageMetadata = {
-        promptTokenCount: data.usage.prompt_tokens,
-        candidatesTokenCount: data.usage.completion_tokens,
-        totalTokenCount: data.usage.total_tokens,
-      };
+      result.usageMetadata = this.buildUsageMetadata(data.usage);
     }
     return result;
   }
@@ -231,7 +251,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     const model = this.mapModelName(request.model || this.model);
     const nativeTooling = this.buildNativeTooling(request);
     const messages = this.toMessages(request, nativeTooling.canUseNativeTools);
-    if (this.shouldUseResponsesApi(model)) {
+    if (this.shouldUseResponsesApi(model, request)) {
       return this.generateContentStreamViaResponsesApi(
         model,
         messages,
@@ -290,8 +310,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
           yield oneShot;
         })();
       } else {
-        throw new Error(
-          `OpenAI-compatible API error: ${response.statusText} - ${errorText}`,
+        throw createProviderHttpError(
+          'OpenAI-compatible API error',
+          response,
+          errorText,
         );
       }
     }
@@ -301,10 +323,13 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const self = this;
+    const mapFinishReason = this.mapFinishReason.bind(this);
+    const buildToolCallChunk = this.buildToolCallChunk.bind(this);
 
     return (async function* () {
       let buffer = '';
+      const toolCalls = new Map<number, { name: string; arguments: string }>();
+      let emittedToolCalls = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -319,22 +344,62 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
           try {
             const chunk = JSON.parse(payload) as OpenAIStreamChunk;
             const deltaText = chunk.choices[0]?.delta?.content;
+            const deltaToolCalls = chunk.choices[0]?.delta?.tool_calls ?? [];
             const finish = chunk.choices[0]?.finish_reason;
-            if (!deltaText && !finish) continue;
+            for (const toolCall of deltaToolCalls) {
+              const index = toolCall.index ?? 0;
+              const current = toolCalls.get(index) ?? {
+                name: '',
+                arguments: '',
+              };
+              if (toolCall.function?.name) {
+                current.name += toolCall.function.name;
+              }
+              if (toolCall.function?.arguments) {
+                current.arguments += toolCall.function.arguments;
+              }
+              toolCalls.set(index, current);
+            }
+            if (!deltaText && !finish && deltaToolCalls.length === 0) continue;
 
-            const result = new GenerateContentResponse();
-            result.candidates = [
-              {
-                content: { role: 'model', parts: [{ text: deltaText ?? '' }] },
-                finishReason: self.mapFinishReason(finish),
-                index: 0,
-              },
-            ];
-            yield result;
+            if (deltaText) {
+              const result = new GenerateContentResponse();
+              result.candidates = [
+                {
+                  content: { role: 'model', parts: [{ text: deltaText }] },
+                  finishReason: mapFinishReason(finish),
+                  index: 0,
+                },
+              ];
+              yield result;
+            }
+
+            if (
+              !emittedToolCalls &&
+              toolCalls.size > 0 &&
+              (finish === 'tool_calls' || finish === 'stop')
+            ) {
+              emittedToolCalls = true;
+              yield buildToolCallChunk(toolCalls, finish);
+            } else if (!deltaText && finish) {
+              const result = new GenerateContentResponse();
+              result.candidates = [
+                {
+                  content: { role: 'model', parts: [{ text: '' }] },
+                  finishReason: mapFinishReason(finish),
+                  index: 0,
+                },
+              ];
+              yield result;
+            }
           } catch {
             continue;
           }
         }
+      }
+
+      if (!emittedToolCalls && toolCalls.size > 0) {
+        yield buildToolCallChunk(toolCalls, 'tool_calls');
       }
     })();
   }
@@ -362,8 +427,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `OpenAI-compatible embeddings error: ${response.statusText}`,
+      throw createProviderHttpError(
+        'OpenAI-compatible embeddings error',
+        response,
+        response.statusText,
       );
     }
 
@@ -401,15 +468,15 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       let toolDescriptions = '';
       if (!suppressToolForcing && hasTools) {
         toolDescriptions += 'Tools available:\n';
-        toolDescriptions += (request.config!.tools as any[])
-          .map((tool: any) => {
+        toolDescriptions += (request.config!.tools as ToolDefinitionLike[])
+          .map((tool) => {
             const declarations = Array.isArray(tool.functionDeclarations)
               ? tool.functionDeclarations
               : [];
             if (declarations.length === 0) return '';
             return declarations
               .map(
-                (funcDecl: any) =>
+                (funcDecl) =>
                   `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`,
               )
               .join('\n');
@@ -437,7 +504,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     if (request.config?.systemInstruction) {
       const sysInst = request.config.systemInstruction as Content;
       const systemText = sysInst.parts
-        ?.map((p) => p.text)
+        ?.map((p) => (p as TextPartLike).text)
         .filter(Boolean)
         .join('\n');
       if (systemText) {
@@ -447,7 +514,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     const contents = toContents(request.contents);
     for (const content of contents) {
       const text = content.parts
-        ?.map((p) => p.text)
+        ?.map((p) => (p as TextPartLike).text)
         .filter(Boolean)
         .join('\n');
       if (!text) continue;
@@ -465,6 +532,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     }
     switch (reason) {
       case 'stop':
+      case 'tool_calls':
         return FinishReason.STOP;
       case 'length':
         return FinishReason.MAX_TOKENS;
@@ -482,20 +550,19 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       return aliasResolved;
     }
 
-    // If it's a known futuristic/hallucinated model our user likes to add,
-    // we preserve it for the API call (it will likely fail, but that's what's requested).
     if (
       model.includes('gpt-oss') ||
       model.includes('gpt-5') ||
-      model.includes('claude-4')
+      model.includes('gpt-4.1')
     ) {
-      // Clean prefix if it exists
       if (
         model.includes('/') &&
         (model.startsWith('groq/') ||
           model.startsWith('openai/') ||
+          model.startsWith('chatgpt/') ||
           model.startsWith('anthropic/') ||
-          model.startsWith('huggingface/'))
+          model.startsWith('huggingface/') ||
+          model.startsWith('xai/'))
       ) {
         return model.split('/').pop()!;
       }
@@ -515,8 +582,8 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       model === 'gemini-3.1-flash'
     ) {
       if (isGroq) return 'llama-3.1-8b-instant';
-      if (isAnthropic) return 'claude-haiku-4-5';
-      return 'gpt-4o-mini';
+      if (isAnthropic) return 'claude-3-5-haiku-20241022';
+      return 'gpt-5.4-mini';
     }
 
     if (
@@ -527,8 +594,8 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       model === 'gemini-3.1-pro'
     ) {
       if (isGroq) return 'llama-3.3-70b-versatile';
-      if (isAnthropic) return 'claude-sonnet-4-6';
-      return 'gpt-4o';
+      if (isAnthropic) return 'claude-sonnet-4-20250514';
+      return 'gpt-5.4';
     }
 
     // Default prefix stripping for everything else
@@ -536,8 +603,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       model.includes('/') &&
       (model.startsWith('groq/') ||
         model.startsWith('openai/') ||
+        model.startsWith('chatgpt/') ||
         model.startsWith('anthropic/') ||
-        model.startsWith('huggingface/'))
+        model.startsWith('huggingface/') ||
+        model.startsWith('xai/'))
     ) {
       return model.split('/').pop()!;
     }
@@ -545,15 +614,28 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     return model;
   }
 
-  private shouldUseResponsesApi(model: string): boolean {
+  private shouldUseResponsesApi(
+    model: string,
+    request?: GenerateContentParameters,
+  ): boolean {
+    const hasTools = ((request?.config?.tools as unknown[]) || []).length > 0;
+    if (hasTools) {
+      return false;
+    }
     const explicit = (process.env['OPENAI_USE_RESPONSES_API'] || '')
       .trim()
       .toLowerCase();
+    const supportsResponses =
+      this.endpoint.includes('openai.com') || this.endpoint.includes('api.x.ai');
     if (explicit === '1' || explicit === 'true' || explicit === 'yes') {
-      return this.endpoint.includes('openai.com');
+      return supportsResponses;
     }
-    // Default to Responses API for GPT-5 family on OpenAI endpoints.
-    return this.endpoint.includes('openai.com') && model.startsWith('gpt-5');
+    // Default to Responses API for GPT-5 on OpenAI and for xAI, whose docs
+    // expose /v1/responses as the forward-compatible chat endpoint.
+    return (
+      (this.endpoint.includes('openai.com') && model.startsWith('gpt-5')) ||
+      this.endpoint.includes('api.x.ai')
+    );
   }
 
   private buildNativeTooling(request: GenerateContentParameters): {
@@ -562,7 +644,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     responsesTools: NonNullable<OpenAIResponsesRequest['tools']>;
     toolChoice?: OpenAIChatRequest['tool_choice'];
   } {
-    const canUseNativeTools = this.endpoint.includes('openai.com');
+    const canUseNativeTools =
+      this.endpoint.includes('openai.com') ||
+      this.endpoint.includes('api.x.ai') ||
+      this.endpoint.includes('groq.com');
     if (!canUseNativeTools) {
       return { canUseNativeTools, chatTools: [], responsesTools: [] };
     }
@@ -657,8 +742,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `OpenAI-compatible Responses API error: ${response.statusText} - ${errorText}`,
+      throw createProviderHttpError(
+        'OpenAI-compatible Responses API error',
+        response,
+        errorText,
       );
     }
 
@@ -670,15 +757,29 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
         .filter((c) => c.type === 'output_text' && typeof c.text === 'string')
         .map((c) => c.text as string)
         .join('');
+    const toolParts = (data.output ?? [])
+      .filter((item) => item.type === 'function_call' && item.name)
+      .map((item) => ({
+        functionCall: {
+          name: item.name as string,
+          args: this.parseToolArguments(item.arguments),
+        },
+      }));
 
     const result = new GenerateContentResponse();
     result.candidates = [
       {
-        content: { role: 'model', parts: [{ text: text || '' }] },
+        content: {
+          role: 'model',
+          parts: text ? [{ text }, ...toolParts] : toolParts.length > 0 ? toolParts : [{ text: '' }],
+        },
         finishReason: FinishReason.STOP,
         index: 0,
       },
     ];
+    if (data.usage) {
+      result.usageMetadata = this.buildUsageMetadata(data.usage);
+    }
     return result;
   }
 
@@ -717,8 +818,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(
-        `OpenAI-compatible Responses API error: ${response.statusText} - ${errorText}`,
+      throw createProviderHttpError(
+        'OpenAI-compatible Responses API error',
+        response,
+        errorText,
       );
     }
     if (!response.body) {
@@ -840,6 +943,98 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
 
     const retryErrorText = await retryResponse.text();
     return { response: retryResponse, errorText: retryErrorText };
+  }
+
+  private buildChatResponse(data: OpenAIChatResponse): GenerateContentResponse {
+    const choice = data.choices[0];
+    const text = choice?.message?.content ?? '';
+    const toolParts = (choice?.message?.tool_calls ?? [])
+      .map((toolCall) => {
+        const name = toolCall.function?.name?.trim();
+        if (!name) {
+          return null;
+        }
+        return {
+          functionCall: {
+            name,
+            args: this.parseToolArguments(toolCall.function?.arguments),
+          },
+        };
+      })
+      .filter((part): part is { functionCall: { name: string; args: Record<string, unknown> } } => part !== null);
+
+    const parts =
+      text.length > 0
+        ? [{ text }, ...toolParts]
+        : toolParts.length > 0
+          ? toolParts
+          : [{ text: '' }];
+
+    const result = new GenerateContentResponse();
+    result.candidates = [
+      {
+        content: { role: 'model', parts },
+        finishReason: this.mapFinishReason(choice?.finish_reason),
+        index: 0,
+      },
+    ];
+    return result;
+  }
+
+  private buildUsageMetadata(
+    usage: NonNullable<OpenAIChatResponse['usage']>,
+  ): GenerateContentResponse['usageMetadata'] {
+    return {
+      promptTokenCount: usage.prompt_tokens,
+      candidatesTokenCount: usage.completion_tokens,
+      totalTokenCount: usage.total_tokens,
+      cachedContentTokenCount: usage.prompt_tokens_details?.cached_tokens,
+    };
+  }
+
+  private buildToolCallChunk(
+    toolCalls: Map<number, { name: string; arguments: string }>,
+    finish: string | null | undefined,
+  ): GenerateContentResponse {
+    const parts = [...toolCalls.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, toolCall]) => ({
+        functionCall: {
+          name: toolCall.name,
+          args: this.parseToolArguments(toolCall.arguments),
+        },
+      }))
+      .filter((part) => part.functionCall.name.length > 0);
+
+    const result = new GenerateContentResponse();
+    result.candidates = [
+      {
+        content: {
+          role: 'model',
+          parts: parts.length > 0 ? parts : [{ text: '' }],
+        },
+        finishReason: this.mapFinishReason(finish),
+        index: 0,
+      },
+    ];
+    return result;
+  }
+
+  private parseToolArguments(
+    rawArguments: string | undefined,
+  ): Record<string, unknown> {
+    if (!rawArguments) {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(rawArguments);
+      return parsed && typeof parsed === 'object'
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
   }
 
   private async generateWithLocalTransformers(

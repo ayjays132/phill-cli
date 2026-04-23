@@ -36,12 +36,12 @@ export function ProQuotaDialog({
   if (failedModel === fallbackModel) {
     items = [
       {
-        label: 'Keep trying',
+        label: '🔁 Keep trying with auto routing',
         value: 'retry_once' as const,
         key: 'retry_once',
       },
       {
-        label: 'Stop',
+        label: '🛑 Stop for now',
         value: 'retry_later' as const,
         key: 'retry_later',
       },
@@ -50,17 +50,17 @@ export function ProQuotaDialog({
     // free users and out of quota users on G1 pro and Cloud Console gets an option to upgrade
     items = [
       {
-        label: `Switch to ${fallbackModel}`,
+        label: `⚡ Switch to ${fallbackModel}`,
         value: 'retry_always' as const,
         key: 'retry_always',
       },
       {
-        label: 'Upgrade for higher limits',
+        label: '🚀 Upgrade for higher limits',
         value: 'upgrade' as const,
         key: 'upgrade',
       },
       {
-        label: `Stop`,
+        label: `🛑 Stop for now`,
         value: 'retry_later' as const,
         key: 'retry_later',
       },
@@ -69,17 +69,17 @@ export function ProQuotaDialog({
     // capacity error
     items = [
       {
-        label: 'Keep trying',
+        label: '🔁 Keep trying with auto routing',
         value: 'retry_once' as const,
         key: 'retry_once',
       },
       {
-        label: `Switch to ${fallbackModel}`,
+        label: `⚡ Switch to ${fallbackModel}`,
         value: 'retry_always' as const,
         key: 'retry_always',
       },
       {
-        label: 'Stop',
+        label: '🛑 Stop for now',
         value: 'retry_later' as const,
         key: 'retry_later',
       },
@@ -114,18 +114,26 @@ export function ProQuotaDialog({
   return (
     <PremiumFrame
       width={Math.max(60, terminalWidth - 2)}
-      title="Rate Limit Handling"
-      subtitle={`Current: ${failedModel}  •  Fallback: ${fallbackModel}`}
+      title="🚦 Rate Limit Recovery"
+      subtitle={`Active: ${failedModel}  •  Next route: ${fallbackModel}`}
       borderColor={theme.status.warning}
       accentColor={theme.text.accent}
     >
       <Box marginBottom={1}>{renderMessage(message)}</Box>
       <Box marginBottom={1} flexDirection="column">
-        <Text color={theme.text.secondary}>
-          Auto mode can retry transient limits and route to a lower-latency model.
+        <Text color={theme.text.primary}>
+          ✨ Phill can keep the request moving through the auto-mode ladder before
+          you manually switch models.
         </Text>
         <Text color={theme.text.secondary}>
-          Choose a strategy now; you can still change it later via /settings or /model.
+          🔁 Keep trying = retry this turn and let availability scoring avoid the
+          rate-limited route.
+        </Text>
+        <Text color={theme.text.secondary}>
+          ⚡ Switch = make the next healthy route sticky for future turns.
+        </Text>
+        <Text color={theme.text.secondary}>
+          🧭 You can still tune routing later with /model, /settings, or /auth.
         </Text>
       </Box>
       <Box marginTop={1} marginBottom={1}>
@@ -133,7 +141,8 @@ export function ProQuotaDialog({
       </Box>
       <Box>
         <Text color={theme.text.secondary}>
-          Tip: upgrade increases quota headroom and reduces retry loops.
+          💡 Tip: preview auto mode now walks the Gemini 3 + 3.1 ladder before
+          dropping to stable last-resort models.
         </Text>
       </Box>
     </PremiumFrame>

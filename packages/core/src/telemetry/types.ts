@@ -41,6 +41,9 @@ import {
 import { sanitizeHookName } from './sanitize.js';
 import { getFileDiffFromResultDisplay } from '../utils/fileDiffUtils.js';
 
+import { TelemetryTarget } from './telemetry-target.js';
+export { TelemetryTarget };
+
 export interface BaseTelemetryEvent {
   'event.name': string;
   /** Current timestamp in ISO 8601 format */

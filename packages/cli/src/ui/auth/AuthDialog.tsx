@@ -44,6 +44,7 @@ function authTypeRequiresApiKey(authType: AuthType): boolean {
     authType === AuthType.OPENAI ||
     authType === AuthType.ANTHROPIC ||
     authType === AuthType.GROQ ||
+    authType === AuthType.XAI ||
     authType === AuthType.CUSTOM_API
   );
 }
@@ -64,6 +65,7 @@ function hasApiKeyConfigured(
     case AuthType.HUGGINGFACE:
       return !!(
         hasNonEmpty(process.env['HUGGINGFACE_API_KEY']) ||
+        hasNonEmpty(process.env['HF_TOKEN']) ||
         hasNonEmpty(settings.merged.huggingFace?.apiKey)
       );
     case AuthType.OPENAI:
@@ -81,7 +83,14 @@ function hasApiKeyConfigured(
     case AuthType.GROQ:
       return !!(
         hasNonEmpty(process.env['GROQ_API_KEY']) ||
+        hasNonEmpty(process.env['PHILL_GROQ_API_KEY']) ||
         hasNonEmpty(settings.merged.groq?.apiKey)
+      );
+    case AuthType.XAI:
+      return !!(
+        hasNonEmpty(process.env['XAI_API_KEY']) ||
+        hasNonEmpty(process.env['GROK_API_KEY']) ||
+        hasNonEmpty(settings.merged.xai?.apiKey)
       );
     case AuthType.CUSTOM_API:
       return !!(
@@ -164,6 +173,11 @@ export function AuthDialog({
       label: 'Groq',
       value: AuthType.GROQ,
       key: AuthType.GROQ,
+    },
+    {
+      label: 'xAI / Grok',
+      value: AuthType.XAI,
+      key: AuthType.XAI,
     },
     {
       label: 'Custom API (OpenAI-compatible)',
@@ -366,4 +380,3 @@ export function AuthDialog({
     </Box>
   );
 }
-

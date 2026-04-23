@@ -48,7 +48,7 @@ export function classifyFailureKind(error: unknown): FailureKind {
     message.includes('rate limit') ||
     message.includes('resource_exhausted')
   ) {
-    return 'transient';
+    return 'terminal';
   }
 
   if (

@@ -25,6 +25,7 @@ describe('DefaultStrategy', () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue(DEFAULT_PHILL_MODEL_AUTO),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;
 
@@ -40,12 +41,35 @@ describe('DefaultStrategy', () => {
     });
   });
 
-  it('should route to the preview model when requested model is preview auto', async () => {
+  it('should route to the stable model when requested model is preview auto but preview features are off', async () => {
     const strategy = new DefaultStrategy();
     const mockContext = {} as RoutingContext;
     const mockConfig = {
       getModel: vi.fn().mockReturnValue(PREVIEW_PHILL_3_1_MODEL_AUTO),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
+    } as unknown as Config;
+    const mockClient = {} as BaseLlmClient;
+
+    const decision = await strategy.route(mockContext, mockConfig, mockClient);
+
+    expect(decision).toEqual({
+      model: DEFAULT_PHILL_MODEL,
+      metadata: {
+        source: 'default',
+        latencyMs: 0,
+        reasoning: `Routing to default model: ${DEFAULT_PHILL_MODEL}`,
+      },
+    });
+  });
+
+  it('should route to the preview model when requested model is preview auto and preview features are on', async () => {
+    const strategy = new DefaultStrategy();
+    const mockContext = {} as RoutingContext;
+    const mockConfig = {
+      getModel: vi.fn().mockReturnValue(PREVIEW_PHILL_3_1_MODEL_AUTO),
+      getPreviewFeatures: vi.fn().mockReturnValue(true),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;
 
@@ -67,6 +91,7 @@ describe('DefaultStrategy', () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue(PHILL_MODEL_ALIAS_AUTO),
       getPreviewFeatures: vi.fn().mockReturnValue(true),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;
 
@@ -88,6 +113,7 @@ describe('DefaultStrategy', () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue(PHILL_MODEL_ALIAS_AUTO),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;
 
@@ -110,6 +136,7 @@ describe('DefaultStrategy', () => {
     const mockConfig = {
       getModel: vi.fn().mockReturnValue(PREVIEW_PHILL_FLASH_MODEL),
       getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getHasAccessToPreviewModel: vi.fn().mockReturnValue(true),
     } as unknown as Config;
     const mockClient = {} as BaseLlmClient;
 
@@ -125,4 +152,3 @@ describe('DefaultStrategy', () => {
     });
   });
 });
-

@@ -78,6 +78,7 @@ import {
   EngineMessageType,
   type EngineMessage,
   CognitiveLineState,
+  type HeartbeatPulse,
 } from 'phill-cli-core';
 import { validateAuthMethod } from '../config/auth.js';
 import process from 'node:process';
@@ -342,6 +343,8 @@ export const AppContainer = (props: AppContainerProps) => {
   const [isForgeOpen, setForgeOpen] = useState(false);
   const [cognitiveLineState, setCognitiveLineState] = useState<CognitiveLineState>(CognitiveLineState.DORMANT);
   const [cognitiveLineSuggestion, setCognitiveLineSuggestion] = useState<string | undefined>(undefined);
+  const [pulse, setPulse] = useState<HeartbeatPulse | undefined>(undefined);
+  const [signalConnected, setSignalConnected] = useState<boolean>(false);
   const [groundingState, setGroundingState] = useState<GroundingState>('none');
 
   const [defaultBannerText, setDefaultBannerText] = useState('');
@@ -474,6 +477,26 @@ export const AppContainer = (props: AppContainerProps) => {
       sync.off('stateChange', handleStateChange);
     };
   }, [config]);
+
+  // [Premium Vitals] Subscribe to Heartbeat & Signal events
+  useEffect(() => {
+    const handleHeartbeat = (p: HeartbeatPulse) => {
+      setPulse(p);
+    };
+
+    const handleSignal = () => {
+      // If we receive a message, we know the link is active
+      setSignalConnected(true);
+    };
+
+    coreEvents.on(CoreEvent.Heartbeat, handleHeartbeat);
+    coreEvents.on(CoreEvent.SignalMessageReceived, handleSignal);
+
+    return () => {
+      coreEvents.off(CoreEvent.Heartbeat, handleHeartbeat);
+      coreEvents.off(CoreEvent.SignalMessageReceived, handleSignal);
+    };
+  }, []);
 
   // Subscribe to ASK_USER_REQUEST messages from the message bus
   useEffect(() => {
@@ -942,6 +965,8 @@ Logging in with Google... Restarting Phill CLI to continue.
           settings.setValue(SettingScope.User, 'anthropic.apiKey', apiKey);
         } else if (targetAuthType === AuthType.GROQ) {
           settings.setValue(SettingScope.User, 'groq.apiKey', apiKey);
+        } else if (targetAuthType === AuthType.XAI) {
+          settings.setValue(SettingScope.User, 'xai.apiKey', apiKey);
         } else if (targetAuthType === AuthType.CUSTOM_API) {
           settings.setValue(SettingScope.User, 'customApi.apiKey', apiKey);
         }
@@ -989,6 +1014,9 @@ Logging in with Google... Restarting Phill CLI to continue.
     }
     if (targetAuthType === AuthType.GROQ) {
       return settings.merged.groq?.apiKey;
+    }
+    if (targetAuthType === AuthType.XAI) {
+      return settings.merged.xai?.apiKey;
     }
     if (targetAuthType === AuthType.CUSTOM_API) {
       return settings.merged.customApi?.apiKey;
@@ -2253,6 +2281,8 @@ Logging in with Google... Restarting Phill CLI to continue.
       isForgeOpen,
       cognitiveLineState,
       cognitiveLineSuggestion,
+      pulse,
+      signalConnected,
       groundingState,
       nexusPipeline: 'standard',
       nexusConfidence: 1.0,
@@ -2365,6 +2395,8 @@ Logging in with Google... Restarting Phill CLI to continue.
       isForgeOpen,
       cognitiveLineState,
       cognitiveLineSuggestion,
+      pulse,
+      signalConnected,
       groundingState,
       // 🚀 Enhanced visual properties
       capabilities,
@@ -2552,4 +2584,3 @@ Logging in with Google... Restarting Phill CLI to continue.
 
 export { detectTerminalCapabilities, FALLBACK_THEME };
 export type { TerminalCapabilities };
-

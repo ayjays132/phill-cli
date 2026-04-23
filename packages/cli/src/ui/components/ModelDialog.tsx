@@ -49,59 +49,38 @@ function getProviderRecommendedModels(authType: AuthType | undefined): string[] 
     case AuthType.OPENAI:
     case AuthType.OPENAI_BROWSER:
       return [
-        // Latest GPT-5 family
+        // Current OpenAI/Codex recommendations.
+        'gpt-5.5',
+        'gpt-5.4',
+        'gpt-5.4-mini',
+        'gpt-5.3-codex',
+        'gpt-5.3-codex-spark',
         'gpt-5.2',
         'gpt-5.1',
         'gpt-5',
         'gpt-5-mini',
         'gpt-5-nano',
-        // Codex-optimized families
-        'gpt-5.2-codex',
-        'gpt-5.3-codex',
-        'gpt-5.1-codex',
-        'gpt-5.1-codex-max',
-        'gpt-5-codex',
-        'gpt-5.1-codex-mini',
-        'codex-mini-latest',
-        // GPT-4.1 family
         'gpt-4.1',
         'gpt-4.1-mini',
         'gpt-4.1-nano',
-        // Reasoning models
         'o3',
         'o4-mini',
-        'o1',
-        'o1-mini',
-        'o1-preview',
-        // GPT-4o family
         'gpt-4o',
         'gpt-4o-mini',
-        // Previous models
-        'gpt-4-turbo',
-        'gpt-4',
-        'gpt-3.5-turbo',
       ];
     case AuthType.ANTHROPIC:
       return [
-        // Claude 4.6 family (newest)
-        'claude-opus-4-6-20250805',
-        // Claude 4.5 family
-        'claude-opus-4-5-20251101',
-        'claude-sonnet-4-5-20250929',
-        'claude-haiku-4-5-20251001',
-        // Claude 4.1 and 4 family
         'claude-opus-4-1-20250805',
         'claude-opus-4-20250514',
         'claude-sonnet-4-20250514',
-        // Claude 3.5 family
+        'claude-3-7-sonnet-20250219',
+        'claude-3-7-sonnet-latest',
         'claude-3-5-sonnet-20241022',
         'claude-3-5-sonnet-20240620',
         'claude-3-5-haiku-20241022',
-        // Claude 3 family
         'claude-3-opus-20240229',
         'claude-3-sonnet-20240229',
         'claude-3-haiku-20240307',
-        // Aliases
         'claude-3-opus-latest',
         'claude-3-5-sonnet-latest',
         'claude-3-5-haiku-latest',
@@ -133,6 +112,16 @@ function getProviderRecommendedModels(authType: AuthType | undefined): string[] 
         'whisper-large-v3',
         'whisper-large-v3-turbo',
       ];
+    case AuthType.XAI:
+      return [
+        'grok-4-20',
+        'grok-4',
+        'grok-4-latest',
+        'grok-3',
+        'grok-3-latest',
+        'grok-3-mini',
+        'grok-3-mini-latest',
+      ];
     default:
       return [];
   }
@@ -145,7 +134,12 @@ function dedupeNonEmpty(values: Array<string | undefined | null>): string[] {
 }
 
 async function discoverOllamaModels(endpoint: string): Promise<string[]> {
-  const base = endpoint.replace(/\/+$/, '');
+  let base = endpoint.replace(/\/+$/, '');
+  if (base.endsWith('/api')) {
+    base = base.slice(0, -4);
+  } else if (base.endsWith('/v1')) {
+    base = base.slice(0, -3);
+  }
   const response = await fetch(`${base}/api/tags`);
   if (!response.ok) {
     throw new Error(`Ollama /api/tags failed with status ${response.status}`);
@@ -196,6 +190,76 @@ async function discoverHuggingFaceCacheModels(): Promise<string[]> {
   return Array.from(found).sort((a, b) => a.localeCompare(b));
 }
 
+async function discoverOpenAICompatibleModels(
+  endpoint: string,
+  apiKey: string | undefined,
+): Promise<string[]> {
+  const base = endpoint.replace(/\/+$/, '');
+  const headers: Record<string, string> = {};
+  if (apiKey?.trim()) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+
+  const response = await fetch(`${base}/models`, { headers });
+  if (!response.ok) {
+    throw new Error(`Provider /models failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    data?: Array<{ id?: string }>;
+  };
+  return dedupeNonEmpty(payload.data?.map((entry) => entry.id) ?? []);
+}
+
+function normalizeHuggingFaceEndpoint(endpoint: string | undefined): string {
+  if (!endpoint) {
+    return 'https://router.huggingface.co';
+  }
+
+  const trimmed = endpoint.replace(/\/+$/, '');
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname.toLowerCase();
+
+    if (
+      host === 'api-inference.huggingface.co' ||
+      host === 'huggingface.co' ||
+      host.endsWith('.huggingface.co') ||
+      pathname.startsWith('/hf-inference')
+    ) {
+      return 'https://router.huggingface.co';
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
+async function discoverHuggingFaceEndpointModels(
+  endpoint: string | undefined,
+  apiKey: string | undefined,
+): Promise<string[]> {
+  const normalizedEndpoint = normalizeHuggingFaceEndpoint(endpoint);
+  const headers: Record<string, string> = {};
+  if (apiKey?.trim()) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+
+  const response = await fetch(`${normalizedEndpoint}/v1/models`, { headers });
+  if (!response.ok) {
+    throw new Error(
+      `Hugging Face model discovery failed with status ${response.status}`,
+    );
+  }
+
+  const payload = (await response.json()) as {
+    data?: Array<{ id?: string }>;
+  };
+  return dedupeNonEmpty(payload.data?.map((entry) => entry.id) ?? []);
+}
+
 export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   const config = useConfig();
   const { terminalWidth } = useUIState();
@@ -232,6 +296,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
       const contentConfig = config?.getContentGeneratorConfig();
       const currentModel = preferredModel;
+      let discoveryError: string | null = null;
 
       try {
         let discovered: string[] = [];
@@ -242,7 +307,80 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
             'http://localhost:11434';
           discovered = await discoverOllamaModels(endpoint);
         } else if (authType === AuthType.HUGGINGFACE) {
-          discovered = await discoverHuggingFaceCacheModels();
+          const endpoint =
+            contentConfig?.huggingFace?.endpoint ||
+            process.env['HUGGINGFACE_ENDPOINT'];
+          const apiKey =
+            contentConfig?.huggingFace?.apiKey ||
+            process.env['HUGGINGFACE_API_KEY'] ||
+            process.env['HF_TOKEN'];
+          const [cacheModels, endpointModels] = await Promise.allSettled([
+            discoverHuggingFaceCacheModels(),
+            discoverHuggingFaceEndpointModels(endpoint, apiKey),
+          ]);
+          discovered = dedupeNonEmpty([
+            ...(cacheModels.status === 'fulfilled' ? cacheModels.value : []),
+            ...(endpointModels.status === 'fulfilled' ? endpointModels.value : []),
+          ]);
+        } else if (
+          authType === AuthType.OPENAI ||
+          authType === AuthType.OPENAI_BROWSER
+        ) {
+          const endpoint =
+            contentConfig?.openAi?.endpoint ||
+            process.env['OPENAI_ENDPOINT'] ||
+            'https://api.openai.com/v1';
+          const apiKey =
+            contentConfig?.openAi?.apiKey || process.env['OPENAI_API_KEY'];
+          try {
+            discovered = await discoverOpenAICompatibleModels(endpoint, apiKey);
+          } catch (error) {
+            discoveryError =
+              error instanceof Error ? error.message : 'Provider model discovery failed.';
+          }
+        } else if (authType === AuthType.GROQ) {
+          const endpoint =
+            contentConfig?.groq?.endpoint ||
+            process.env['GROQ_ENDPOINT'] ||
+            'https://api.groq.com/openai/v1';
+          const apiKey =
+            contentConfig?.groq?.apiKey ||
+            process.env['GROQ_API_KEY'] ||
+            process.env['PHILL_GROQ_API_KEY'];
+          try {
+            discovered = await discoverOpenAICompatibleModels(endpoint, apiKey);
+          } catch (error) {
+            discoveryError =
+              error instanceof Error ? error.message : 'Provider model discovery failed.';
+          }
+        } else if (authType === AuthType.XAI) {
+          const endpoint =
+            contentConfig?.xai?.endpoint ||
+            process.env['XAI_ENDPOINT'] ||
+            'https://api.x.ai/v1';
+          const apiKey =
+            contentConfig?.xai?.apiKey ||
+            process.env['XAI_API_KEY'] ||
+            process.env['GROK_API_KEY'];
+          try {
+            discovered = await discoverOpenAICompatibleModels(endpoint, apiKey);
+          } catch (error) {
+            discoveryError =
+              error instanceof Error ? error.message : 'Provider model discovery failed.';
+          }
+        } else if (authType === AuthType.CUSTOM_API) {
+          const endpoint =
+            contentConfig?.customApi?.endpoint ||
+            process.env['CUSTOM_API_ENDPOINT'] ||
+            'http://localhost:8000/v1';
+          const apiKey =
+            contentConfig?.customApi?.apiKey || process.env['CUSTOM_API_KEY'];
+          try {
+            discovered = await discoverOpenAICompatibleModels(endpoint, apiKey);
+          } catch (error) {
+            discoveryError =
+              error instanceof Error ? error.message : 'Provider model discovery failed.';
+          }
         }
 
         const providerConfigured = (() => {
@@ -263,6 +401,8 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
               );
             case AuthType.GROQ:
               return contentConfig?.groq?.model ?? process.env['GROQ_MODEL'];
+            case AuthType.XAI:
+              return contentConfig?.xai?.model ?? process.env['XAI_MODEL'];
             case AuthType.CUSTOM_API:
               return (
                 contentConfig?.customApi?.model ?? process.env['CUSTOM_API_MODEL']
@@ -288,6 +428,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
         if (!cancelled) {
           setProviderOptions(items);
+          setProviderError(discoveryError);
           setProviderLoading(false);
         }
       } catch (error) {
@@ -299,6 +440,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
             process.env['OPENAI_MODEL'],
             process.env['ANTHROPIC_MODEL'],
             process.env['GROQ_MODEL'],
+            process.env['XAI_MODEL'],
             process.env['CUSTOM_API_MODEL'],
           ]);
           setProviderOptions(
@@ -378,14 +520,14 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         value: PREVIEW_PHILL_3_1_MODEL_AUTO,
         title: getDisplayString(PREVIEW_PHILL_3_1_MODEL_AUTO),
         description:
-          'Adaptive auto mode (preview tier): routes between gemini-3.1-pro and gemini-3.1-flash, then retries intelligently on transient limits.',
+          'Adaptive auto mode (preview tier): cycles across gemini-3.1-pro-preview, gemini-3-flash-preview, and gemini-3.1-flash-lite-preview with family-preserving fallback under transient limits.',
         key: PREVIEW_PHILL_3_1_MODEL_AUTO,
       },
       {
         value: DEFAULT_PHILL_MODEL_AUTO,
         title: getDisplayString(DEFAULT_PHILL_MODEL_AUTO),
         description:
-          'Adaptive auto mode (stable tier): routes between gemini-2.5-pro and gemini-2.5-flash with fast fallback behavior under rate pressure.',
+          'Adaptive auto mode (stable tier): cycles across gemini-2.5-pro and gemini-2.5-flash with fast stable-family fallback under rate pressure.',
         key: DEFAULT_PHILL_MODEL_AUTO,
       },
       {
@@ -547,5 +689,3 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     </PremiumFrame>
   );
 }
-
-

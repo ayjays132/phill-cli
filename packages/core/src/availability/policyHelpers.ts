@@ -16,15 +16,12 @@ import type {
 import {
   createDefaultPolicy,
   createSingleModelChain,
-  getModelPolicyChain,
-  getFlashLitePolicyChain,
 } from './policyCatalog.js';
 import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_MODEL,
-  PREVIEW_PHILL_3_1_MODEL_AUTO,
-  PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO,
   isAutoModel,
+  isPhill3Model,
   resolveModel,
 } from '../config/models.js';
 import type { ModelSelectionResult } from './modelAvailabilityService.js';
@@ -43,31 +40,47 @@ export function resolvePolicyChain(
     preferredModel ?? config.getActiveModel?.() ?? config.getModel();
   const configuredModel = config.getModel();
 
+  const previewFeaturesEnabled = config.getPreviewFeatures?.() ?? false;
+  const hasAccessToPreview = config.getHasAccessToPreviewModel?.() ?? true;
+
+  const context = {
+    useGemini3_1: previewFeaturesEnabled,
+    useGemini3_1FlashLite: previewFeaturesEnabled,
+    hasAccessToPreview,
+  };
+
   let chain;
   const resolvedModel = resolveModel(
     modelFromConfig,
-    config.getPreviewFeatures(),
+    previewFeaturesEnabled,
     false,
-    config.getHasAccessToPreviewModel?.() ?? true,
+    hasAccessToPreview,
     config,
   );
   const isAutoPreferred = preferredModel ? isAutoModel(preferredModel) : false;
   const isAutoConfigured = isAutoModel(configuredModel);
 
   if (resolvedModel === DEFAULT_PHILL_FLASH_LITE_MODEL) {
-    chain = getFlashLitePolicyChain();
-  } else if (isAutoPreferred || isAutoConfigured) {
-    const autoMode = isAutoPreferred ? preferredModel! : configuredModel;
-    const previewEnabled =
-      autoMode === PREVIEW_PHILL_3_1_MODEL_AUTO ||
-      autoMode === PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO;
-
-    chain = getModelPolicyChain({
-      previewEnabled,
-      autoMode,
-      userTier: config.getUserTier(),
-    });
+    chain = config.modelConfigService.resolveChain('lite', context);
+  } else if (isAutoPreferred || isAutoConfigured || isPhill3Model(resolvedModel)) {
+    const targetAlias = isAutoPreferred ? preferredModel! : configuredModel;
+    if (
+      isAutoModel(targetAlias) &&
+      config.modelConfigService.getModelChain(targetAlias)
+    ) {
+      chain = config.modelConfigService.resolveChain(targetAlias, context);
+    }
+    
+    if (!chain) {
+      const chainKey = isPhill3Model(resolvedModel) ? 'auto-gemini-3.1' : 'default';
+      chain = config.modelConfigService.resolveChain(chainKey, context);
+    }
   } else {
+    // If not auto and not a known preview family, we still try the default fallback
+    chain = config.modelConfigService.resolveChain('default', context);
+  }
+  
+  if (!chain) {
     chain = createSingleModelChain(modelFromConfig);
   }
 
@@ -234,9 +247,15 @@ export function applyAvailabilityTransition(
   if (!transition) return;
 
   if (transition === 'cool_off') {
+    const reason =
+      failureKind === 'terminal'
+        ? 'quota'
+        : failureKind === 'not_found'
+          ? 'not_found'
+          : 'capacity';
     context.service.markTerminal(
       context.policy.model,
-      failureKind === 'terminal' ? 'quota' : 'capacity',
+      reason,
     );
   } else if (transition === 'sticky_retry') {
     context.service.markRetryOncePerTurn(context.policy.model);

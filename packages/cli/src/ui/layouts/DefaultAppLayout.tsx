@@ -19,6 +19,7 @@ import { Forge } from '../components/Forge.js';
 import { BrowserControl } from '../components/BrowserControl.js';
 
 import { PremiumFrame } from '../components/shared/PremiumFrame.js';
+import { VitalsStatus } from '../components/VitalsStatus.js';
 
 export const DefaultAppLayout: React.FC = () => {
   const uiState = useUIState();
@@ -32,6 +33,7 @@ export const DefaultAppLayout: React.FC = () => {
     <PremiumFrame 
       width={uiState.terminalWidth} 
       height={isAlternateBuffer ? terminalHeight : undefined}
+      footer={<VitalsStatus pulse={uiState.pulse} signalConnected={uiState.signalConnected} />}
     >
       <Box
         flexDirection="column"

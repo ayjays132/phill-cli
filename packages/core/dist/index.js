@@ -8,6 +8,7 @@ export * from './config/config.js';
 export * from './config/defaultModelConfigs.js';
 export * from './config/models.js';
 export * from './config/constants.js';
+export * from './config/storage.js';
 export * from './output/types.js';
 export * from './output/json-formatter.js';
 export * from './output/stream-json-formatter.js';
@@ -15,8 +16,10 @@ export * from './policy/types.js';
 export * from './policy/policy-engine.js';
 export * from './policy/toml-loader.js';
 export * from './policy/config.js';
+export * from './policy/index.js';
 export * from './confirmation-bus/types.js';
 export * from './confirmation-bus/message-bus.js';
+export * from './confirmation-bus/index.js';
 // Export Commands logic
 export * from './commands/extensions.js';
 export * from './commands/restore.js';
@@ -28,6 +31,7 @@ export * from './core/client.js';
 export * from './core/baseLlmClient.js';
 export * from './core/contentGenerator.js';
 export * from './core/loggingContentGenerator.js';
+export * from './core/ollamaContentGenerator.js';
 export * from './core/phillChat.js';
 export * from './core/logger.js';
 export * from './core/prompts.js';
@@ -35,18 +39,21 @@ export * from './core/tokenLimits.js';
 export * from './core/turn.js';
 export * from './core/phillRequest.js';
 export * from './core/coreToolScheduler.js';
+export * from './core/recordingContentGenerator.js';
+export * from './core/apiKeyCredentialStorage.js';
 export * from './scheduler/scheduler.js';
 export * from './scheduler/types.js';
 export * from './scheduler/tool-executor.js';
-export * from './core/recordingContentGenerator.js';
+export * from './scheduler/state-manager.js';
+export * from './scheduler/confirmation.js';
 export * from './fallback/types.js';
+export * from './cognitive-engine/engine-types.js';
 export * from './code_assist/codeAssist.js';
 export * from './code_assist/oauth2.js';
 export * from './code_assist/server.js';
 export * from './code_assist/setup.js';
 export * from './code_assist/types.js';
 export * from './code_assist/telemetry.js';
-export * from './core/apiKeyCredentialStorage.js';
 // Export utilities
 export { homedir, tmpdir } from './utils/paths.js';
 export * from './utils/paths.js';
@@ -93,6 +100,10 @@ export * from './utils/apiConversionUtils.js';
 export * from './utils/channel.js';
 export * from './utils/constants.js';
 export * from './utils/tokenCalculation.js';
+export * from './utils/session.js';
+export * from './utils/continuityVault.js';
+export * from './utils/stdio.js';
+export * from './utils/terminal.js';
 // Export services
 export * from './services/fileDiscoveryService.js';
 export * from './services/gitService.js';
@@ -100,8 +111,6 @@ export * from './services/chatRecordingService.js';
 export * from './services/fileSystemService.js';
 export * from './services/sessionSummaryUtils.js';
 export * from './services/contextManager.js';
-export * from './skills/skillManager.js';
-export * from './skills/skillLoader.js';
 export * from './services/browserService.js';
 export * from './services/ethicalGuardService.js';
 export * from './services/agentIdentityService.js';
@@ -115,54 +124,62 @@ export * from './services/operatorLatentSync.js';
 export * from './services/visualLatentService.js';
 export * from './services/agentAutonomyService.js';
 export * from './services/modelConfigService.js';
-export * from './cognitive-engine/engine-types.js';
+export * from './services/shellExecutionService.js';
+export * from './services/chatCompressionService.js';
+export * from './services/environmentSanitization.js';
+export * from './services/loopDetectionService.js';
+export * from './services/nexusService.js';
+export * from './services/proprioceptionService.js';
+export * from './services/signalService.js';
 export { AxiomService } from './services/axiomService.js';
 export { LogosService } from './services/logosService.js';
 export { SuccessTraceService, } from './services/successTraceService.js';
 export * from './utils/axiom/types.js';
+export * from './vision/moondream.js';
 // Export IDE specific logic
 export * from './ide/ide-client.js';
 export * from './ide/ideContext.js';
-export * from './vision/moondream.js';
 export * from './ide/ide-installer.js';
 export { IDE_DEFINITIONS } from './ide/detect-ide.js';
 export * from './ide/constants.js';
 export * from './ide/types.js';
-// Export Shell Execution Service
-export * from './services/shellExecutionService.js';
+export * from './ide/detect-ide.js';
 // Export base tool definitions
 export * from './tools/tools.js';
 export * from './tools/tool-error.js';
 export * from './tools/tool-registry.js';
 export * from './tools/tool-names.js';
 export * from './resources/resource-registry.js';
-// Export prompt logic
-export * from './prompts/mcp-prompts.js';
-export * from './config/models.js';
-// Export agent definitions
-export * from './agents/types.js';
-export * from './agents/agentLoader.js';
-export * from './agents/local-executor.js';
-// Export specific tool logic
+export * from './tools/memoryTool.js';
+export * from './tools/signalTool.js';
+export * from './tools/write-file.js';
 export * from './tools/read-file.js';
-export * from './tools/ls.js';
+export * from './tools/edit.js';
 export * from './tools/grep.js';
+export * from './tools/ls.js';
 export * from './tools/ripGrep.js';
 export * from './tools/glob.js';
-export * from './tools/edit.js';
-export * from './tools/write-file.js';
 export * from './tools/web-fetch.js';
-export * from './tools/memoryTool.js';
 export * from './tools/shell.js';
 export * from './tools/web-search.js';
 export * from './tools/read-many-files.js';
 export * from './tools/mcp-client.js';
+export * from './tools/mcp-client-manager.js';
 export * from './tools/mcp-tool.js';
 export * from './tools/browserTools.js';
 export * from './tools/write-todos.js';
 export * from './tools/audioTools.js';
 export * from './tools/lyriaMusic.js';
-export * from './services/lyriaService.js';
+// Export prompt logic
+export * from './prompts/mcp-prompts.js';
+// Export agent definitions
+export * from './agents/types.js';
+export * from './agents/registry.js';
+export * from './agents/agentLoader.js';
+export * from './agents/local-executor.js';
+// Export skills
+export * from './skills/skillManager.js';
+export * from './skills/skillLoader.js';
 // MCP OAuth
 export { MCPOAuthProvider } from './mcp/oauth-provider.js';
 export { MCPOAuthTokenStorage } from './mcp/oauth-token-storage.js';
@@ -174,33 +191,21 @@ export * from './utils/browser.js';
 export { Storage } from './config/storage.js';
 // Export hooks system
 export * from './hooks/index.js';
-// Export hook types
 export * from './hooks/types.js';
-// Export agent types
-export * from './agents/types.js';
-// Export stdio utils
-export * from './utils/stdio.js';
-export * from './utils/terminal.js';
 // Export voice infrastructure
 export { AudioManager } from './voice/audioManager.js';
 export { PhillLiveClient } from './voice/phillLiveClient.js';
 export { VoiceService, } from './voice/VoiceService.js';
 export { DeviceManager } from './voice/deviceManager.js';
 export { TTSService } from './voice/ttsService.js';
+export * from './voice/ttsProvider.js';
 export { ensurePocketModelReady, getDefaultPocketModelDir, resolvePocketModelDir, resolvePocketModelId, resolvePocketHfToken, } from './voice/pocketTtsSetupService.js';
-// Export continuity utilities
-export * from './utils/continuityVault.js';
 // Additional exports from root index.ts
-export { makeFakeConfig } from './test-utils/config.js';
 export * from './utils/pathReader.js';
 export { ClearcutLogger } from './telemetry/clearcut-logger/clearcut-logger.js';
 export { KeychainTokenStorage } from './mcp/token-storage/keychain-token-storage.js';
 export { getCodeAssistServer } from './code_assist/codeAssist.js';
 export { getExperiments } from './code_assist/experiments/experiments.js';
-export * from './utils/extensionLoader.js';
 export { ExperimentFlags } from './code_assist/experiments/flagNames.js';
 export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';
-export * from './config/models.js';
-export * from './config/defaultModelConfigs.js';
-export * from './config/config.js';
 //# sourceMappingURL=index.js.map

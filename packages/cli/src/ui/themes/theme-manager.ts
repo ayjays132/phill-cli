@@ -37,6 +37,17 @@ export interface ThemeDisplay {
 
 export const DEFAULT_THEME: Theme = SOTAPremium;
 
+function isPathWithinDirectory(candidatePath: string, directory: string): boolean {
+  const relative = path.relative(directory, candidatePath);
+  if (!relative) {
+    return true;
+  }
+  return (
+    !relative.startsWith('..') &&
+    !path.isAbsolute(relative)
+  );
+}
+
 class ThemeManager {
   private readonly availableThemes: Theme[];
   private activeTheme: Theme;
@@ -259,7 +270,7 @@ class ThemeManager {
 
       // 2. Perform security check.
       const homeDir = path.resolve(homedir());
-      if (!canonicalPath.startsWith(homeDir)) {
+      if (!isPathWithinDirectory(canonicalPath, homeDir)) {
         debugLogger.warn(
           `Theme file at "${themePath}" is outside your home directory. ` +
             `Only load themes from trusted sources.`,

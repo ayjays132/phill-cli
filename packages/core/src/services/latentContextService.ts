@@ -12,11 +12,55 @@ import {
   VisualLatentService,
 } from '../index.js';
 import { cosineSimilarity } from '../utils/math.js';
+import { MemoryVault } from '../cognitive-engine/memory-vault.js';
 
 export interface LatentSnapshot {
   dlr: string; // Dense Latent Representation
   timestamp: string;
   coherencyHash?: string;
+}
+
+const MAX_LATENT_CACHE_ENTRIES = 100;
+
+export function buildHeuristicDLRFromHistory(
+  history: Content[],
+  currentVisualLatent?: string,
+): string {
+  const flattenedText = history
+    .flatMap((entry) =>
+      (entry.parts ?? []).map((part) => part.text ?? '').filter(Boolean),
+    )
+    .join('\n');
+  const normalizedText = flattenedText.replace(/\s+/g, ' ').trim();
+
+  const lastUserMsg = [...history].reverse().find((h) => h.role === 'user');
+  const userText =
+    lastUserMsg?.parts
+      ?.map((p) => p.text)
+      .filter(Boolean)
+      .join(' ')
+      .substring(0, 48) || 'NIL';
+
+  const toolSuccessCount = history.filter((h) =>
+    h.parts?.some(
+      (p) =>
+        p.text?.includes('Success') ||
+        p.text?.includes('completed') ||
+        p.text?.includes('finished'),
+    ),
+  ).length;
+
+  const discoveredConstraints =
+    normalizedText.match(/\b(must|should|cannot|can't|avoid|constraint)\b/gi)
+      ?.length ?? 0;
+  const discoveredGoals =
+    normalizedText.match(/\b(goal|task|build|fix|implement|analyze)\b/gi)
+      ?.length ?? 0;
+  const visualState = currentVisualLatent && currentVisualLatent !== 'V:EMPTY'
+    ? currentVisualLatent
+    : 'V:EMPTY';
+
+  return `H:U[${userText}]|T[${toolSuccessCount}]|G[${discoveredGoals}]|C[${discoveredConstraints}]|V[${visualState}]|L[${history.length}]`;
 }
 
 /**
@@ -97,6 +141,7 @@ History to Encode:
       const historyText = history
         .map((h) => h.parts?.map((p) => p.text).join(' '))
         .join('\n');
+      const cacheKey = this.buildCacheKey(historyText, currentVisualLatent);
 
       // 1. Semantic Deduplication Check
       const client = config.getBaseLlmClient();
@@ -114,6 +159,7 @@ History to Encode:
             debugLogger.debug(
               `[LatentContext] Semantic Cache Hit (${(similarity * 100).toFixed(1)}%) - Reusing DLR`,
             );
+            this.persistLatentSnapshot(cached.dlr, ['latent-context', 'cache-hit']);
             return cached.dlr;
           }
         }
@@ -123,7 +169,15 @@ History to Encode:
           debugLogger.debug(
             `[LatentContext] Local fallback for ${promptId} (No embedding support).`,
           );
-          return this.generateHeuristicDLR(history);
+          const heuristic = buildHeuristicDLRFromHistory(
+            history,
+            currentVisualLatent,
+          );
+          this.persistLatentSnapshot(heuristic, [
+            'latent-context',
+            'heuristic-fallback',
+          ]);
+          return heuristic;
         }
         debugLogger.error(
           '[LatentContext] Embedding failed, continuing with direct neural encoding.',
@@ -153,31 +207,16 @@ History to Encode:
 
       const dlr = getResponseText(response)?.trim() || '';
       if (dlr && currentEmbedding) {
-        this.latentCache.set(promptId, { dlr, embedding: currentEmbedding });
+        this.latentCache.set(cacheKey, { dlr, embedding: currentEmbedding });
+        this.trimCache();
+      }
+      if (dlr) {
+        this.persistLatentSnapshot(dlr, ['latent-context', promptId]);
       }
       return dlr;
     } finally {
       this.isEncoding = false;
     }
-  }
-
-  /**
-   * Generates a local, low-fidelity shorthand for the conversation. No AI needed.
-   */
-  private generateHeuristicDLR(history: Content[]): string {
-    const lastUserMsg = [...history].reverse().find((h) => h.role === 'user');
-    const userText =
-      lastUserMsg?.parts
-        ?.map((p) => p.text)
-        .join(' ')
-        .substring(0, 30) || 'NIL';
-    const toolSuccessCount = history.filter((h) =>
-      h.parts?.some(
-        (p) => p.text?.includes('Success') || p.text?.includes('completed'),
-      ),
-    ).length;
-
-    return `H:U[${userText}]|T[${toolSuccessCount}]|L[${history.length}]`;
   }
 
   /**
@@ -192,5 +231,30 @@ History to Encode:
    */
   formatLatentSnapshot(dlr: string): string {
     return `[LATENT_SNAPSHOT_${new Date().toISOString()}]\n${dlr}\n[/LATENT_SNAPSHOT]`;
+  }
+
+  private buildCacheKey(historyText: string, visualLatent: string): string {
+    const compactText = historyText.replace(/\s+/g, ' ').trim().slice(0, 512);
+    return `${visualLatent}::${compactText}`;
+  }
+
+  private trimCache() {
+    if (this.latentCache.size <= MAX_LATENT_CACHE_ENTRIES) {
+      return;
+    }
+
+    const oldestKey = this.latentCache.keys().next().value;
+    if (oldestKey) {
+      this.latentCache.delete(oldestKey);
+    }
+  }
+
+  private persistLatentSnapshot(dlr: string, tags: string[]) {
+    try {
+      const vault = new MemoryVault();
+      vault.addMemory(dlr, tags);
+    } catch (error) {
+      debugLogger.debug('[LatentContext] Failed to persist latent snapshot.', error);
+    }
   }
 }

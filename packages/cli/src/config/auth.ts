@@ -70,10 +70,13 @@ export function validateAuthMethod(authMethod: string): string | null {
     return null;
   }
 
+  if (authMethod === AuthType.XAI) {
+    return null;
+  }
+
   if (authMethod === AuthType.CUSTOM_API) {
     return null;
   }
 
   return 'Invalid auth method selected.';
 }
-

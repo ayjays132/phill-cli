@@ -12,6 +12,8 @@ import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const PHILL_DIR = '.phill';
+export const MEMORY_DIR = '.phill/memory';
+export const PHILL_CONFIG_DIR = '.phill/config';
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
 
 /**
@@ -388,7 +390,6 @@ export function resolveToRealPath(path: string): string {
  */
 export function findProjectRoot(startDir: string): string {
   let currentDir = path.resolve(startDir);
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const packageJsonPath = path.join(currentDir, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
@@ -399,7 +400,7 @@ export function findProjectRoot(startDir: string): string {
         if (packageJson.workspaces) {
           return currentDir; // Found monorepo root
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore JSON parsing errors, continue searching
       }
     }

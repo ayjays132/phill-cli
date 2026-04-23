@@ -9,8 +9,9 @@ import { EthicalGuardService } from './ethicalGuardService.js';
 import { LogosService } from './logosService.js';
 import type { LogosSignal } from './logosService.js';
 import { ManifoldMemoryService } from './manifoldMemoryService.js';
-import { debugLogger } from '../utils/debugLogger.js';
+import { SignalService } from './signalService.js';
 import { coreEvents, CoreEvent } from '../utils/events.js';
+import { debugLogger } from '../utils/debugLogger.js';
 import type { Config } from '../config/config.js';
 import type { Content } from '@google/genai';
 import * as fs from 'node:fs';
@@ -88,6 +89,22 @@ export class NexusService {
       // Initialize Manifold Memory
       const manifoldMemory = ManifoldMemoryService.getInstance();
       await manifoldMemory.initialize();
+
+      // Listen for Signal messages
+      coreEvents.on(CoreEvent.SignalMessageReceived, async (msg) => {
+        debugLogger.debug(`[NEXUS] Signal input received from ${msg.sender}: "${msg.content}"`);
+        
+        // Process prompt via the Reasoning Manifold
+        const result = await this.processPrompt(msg.content, [], config);
+        
+        // Send the reasoning output back via Signal
+        const signal = SignalService.getInstance(config);
+        const responsePrefix = `[Phill Remote Nexus]\n`;
+        const responseBody = result.assembledContext || "I processed your request but found no conclusive context.";
+        const confidenceSuffix = `\n\nConfidence: ${(result.confidence * 100).toFixed(1)}%`;
+        
+        await signal.sendMessage(msg.sender, responsePrefix + responseBody + confidenceSuffix);
+      });
     } catch (error) {
       debugLogger.error('[NEXUS] Failed to initialize persistence:', error);
     }
@@ -204,6 +221,17 @@ export class NexusService {
   getCurrentPipeline(): NexusPipeline {
     if (this.memory.history.length === 0) return NexusPipeline.DIRECT;
     return this.memory.history[this.memory.history.length - 1].pipeline;
+  }
+
+  /**
+   * Returns a snapshot of current reasoning memory for proprioception.
+   */
+  getSnapshot(): any {
+    return {
+      historyLength: this.memory.history.length,
+      lastPipeline: this.getCurrentPipeline(),
+      memoryPath: this.memoryFilePath,
+    };
   }
 
   /**

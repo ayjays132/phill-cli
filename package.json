@@ -1,6 +1,6 @@
 {
   "name": "phill-cli",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "author": "Phillip A. Holland Jr.",
   "engines": {
     "node": ">=20.0.0"
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/ayjays132/phill-cli.git"
   },
   "config": {
-    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/phill-cli/sandbox:1.1.4"
+    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/phill-cli/sandbox:1.2.0"
   },
   "scripts": {
     "start": "npm run dev:hot",
@@ -80,7 +80,12 @@
     "young-philly": "bundle/phill.js"
   },
   "files": [
-    "bundle/",
+    "bundle/phill.js",
+    "bundle/engine-process.js",
+    "bundle/policies/",
+    "bundle/docs/",
+    "bundle/builtin/",
+    "bundle/*.sb",
     "README.md",
     "LICENSE"
   ],

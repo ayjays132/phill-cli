@@ -4,22 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Config } from '../../config/config.js';
+import type { Config } from '../../config/config.js';
 import { ScreenshotService } from '../../services/screenshotService.js';
 import { OSAccessibilityService } from '../../services/osAccessibilityService.js';
 import { VisionProcessor } from '../../vision/visionProcessor.js';
+import type {
+  AccessibilityNode,
+  UIElement,
+} from '../../vision/visionProcessor.js';
 import { BrowserService } from '../../services/browserService.js';
 
 export interface GroundedOSView {
   screenshotPath: string;
-  elements: any[];
+  elements: UIElement[];
   summary: string;
   source: 'ax' | 'vision' | 'merged';
 }
 
 export async function groundOS(
   config: Config,
-  pid?: number,
+  _pid?: number,
 ): Promise<GroundedOSView> {
   const screenshotService = ScreenshotService.getInstance(config);
   const osService = OSAccessibilityService.getInstance(config);
@@ -28,17 +32,24 @@ export async function groundOS(
   const screenshotPath = await screenshotService.captureDesktop();
 
   // 2. Get AX Trees (Native + Browser)
-  let elements: any[] = [];
+  let elements: UIElement[] = [];
   try {
     const rawNative = await osService.getNativeAccessibilityTree();
-    let rawBrowser: any = [];
+    let rawBrowser: AccessibilityNode[] = [];
     try {
       if (browserService.isBrowserOpen()) {
-        rawBrowser = (await browserService.getAccessibilityTree()) || [];
+        rawBrowser =
+          ((await browserService.getAccessibilityTree()) as
+            | AccessibilityNode[]
+            | undefined) ?? [];
       }
-    } catch (_e) {}
+    } catch {
+      // Browser accessibility is optional.
+    }
 
-    const nativeElements = visionProcessor.flattenTree(rawNative);
+    const nativeElements = visionProcessor.flattenTree(
+      rawNative as AccessibilityNode[],
+    );
     const browserElements = visionProcessor.flattenTree(rawBrowser);
     elements = [...nativeElements, ...browserElements];
   } catch (_e) {

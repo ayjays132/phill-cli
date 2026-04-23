@@ -137,6 +137,15 @@ export enum CoreEvent {
   MemoryWiped = 'memory-wiped',
   NexusPipelineChanged = 'nexus-pipeline-changed',
   MetacognitiveAction = 'metacognitive-action',
+  SignalMessageReceived = 'signal-message-received',
+  Heartbeat = 'heartbeat',
+}
+
+export interface HeartbeatPulse {
+  timestamp: string;
+  coherence: number;
+  dominantDimension: string;
+  activeTask?: string;
 }
 
 export interface CoreEvents extends ExtensionEvents {
@@ -168,6 +177,10 @@ export interface CoreEvents extends ExtensionEvents {
       logosScore: number;
     },
   ];
+  [CoreEvent.SignalMessageReceived]: [
+    { sender: string; content: string; timestamp: number },
+  ];
+  [CoreEvent.Heartbeat]: [HeartbeatPulse];
 }
 
 type EventBacklogItem = {
@@ -324,3 +337,19 @@ export class CoreEventEmitter extends EventEmitter<CoreEvents> {
 }
 
 export const coreEvents = new CoreEventEmitter();
+
+export function addCoreEventListener<K extends keyof CoreEvents>(
+  event: K,
+  listener: (...args: CoreEvents[K]) => void,
+): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coreEvents.on(event, listener as any);
+}
+
+export function removeCoreEventListener<K extends keyof CoreEvents>(
+  event: K,
+  listener: (...args: CoreEvents[K]) => void,
+): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coreEvents.off(event, listener as any);
+}

@@ -85,22 +85,47 @@ describe('agentsCommand', () => {
         displayName: 'Agent One',
         description: 'desc1',
         kind: 'local',
+        modelConfig: {
+          model: 'gemini-2.5-pro',
+        },
+        runConfig: {
+          maxTurns: 8,
+        },
+        toolConfig: {
+          tools: ['read_file', 'edit_file'],
+        },
       },
       {
         name: 'agent2',
         displayName: undefined,
         description: 'desc2',
         kind: 'remote',
+        experimental: true,
       },
     ];
-    mockConfig.getAgentRegistry().getAllDefinitions.mockReturnValue(mockAgents);
+    mockConfig.getAgentRegistry().getAllDefinitions.mockReturnValue(
+      mockAgents as never[],
+    );
 
     await agentsCommand.action!(mockContext, '');
 
     expect(mockContext.ui.addItem).toHaveBeenCalledWith(
       expect.objectContaining({
         type: MessageType.AGENTS_LIST,
-        agents: mockAgents,
+        agents: [
+          expect.objectContaining({
+            name: 'agent1',
+            model: 'gemini-2.5-pro',
+            maxTurns: 8,
+            toolCount: 2,
+            capabilities: ['read_file', 'edit_file'],
+          }),
+          expect.objectContaining({
+            name: 'agent2',
+            model: 'remote',
+            experimental: true,
+          }),
+        ],
       }),
     );
   });

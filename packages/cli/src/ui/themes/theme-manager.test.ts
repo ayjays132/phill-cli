@@ -187,5 +187,23 @@ describe('ThemeManager', () => {
 
       consoleWarnSpy.mockRestore();
     });
+
+    it('should reject sibling paths that only share the home directory prefix', () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+      vi.spyOn(fs, 'readFileSync').mockReturnValue(JSON.stringify(mockTheme));
+      const consoleWarnSpy = vi
+        .spyOn(debugLogger, 'warn')
+        .mockImplementation(() => {});
+
+      const result = themeManager.setActiveTheme('/home/user-evil/my-theme.json');
+
+      expect(result).toBe(false);
+      expect(themeManager.getActiveTheme().name).toBe(DEFAULT_THEME.name);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('is outside your home directory'),
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
   });
 });

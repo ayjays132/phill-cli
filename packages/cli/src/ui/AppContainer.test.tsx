@@ -23,13 +23,13 @@ import { SettingsContext } from './contexts/SettingsContext.js';
 import { type TrackedToolCall } from './hooks/useReactToolScheduler.js';
 import {
   type Config,
-  makeFakeConfig,
   CoreEvent,
   type UserFeedbackPayload,
   type ResumedSessionData,
   AuthType,
   type AgentDefinition,
 } from 'phill-cli-core';
+import { makeFakeConfig } from 'phill-cli-core/src/test-utils/config.js';
 
 // Mock coreEvents
 const mockCoreEvents = vi.hoisted(() => ({
@@ -2567,4 +2567,3 @@ describe('AppContainer State Management', () => {
     });
   });
 });
-

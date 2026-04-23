@@ -429,7 +429,7 @@ describe('createContentGeneratorConfig', () => {
     expect(config.openAi).toEqual({
       endpoint: 'https://api.openai.com/v1',
       apiKey: 'env-openai-key',
-      model: 'gpt-4o',
+      model: 'gpt-5.4',
     });
   });
 
@@ -442,4 +442,3 @@ describe('createContentGeneratorConfig', () => {
     );
   });
 });
-

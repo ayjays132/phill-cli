@@ -17,12 +17,12 @@ import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
 import {
   AuthType,
   OutputFormat,
-  makeFakeConfig,
   debugLogger,
   ExitCodes,
   coreEvents,
 } from 'phill-cli-core';
 import type { Config } from 'phill-cli-core';
+import { makeFakeConfig } from 'phill-cli-core/src/test-utils/config.js';
 import * as auth from './config/auth.js';
 import { type LoadedSettings } from './config/settings.js';
 
@@ -468,4 +468,3 @@ describe('validateNonInterActiveAuth', () => {
     });
   });
 });
-

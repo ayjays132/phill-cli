@@ -128,7 +128,7 @@ describe('PhillAgent', () => {
     });
 
     expect(response.protocolVersion).toBe(acp.PROTOCOL_VERSION);
-    expect(response.authMethods).toHaveLength(8);
+    expect(response.authMethods).toHaveLength(9);
     expect(response.agentCapabilities?.loadSession).toBe(false);
   });
 

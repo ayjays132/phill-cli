@@ -35,7 +35,7 @@ export const NexusDashboard: React.FC = () => {
       {/* Header */}
       <Box justifyContent="space-between">
         <Text bold color={theme.text.accent}>
-          NEXUS NEURAL DASHBOARD v0.1
+          NEXUS NEURAL DASHBOARD v1.2.0-NEXUS
         </Text>
         <Text color={theme.text.secondary}>[ESC to Close]</Text>
       </Box>

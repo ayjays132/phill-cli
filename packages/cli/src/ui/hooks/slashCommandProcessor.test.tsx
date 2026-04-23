@@ -19,9 +19,9 @@ import { McpPromptLoader } from '../../services/McpPromptLoader.js';
 import {
   type PhillClient,
   SlashCommandStatus,
-  makeFakeConfig,
   coreEvents,
 } from 'phill-cli-core';
+import { makeFakeConfig } from 'phill-cli-core/src/test-utils/config.js';
 
 const {
   logSlashCommand,

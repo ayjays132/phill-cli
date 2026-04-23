@@ -122,6 +122,11 @@ export class PhillAgent {
         description: 'Requires GROQ_API_KEY',
       },
       {
+        id: AuthType.XAI,
+        name: 'xAI / Grok',
+        description: 'Requires XAI_API_KEY or GROK_API_KEY',
+      },
+      {
         id: AuthType.CUSTOM_API,
         name: 'Custom API',
         description:
@@ -320,7 +325,7 @@ export class Session {
           this.config.getModel(),
           this.config.getPreviewFeatures(),
           false,
-          this.config.getHasAccessToPreviewModel(),
+          this.config.getHasAccessToPreviewModel?.() ?? true,
           this.config,
         );
         const responseStream = await chat.sendMessageStream(
@@ -1040,4 +1045,3 @@ function toAcpToolKind(kind: Kind): acp.ToolKind {
       return 'other';
   }
 }
-

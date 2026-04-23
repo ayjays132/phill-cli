@@ -16,7 +16,10 @@ import type { Config } from '../config/config.js';
 import { getResponseText } from '../utils/partUtils.js';
 import { ideContextStore } from '../ide/ideContext.js';
 import type { File } from '../ide/types.js';
-import { AuthType } from '../core/contentGenerator.js';
+import { VectorService } from '../services/vectorService.js';
+import { ToolCacheService } from '../services/toolCacheService.js';
+import { SelfHealer } from '../utils/selfHealer.js';
+import type { HealingCandidate } from '../utils/selfHealer.js';
 
 // @ts-expect-error
 import ddgSearchLib from '@pikisoft/duckduckgo-search';
@@ -144,11 +147,6 @@ class WebSearchToolInvocation extends BaseToolInvocation<
     };
   }
 
-  private isOpenAiAuth(): boolean {
-    const authType = this.config.getContentGeneratorConfig()?.authType;
-    return authType === AuthType.OPENAI || authType === AuthType.OPENAI_BROWSER;
-  }
-
   private async performDeepResearch(
     query: string,
     sources: GroundingChunkItem[],
@@ -197,6 +195,16 @@ ${topUrls.join('\n')}
     try {
       const phillClient = this.config.getPhillClient();
       const settings = this.config.getWebSearchSettings();
+      const toolCache = ToolCacheService.getInstance();
+      
+      // Attempt cache lookup
+      const cachedResult = await toolCache.get(WEB_SEARCH_TOOL_NAME, this.params);
+      if (cachedResult) {
+        return {
+          ...cachedResult,
+          returnDisplay: `[Cache Hit] ${cachedResult.returnDisplay || 'Search results retrieved from local cache.'}`,
+        };
+      }
 
       let augmentedQuery = this.params.query;
       const ideContext = ideContextStore.get();
@@ -211,52 +219,55 @@ ${topUrls.join('\n')}
         );
       }
 
-      let response;
-      try {
-        response = await phillClient.generateContent(
-          { model: 'web-search' },
-          [{ role: 'user', parts: [{ text: augmentedQuery }] }],
-          signal,
-        );
-      } catch (searchError: unknown) {
-        // Final Fallback: DuckDuckGo Search if Gemini Web Search fails
-        const errorMessage = (searchError as Error)?.message || 'Unknown error';
-        debugLogger.warn(
-          `[WebSearch] Primary search failed, attempting DuckDuckGo fallback: ${errorMessage}`,
-        );
-        try {
-          return await this.performDuckDuckGoFallback(augmentedQuery);
-        } catch (ddgError) {
-          debugLogger.error(
-            `[WebSearch] DuckDuckGo fallback also failed: ${getErrorMessage(ddgError)}`,
-          );
-
-          if (!this.isOpenAiAuth()) {
-            throw searchError;
-          }
-
-          debugLogger.warn(
-            `WebSearch model unavailable under OpenAI/Codex auth. Falling back to standard model synthesis for query "${this.params.query}".`,
-          );
-
-          response = await phillClient.generateContent(
-            { model: this.config.getModel() },
-            [
-              {
-                role: 'user',
-                parts: [
-                  {
-                    text:
-                      `Perform a best-effort web-style research answer for this query:\n\n${augmentedQuery}\n\n` +
-                      `If live browsing tools are unavailable, clearly state limitations and still provide the best possible answer.`,
-                  },
-                ],
-              },
-            ],
+      const primarySearch: HealingCandidate<any> = {
+        name: 'Gemini Web Search (Google)',
+        execute: async () => {
+          return await phillClient.generateContent(
+            { model: 'web-search' },
+            [{ role: 'user', parts: [{ text: augmentedQuery }] }],
             signal,
           );
         }
-      }
+      };
+
+      const ddgFallback: HealingCandidate<any> = {
+        name: 'DuckDuckGo Fallback',
+        execute: async () => {
+          const ddgResult = await this.performDuckDuckGoFallback(augmentedQuery);
+          // Transform result to match response shape
+          return {
+            candidates: [{
+              content: { parts: [{ text: ddgResult.llmContent }] }
+            }]
+          };
+        }
+      };
+
+      const ragFallback: HealingCandidate<any> = {
+        name: 'Local Workspace RAG Fallback',
+        execute: async () => {
+          const contentGenerator = this.config.getContentGenerator();
+          if (!contentGenerator) throw new Error('No content generator');
+          const vectorService = VectorService.getInstance(contentGenerator);
+          const ragResults = await vectorService.search(augmentedQuery, 5);
+          if (ragResults.length === 0) throw new Error('No local results');
+          
+          const ragText = ragResults
+            .map(
+              (r) =>
+                `[Local File: ${r.metadata?.['path'] || 'Unknown'}]\n${r.content}`,
+            )
+            .join('\n\n');
+          const res = await phillClient.generateContent(
+            { model: this.config.getModel() },
+            [{ role: 'user', parts: [{ text: `Based on the following local workspace context:\n\n${ragText}\n\nAnswer the query: ${augmentedQuery}` }] }],
+            signal,
+          );
+          return res;
+        }
+      };
+
+      const response = await SelfHealer.resolve(primarySearch, [ddgFallback, ragFallback]);
 
       const responseText = getResponseText(response);
       const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
@@ -298,29 +309,12 @@ ${topUrls.join('\n')}
             }
           });
 
-          // Sort insertions by index in descending order to avoid shifting subsequent indices
           insertions.sort((a, b) => b.index - a.index);
-
-          const encoder = new TextEncoder();
-          const responseBytes = encoder.encode(modifiedResponseText);
-          const parts: Uint8Array[] = [];
-          let lastIndex = responseBytes.length;
-          for (const ins of insertions) {
-            const pos = Math.min(ins.index, lastIndex);
-            parts.unshift(responseBytes.subarray(pos, lastIndex));
-            parts.unshift(encoder.encode(ins.marker));
-            lastIndex = pos;
-          }
-          parts.unshift(responseBytes.subarray(0, lastIndex));
-
-          const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
-          const finalBytes = new Uint8Array(totalLength);
-          let offset = 0;
-          for (const part of parts) {
-            finalBytes.set(part, offset);
-            offset += part.length;
-          }
-          modifiedResponseText = new TextDecoder().decode(finalBytes);
+          const responseChars = modifiedResponseText.split('');
+          insertions.forEach((insertion) => {
+            responseChars.splice(insertion.index, 0, insertion.marker);
+          });
+          modifiedResponseText = responseChars.join('');
         }
 
         if (sourceListFormatted.length > 0) {
@@ -344,11 +338,32 @@ ${topUrls.join('\n')}
         displayMessage = `Deep research completed for "${this.params.query}". Synthesis generated.`;
       }
 
-      return {
+      const result: WebSearchToolResult = {
         llmContent: finalLlmContent,
         returnDisplay: displayMessage,
         sources,
       };
+
+      // Persist to cache
+      await toolCache.set(WEB_SEARCH_TOOL_NAME, this.params, result);
+
+      // Persist to Vector Memory (Knowledge Bank)
+      try {
+        const contentGenerator = this.config.getContentGenerator();
+        if (contentGenerator) {
+          const vectorService = VectorService.getInstance(contentGenerator);
+          await vectorService.addDocument(finalLlmContent, {
+            type: 'web_search_result',
+            query: this.params.query,
+            timestamp: Date.now(),
+            sourceCount: sources?.length || 0,
+          });
+        }
+      } catch (e) {
+        debugLogger.error('[WebSearch] Memory persistence failed:', e);
+      }
+
+      return result;
     } catch (error: unknown) {
       const errorMessage = `Error during web search for query "${
         this.params.query

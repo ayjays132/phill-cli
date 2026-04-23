@@ -19,6 +19,7 @@ import {
   USER_IDENTITY_SECTION_HEADER,
   VITALS_SECTION_HEADER,
 } from '../tools/memoryTool.js';
+import { MemoryVault } from '../cognitive-engine/memory-vault.js';
 
 
 const DEFAULT_FALLBACK_MEMORY_CONTENT = [
@@ -150,12 +151,16 @@ export async function memoryStatus(config: Config): Promise<MessageActionReturn>
     fallbackExists = false;
   }
 
+  const vaultStats = new MemoryVault().getStats();
+
   const content = [
     'Memory status:',
     `- Loaded chars: ${memoryContent.length}`,
     `- Loaded PHILL.md files: ${fileCount}`,
     `- Loaded paths tracked: ${filePaths.length}`,
     `- Global fallback file: ${fallbackExists ? 'present' : 'missing'} (${globalMemoryPath})`,
+    `- Cognitive vault entries: ${vaultStats.memoryCount} (${vaultStats.summaryCount} summaries)`,
+    `- Cognitive vault active latches: ${vaultStats.activeLatchCount}/${vaultStats.latchCount}`,
   ].join('\n');
 
   return {
@@ -192,7 +197,7 @@ export async function resetMemory(
     const cognitiveMemoryPath = path.join(os.homedir(), '.phill', 'state', 'cognitive-memory.json');
     try {
       await fs.rm(cognitiveMemoryPath, { force: true });
-    } catch (e) {
+    } catch {
       // Ignore if file doesn't exist
     }
     

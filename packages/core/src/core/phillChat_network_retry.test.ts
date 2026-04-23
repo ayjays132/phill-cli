@@ -57,6 +57,16 @@ vi.mock('../telemetry/loggers.js', () => ({
   logContentRetryFailure: mockLogContentRetryFailure,
 }));
 
+vi.mock('../services/ethicalGuardService.js', () => ({
+  EthicalGuardService: {
+    getInstance: vi.fn(() => ({
+      getEthicalScaffolding: () => '',
+      hallucinationCheck: vi.fn().mockResolvedValue({ isHallucination: false }),
+      getConfidence: vi.fn().mockReturnValue({ alignment: 1, risk: 0 }),
+    })),
+  },
+}));
+
 describe('PhillChat Network Retries', () => {
   let mockContentGenerator: ContentGenerator;
   let chat: PhillChat;
@@ -99,6 +109,7 @@ describe('PhillChat Network Retries', () => {
           model: modelConfigKey.model,
           generateContentConfig: { temperature: 0 },
         })),
+        resolveChain: vi.fn().mockReturnValue(undefined),
       },
       getEnableHooks: vi.fn().mockReturnValue(false),
       getModelAvailabilityService: vi

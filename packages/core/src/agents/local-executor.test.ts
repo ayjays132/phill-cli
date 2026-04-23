@@ -70,6 +70,7 @@ import type {
 import type { AgentRegistry } from './registry.js';
 import { getModelConfigAlias } from './registry.js';
 import type { ModelRouterService } from '../routing/modelRouterService.js';
+import { runWithAgentExecutionContext } from './agentExecutionContext.js';
 
 const {
   mockSendMessageStream,
@@ -439,18 +440,16 @@ describe('LocalAgentExecutor', () => {
       expect(secondPart?.text).toBe('OK, starting on TestGoal.');
     });
 
-    it('should filter out subagent tools to prevent recursion', async () => {
-      const subAgentName = 'recursive-agent';
-      // Register a mock tool that simulates a subagent
-      parentToolRegistry.registerTool(new MockTool({ name: subAgentName }));
+    it('should allow non-cyclic subagent tools for swarm delegation', async () => {
+      const expertAgentName = 'expert-agent';
+      parentToolRegistry.registerTool(new MockTool({ name: expertAgentName }));
 
-      // Mock the agent registry to return the subagent name
       vi.spyOn(
         mockConfig.getAgentRegistry(),
         'getAllAgentNames',
-      ).mockReturnValue([subAgentName]);
+      ).mockReturnValue([expertAgentName]);
 
-      const definition = createTestDefinition([LS_TOOL_NAME, subAgentName]);
+      const definition = createTestDefinition([LS_TOOL_NAME, expertAgentName]);
       const executor = await LocalAgentExecutor.create(
         definition,
         mockConfig,
@@ -459,44 +458,66 @@ describe('LocalAgentExecutor', () => {
 
       const agentRegistry = executor['toolRegistry'];
 
-      // LS should be present
       expect(agentRegistry.getTool(LS_TOOL_NAME)).toBeDefined();
-      // Subagent should be filtered out
-      expect(agentRegistry.getTool(subAgentName)).toBeUndefined();
+      expect(agentRegistry.getTool(expertAgentName)).toBeDefined();
     });
 
-    it('should default to ALL tools (except subagents) when toolConfig is undefined', async () => {
-      const subAgentName = 'recursive-agent';
-      // Register tools in parent registry
-      // LS_TOOL_NAME is already registered in beforeEach
-      const otherTool = new MockTool({ name: 'other-tool' });
-      parentToolRegistry.registerTool(otherTool);
-      parentToolRegistry.registerTool(new MockTool({ name: subAgentName }));
+    it('should filter out subagent tools that would create a delegation cycle', async () => {
+      const recursiveAgentName = 'recursive-agent';
+      const descendantAgentName = 'descendant-agent';
+      parentToolRegistry.registerTool(new MockTool({ name: recursiveAgentName }));
+      parentToolRegistry.registerTool(new MockTool({ name: descendantAgentName }));
 
-      // Mock the agent registry to return the subagent name
       vi.spyOn(
         mockConfig.getAgentRegistry(),
         'getAllAgentNames',
-      ).mockReturnValue([subAgentName]);
+      ).mockReturnValue([recursiveAgentName, descendantAgentName]);
 
-      // Create definition and force toolConfig to be undefined
+      const definition = createTestDefinition([
+        LS_TOOL_NAME,
+        recursiveAgentName,
+        descendantAgentName,
+      ]);
+
+      const executor = await runWithAgentExecutionContext(
+        { agentStack: [recursiveAgentName] },
+        () => LocalAgentExecutor.create(definition, mockConfig, onActivity),
+      );
+
+      const agentRegistry = executor['toolRegistry'];
+
+      expect(agentRegistry.getTool(LS_TOOL_NAME)).toBeDefined();
+      expect(agentRegistry.getTool(recursiveAgentName)).toBeUndefined();
+      expect(agentRegistry.getTool(descendantAgentName)).toBeDefined();
+    });
+
+    it('should default to all tools except cyclic subagents when toolConfig is undefined', async () => {
+      const ancestorAgentName = 'ancestor-agent';
+      const descendantAgentName = 'descendant-agent';
+      const otherTool = new MockTool({ name: 'other-tool' });
+      parentToolRegistry.registerTool(otherTool);
+      parentToolRegistry.registerTool(new MockTool({ name: ancestorAgentName }));
+      parentToolRegistry.registerTool(new MockTool({ name: descendantAgentName }));
+
+      vi.spyOn(
+        mockConfig.getAgentRegistry(),
+        'getAllAgentNames',
+      ).mockReturnValue([ancestorAgentName, descendantAgentName]);
+
       const definition = createTestDefinition();
       definition.toolConfig = undefined;
 
-      const executor = await LocalAgentExecutor.create(
-        definition,
-        mockConfig,
-        onActivity,
+      const executor = await runWithAgentExecutionContext(
+        { agentStack: [ancestorAgentName] },
+        () => LocalAgentExecutor.create(definition, mockConfig, onActivity),
       );
 
       const agentRegistry = executor['toolRegistry'];
 
-      // Should include standard tools
       expect(agentRegistry.getTool(LS_TOOL_NAME)).toBeDefined();
       expect(agentRegistry.getTool('other-tool')).toBeDefined();
-
-      // Should exclude subagent
-      expect(agentRegistry.getTool(subAgentName)).toBeUndefined();
+      expect(agentRegistry.getTool(ancestorAgentName)).toBeUndefined();
+      expect(agentRegistry.getTool(descendantAgentName)).toBeDefined();
     });
 
     it('should enforce qualified names for MCP tools in agent definitions', async () => {

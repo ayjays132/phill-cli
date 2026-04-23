@@ -122,19 +122,28 @@ async def chat_completions(request: ChatCompletionRequest):
         raise HTTPException(status_code=503, detail="Model not loaded")
     
     try:
-        # Convert messages to prompt
-        prompt = ""
-        for msg in request.messages:
-            if msg.role == "system":
-                prompt += f"System: {msg.content}\n"
-            elif msg.role == "user":
-                prompt += f"User: {msg.content}\n"
-            elif msg.role == "assistant":
-                prompt += f"Assistant: {msg.content}\n"
-        prompt += "Assistant:"
-        
-        # Tokenize
-        inputs = tokenizer(prompt, return_tensors="pt", padding=True)
+        # Build model-native chat input when supported (critical for Qwen chat models).
+        chat_messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+        if hasattr(tokenizer, "apply_chat_template"):
+            inputs = tokenizer.apply_chat_template(
+                chat_messages,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+            )
+        else:
+            # Fallback for tokenizers that do not expose a chat template.
+            prompt = ""
+            for msg in request.messages:
+                if msg.role == "system":
+                    prompt += f"System: {msg.content}\n"
+                elif msg.role == "user":
+                    prompt += f"User: {msg.content}\n"
+                elif msg.role == "assistant":
+                    prompt += f"Assistant: {msg.content}\n"
+            prompt += "Assistant:"
+            inputs = tokenizer(prompt, return_tensors="pt", padding=True)
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
         
         # Generate
@@ -149,15 +158,16 @@ async def chat_completions(request: ChatCompletionRequest):
                 eos_token_id=tokenizer.eos_token_id,
             )
         
-        # Decode
+        # Decode only newly generated tokens.
+        prompt_len = inputs["input_ids"].shape[-1]
         generated_text = tokenizer.decode(
-            outputs[0][inputs["input_ids"].shape[1]:],
+            outputs[0][prompt_len:],
             skip_special_tokens=True
-        )
+        ).strip()
         
         # Return response
         return ChatCompletionResponse(
-            id="local-" + str(hash(prompt)),
+            id="local-" + str(hash(tuple((m.role, m.content) for m in request.messages))),
             choices=[
                 ChatCompletionChoice(
                     index=0,

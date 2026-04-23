@@ -359,16 +359,42 @@ exports[`<HistoryItemDisplay /> > phill items (alternateBuffer=true) > should re
 `;
 
 exports[`<HistoryItemDisplay /> > renders AgentsStatus for "agents_list" type 1`] = `
-"Local Agents
-
-  - Local Agent (local_agent)
-      Local agent description.
-        Second line.
-
-Remote Agents
-
-  - remote_agent
-    Remote agent description.
+"╔══════════════════════════════════════════════════════════════════════════════╗
+║ Swarm Status                                                                 ║
+║ Active agent-mode registry, themed with semantic status and capability       ║
+║ signals.                                                                     ║
+║                                                                              ║
+║ ╭───────╮ ╭───────╮ ╭────────╮ ╭─────────╮                                   ║
+║ │ Total │ │ Local │ │ Remote │ │ Preview │                                   ║
+║ │ 2     │ │ 1     │ │ 1      │ │ 1       │                                   ║
+║ ╰───────╯ ╰───────╯ ╰────────╯ ╰─────────╯                                   ║
+║                                                                              ║
+║ Local Agents                                                                 ║
+║ Execution happens inside the local Phill runtime.                            ║
+║                                                                              ║
+║ ╭──────────────────────────────────────────────────────────────────────────╮ ║
+║ │ Local Agent (local_agent)                                          LOCAL │ ║
+║ │                                                                          │ ║
+║ │ Model: gemini-3.1-pro-preview                                  Turns: 10 │ ║
+║ │ Tools: 2                              Capabilities: read_file, edit_file │ ║
+║ │                                                                          │ ║
+║ │   Local agent description.    Second line.                               │ ║
+║ ╰──────────────────────────────────────────────────────────────────────────╯ ║
+║                                                                              ║
+║                                                                              ║
+║ Remote Agents                                                                ║
+║ Delegation is routed through external agent endpoints.                       ║
+║                                                                              ║
+║ ╭──────────────────────────────────────────────────────────────────────────╮ ║
+║ │ remote_agent                                              PREVIEW REMOTE │ ║
+║ │                                                                          │ ║
+║ │ Model: remote                                            Turns: adaptive │ ║
+║ │ Tools: default                                         Capabilities: a2a │ ║
+║ │                                                                          │ ║
+║ │ Remote agent description.                                                │ ║
+║ ╰──────────────────────────────────────────────────────────────────────────╯ ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 "
 `;
 

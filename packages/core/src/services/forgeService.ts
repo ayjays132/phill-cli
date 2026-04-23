@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Config } from '../config/config.js';
+import type { Config } from '../config/config.js';
 import { RealTimeActionJournal, type ActionEntry } from './actionJournal.js';
-import { AgentRegistry } from '../agents/registry.js';
-import { AgentIdentityService } from './agentIdentityService.js';
+import type { AgentRegistry } from '../agents/registry.js';
+import type { AgentIdentityService } from './agentIdentityService.js';
 import * as fs from 'node:fs/promises';
 import { debugLogger } from '../utils/debugLogger.js';
 
@@ -19,6 +19,10 @@ export interface SwarmAgentStatus {
   description: string;
   isActive: boolean;
   capabilities: string[];
+  kind: 'local' | 'remote';
+  model: string;
+  toolCount: number;
+  maxTurns?: number;
 }
 
 export interface ForgeStats {
@@ -38,7 +42,7 @@ export class ForgeService {
     private socialService: SocialService
   ) {}
 
-  public static getInstance(config: Config): ForgeService {
+  static getInstance(config: Config): ForgeService {
     if (!ForgeService.instance) {
       ForgeService.instance = new ForgeService(
         RealTimeActionJournal.getInstance(config),
@@ -55,7 +59,7 @@ export class ForgeService {
    * Retrieves the Phillbook feed from the action journal.
    * Reads the file in reverse to get the latest actions first.
    */
-  public async getPhillbookFeed(limit: number = 50): Promise<ActionEntry[]> {
+  async getPhillbookFeed(limit: number = 50): Promise<ActionEntry[]> {
     const logPath = this.journal.getLogPath();
     try {
       const content = await fs.readFile(logPath, 'utf-8');
@@ -86,7 +90,7 @@ export class ForgeService {
   /**
    * Retrieves the current status of the agent swarm.
    */
-  public getSwarmStatus(): SwarmAgentStatus[] {
+  getSwarmStatus(): SwarmAgentStatus[] {
     const definitions = this.agentRegistry.getAllDefinitions();
     // In a real implementation, we would track "isActive" via a session manager or similar.
     // For now, we'll assume enabled agents are "active" in the swarm sense.
@@ -105,7 +109,14 @@ export class ForgeService {
         name: def.name,
         description: def.description,
         isActive: true, // Agents in registry are considered available/online
-        capabilities
+        capabilities,
+        kind: def.kind,
+        model:
+          def.kind === 'local'
+            ? def.modelConfig.model ?? 'inherit'
+            : 'remote',
+        toolCount: capabilities.length,
+        maxTurns: def.kind === 'local' ? def.runConfig.maxTurns : undefined,
       };
     });
   }
@@ -113,30 +124,30 @@ export class ForgeService {
   /**
    * Retrieves the current identity configuration.
    */
-  public getIdentity() {
+  getIdentity() {
     return this.identityService.getIdentity();
   }
   
-  public getBankAccount(): BankAccount {
+  getBankAccount(): BankAccount {
       return this.economyService.getAccount();
   }
   
-  public getBazaarListings(): BazaarItem[] {
+  getBazaarListings(): BazaarItem[] {
       return this.economyService.getBazaarItems();
   }
   
-  public getSocialRelations(): Relation[] {
+  getSocialRelations(): Relation[] {
       return this.socialService.getRelations();
   }
   
-  public getMetropolisGlobalFeed(): string[] {
+  getMetropolisGlobalFeed(): string[] {
       return this.economyService.getGlobalMarketFeed();
   }
 
   /**
    * Retrieves system stats for the Observer Deck.
    */
-  public getObserverStats(): ForgeStats {
+  getObserverStats(): ForgeStats {
     return {
       memoryUsage: process.memoryUsage(),
       cpuUsage: process.cpuUsage(),

@@ -27,7 +27,11 @@ import { BORDER_STYLE, AGI_THEME } from '../AppContainer.js';
 
 const HoleifyPath = (path: string) => path.replace(/\\/g, ' • ');
 
-export const Footer: React.FC = () => {
+export interface FooterProps {
+  compact?: boolean;
+}
+
+export const Footer: React.FC<FooterProps> = ({ compact = false }) => {
   const uiState = useUIState();
   const config = useConfig();
   const settings = useSettings();
@@ -68,15 +72,112 @@ export const Footer: React.FC = () => {
 
   const pathLength = Math.max(20, Math.floor(terminalWidth * 0.25));
   const displayPath = shortenPath(tildeifyPath(targetDir), pathLength);
-
-  const justifyContent = hideCWD && hideModelInfo ? 'center' : 'space-between';
   const displayVimMode = vimEnabled ? vimMode : undefined;
-
   const showDebugProfiler = debugMode || isDevelopment;
+  const justifyContent = hideCWD && hideModelInfo ? 'center' : 'space-between';
+
+  const content = (
+    <>
+      {(showDebugProfiler || displayVimMode || !hideCWD) && (
+        <Box flexDirection="row" alignItems="center">
+          {showDebugProfiler && <DebugProfiler />}
+          {displayVimMode && (
+            <Text color={theme.text.secondary}>
+              [{displayVimMode.toUpperCase()}]{' '}
+            </Text>
+          )}
+          {!hideCWD &&
+            (nightly ? (
+              <ThemedGradient>
+                {HoleifyPath(displayPath)}
+                {branchName && <Text> ({branchName.toUpperCase()}*)</Text>}
+              </ThemedGradient>
+            ) : (
+              <Text color={theme.text.link}>
+                {HoleifyPath(displayPath)}
+                {branchName && (
+                  <Text color={theme.text.secondary}>
+                    {' '}
+                    ({branchName.toUpperCase()}*)
+                  </Text>
+                )}
+              </Text>
+            ))}
+          {debugMode && (
+            <Text color={theme.status.error}>
+              {' '}
+              {(debugMessage || '--debug').toUpperCase()}
+            </Text>
+          )}
+        </Box>
+      )}
+
+      {!hideSandboxStatus && (
+        <Box flexGrow={1} alignItems="center" justifyContent="center">
+          <PremiumStatusHUD />
+        </Box>
+      )}
+
+      {!hideModelInfo && (
+        <Box alignItems="center" justifyContent="flex-end" flexDirection="row">
+          <Box alignItems="center" flexDirection="row">
+            <Text color={theme.text.accent} bold>
+              {getDisplayString(model, config).toUpperCase()}
+            </Text>
+            <Text color={theme.text.secondary}> /MODE</Text>
+            {!hideContextPercentage && (
+              <>
+                {' '}
+                <ContextUsageDisplay
+                  promptTokenCount={promptTokenCount}
+                  model={model}
+                  terminalWidth={terminalWidth}
+                />
+              </>
+            )}
+            {showMemoryUsage && <MemoryUsageDisplay />}
+          </Box>
+          <Box alignItems="center">
+            {corgiMode && (
+              <Box paddingLeft={1} flexDirection="row">
+                <Text>
+                  <Text color={theme.ui.symbol}>| </Text>
+                  <Text color={theme.status.error}>▼</Text>
+                  <Text color={theme.text.primary}>(´</Text>
+                  <Text color={theme.status.error}>ᴥ</Text>
+                  <Text color={theme.text.primary}>`)</Text>
+                  <Text color={theme.status.error}>▼</Text>
+                </Text>
+              </Box>
+            )}
+            {!showErrorDetails && errorCount > 0 && (
+              <Box paddingLeft={1} flexDirection="row">
+                <Text color={theme.ui.comment}>| </Text>
+                <ConsoleSummaryDisplay errorCount={errorCount} />
+              </Box>
+            )}
+          </Box>
+        </Box>
+      )}
+    </>
+  );
+
+  if (compact) {
+    return (
+      <Box
+        width={terminalWidth}
+        flexDirection="row"
+        alignItems="center"
+        justifyContent={justifyContent}
+        paddingX={0}
+      >
+        {content}
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" width={terminalWidth} marginY={0}>
-      {/* Premium Top Border */}
       <Box flexDirection="row" width={terminalWidth}>
         <Text color={AGI_THEME.accent}>{BORDER_STYLE.topLeft}</Text>
         <Text color={AGI_THEME.muted}>
@@ -93,91 +194,18 @@ export const Footer: React.FC = () => {
         paddingX={1}
       >
         <Text color={AGI_THEME.muted}>{BORDER_STYLE.vertical}</Text>
-        
-        <Box flexGrow={1} flexDirection="row" alignItems="center" justifyContent={justifyContent} paddingX={1}>
-          {(showDebugProfiler || displayVimMode || !hideCWD) && (
-            <Box>
-              {showDebugProfiler && <DebugProfiler />}
-              {displayVimMode && (
-                <Text color={theme.text.secondary}>[{displayVimMode.toUpperCase()}] </Text>
-              )}
-              {!hideCWD &&
-                (nightly ? (
-                  <ThemedGradient>
-                    {HoleifyPath(displayPath)}
-                    {branchName && <Text> ({branchName.toUpperCase()}*)</Text>}
-                  </ThemedGradient>
-                ) : (
-                  <Text color={theme.text.link}>
-                    {HoleifyPath(displayPath)}
-                    {branchName && (
-                      <Text color={theme.text.secondary}> ({branchName.toUpperCase()}*)</Text>
-                    )}
-                  </Text>
-                ))}
-              {debugMode && (
-                <Text color={theme.status.error}>
-                  {' ' + (debugMessage || '--debug').toUpperCase()}
-                </Text>
-              )}
-            </Box>
-          )}
-
-          {/* Middle Section: Premium HUD */}
-          {!hideSandboxStatus && (
-            <Box flexGrow={1} alignItems="center" justifyContent="center">
-              <PremiumStatusHUD />
-            </Box>
-          )}
-
-          {/* Right Section: Phill Label and Console Summary */}
-          {!hideModelInfo && (
-            <Box alignItems="center" justifyContent="flex-end" flexDirection="row">
-              <Box alignItems="center" flexDirection="row">
-                <Text color={theme.text.accent} bold>
-                  {getDisplayString(model, config).toUpperCase()}
-                </Text>
-                <Text color={theme.text.secondary}> /MODE</Text>
-                {!hideContextPercentage && (
-                  <>
-                    {' '}
-                    <ContextUsageDisplay
-                      promptTokenCount={promptTokenCount}
-                      model={model}
-                      terminalWidth={terminalWidth}
-                    />
-                  </>
-                )}
-                {showMemoryUsage && <MemoryUsageDisplay />}
-              </Box>
-              <Box alignItems="center">
-                {corgiMode && (
-                  <Box paddingLeft={1} flexDirection="row">
-                    <Text>
-                      <Text color={theme.ui.symbol}>| </Text>
-                      <Text color={theme.status.error}>▼</Text>
-                      <Text color={theme.text.primary}>(´</Text>
-                      <Text color={theme.status.error}>ᴥ</Text>
-                      <Text color={theme.text.primary}>`)</Text>
-                      <Text color={theme.status.error}>▼</Text>
-                    </Text>
-                  </Box>
-                )}
-                {!showErrorDetails && errorCount > 0 && (
-                  <Box paddingLeft={1} flexDirection="row">
-                    <Text color={theme.ui.comment}>| </Text>
-                    <ConsoleSummaryDisplay errorCount={errorCount} />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          )}
+        <Box
+          flexGrow={1}
+          flexDirection="row"
+          alignItems="center"
+          justifyContent={justifyContent}
+          paddingX={1}
+        >
+          {content}
         </Box>
-
         <Text color={AGI_THEME.muted}>{BORDER_STYLE.vertical}</Text>
       </Box>
 
-      {/* Bottom Border */}
       <Box flexDirection="row" width={terminalWidth}>
         <Text color={AGI_THEME.accent}>{BORDER_STYLE.bottomLeft}</Text>
         <Text color={AGI_THEME.muted}>

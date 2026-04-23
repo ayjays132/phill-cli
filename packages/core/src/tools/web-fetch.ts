@@ -23,6 +23,8 @@ import { ApprovalMode } from '../policy/types.js';
 import { getResponseText } from '../utils/partUtils.js';
 import { fetchWithTimeout, isPrivateIp } from '../utils/fetch.js';
 import { convert } from 'html-to-text';
+import { VectorService } from '../services/vectorService.js';
+import { ToolCacheService } from '../services/toolCacheService.js';
 import {
   logWebFetchFallbackAttempt,
   WebFetchFallbackAttemptEvent,
@@ -256,6 +258,17 @@ ${textContent}
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
     const userPrompt = this.params.prompt;
+    const toolCache = ToolCacheService.getInstance();
+    
+    // Attempt cache lookup
+    const cachedResult = await toolCache.get(WEB_FETCH_TOOL_NAME, this.params);
+    if (cachedResult) {
+      return {
+        ...cachedResult,
+        returnDisplay: `[Cache Hit] ${cachedResult.returnDisplay || 'Content retrieved from local cache.'}`,
+      };
+    }
+
     const { validUrls: urls } = parsePrompt(userPrompt);
     const url = urls[0];
     const isPrivate = isPrivateIp(url);
@@ -375,10 +388,30 @@ ${sourceListFormatted.join('\n')}`;
         llmContent,
       );
 
-      return {
+      const result = {
         llmContent,
         returnDisplay: `Content processed from prompt.`,
       };
+
+      // Persist to cache
+      await toolCache.set(WEB_FETCH_TOOL_NAME, this.params, result);
+
+      // Persist to Vector Memory (Knowledge Bank)
+      try {
+        const contentGenerator = this.config.getContentGenerator();
+        if (contentGenerator) {
+          const vectorService = VectorService.getInstance(contentGenerator);
+          await vectorService.addDocument(llmContent, {
+            type: 'web_fetch_result',
+            url: urls[0],
+            timestamp: Date.now(),
+          });
+        }
+      } catch (e) {
+        debugLogger.error('[WebFetch] Memory persistence failed:', e);
+      }
+
+      return result;
     } catch (error: unknown) {
       const errorMessage = `Error processing web content for prompt "${userPrompt.substring(
         0,

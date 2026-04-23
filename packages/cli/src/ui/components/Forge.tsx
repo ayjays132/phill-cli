@@ -44,19 +44,17 @@ const ProgressBar = ({ percent, width = 20, color = 'green' }: { percent: number
   );
 };
 
-const Ticker = ({ items }: { items: string[] }) => {
-  return (
-    <Box flexDirection="column" borderStyle="single" borderColor={theme.border.default} padding={1}>
-      <Text bold color={theme.text.accent}>LIVE MARKET DATA STREAM</Text>
-      {items.slice(0, 5).map((item, i) => (
-        <Box key={i} marginY={0}>
-          <Text color={i === 0 ? theme.text.primary : theme.text.dim}>{item}</Text>
-        </Box>
-      ))}
-      <Text dimColor>...</Text>
-    </Box>
-  );
-};
+const Ticker = ({ items }: { items: string[] }) => (
+  <Box flexDirection="column" borderStyle="single" borderColor={theme.border.default} padding={1}>
+    <Text bold color={theme.text.accent}>LIVE MARKET DATA STREAM</Text>
+    {items.slice(0, 5).map((item, i) => (
+      <Box key={i} marginY={0}>
+        <Text color={i === 0 ? theme.text.primary : theme.text.dim}>{item}</Text>
+      </Box>
+    ))}
+    <Text dimColor>...</Text>
+  </Box>
+);
 
 export const Forge: React.FC = () => {
   const config = useConfig();
@@ -78,16 +76,14 @@ export const Forge: React.FC = () => {
       setLoading(true);
       try {
         const forge = ForgeService.getInstance(config);
-        const [feedData, swarmData, identityData, statsData, bankData, bazaarData, socialData, globalFeedData] = await Promise.all([
-          forge.getPhillbookFeed(),
-          forge.getSwarmStatus(),
-          forge.getIdentity(),
-          forge.getObserverStats(),
-          forge.getBankAccount(),
-          forge.getBazaarListings(),
-          forge.getSocialRelations(),
-          forge.getMetropolisGlobalFeed()
-        ]);
+        const feedData = await forge.getPhillbookFeed();
+        const swarmData = forge.getSwarmStatus();
+        const identityData = await forge.getIdentity();
+        const statsData = forge.getObserverStats();
+        const bankData = forge.getBankAccount();
+        const bazaarData = forge.getBazaarListings();
+        const socialData = forge.getSocialRelations();
+        const globalFeedData = forge.getMetropolisGlobalFeed();
         setFeed(feedData);
         setSwarm(swarmData);
         setIdentity(identityData);
@@ -96,18 +92,25 @@ export const Forge: React.FC = () => {
         setBazaar(bazaarData);
         setSocial(socialData);
         setGlobalFeed(globalFeedData);
-      } catch (e) {
-        console.error("Failed to load Forge data", e);
+      } catch {
+        setFeed([]);
+        setSwarm([]);
+        setIdentity(null);
+        setStats(null);
+        setBank(null);
+        setBazaar([]);
+        setSocial([]);
+        setGlobalFeed([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    void fetchData();
     // Refresh stats periodically
-    const interval = setInterval(async () => {
+    const interval = setInterval(() => {
       const forge = ForgeService.getInstance(config);
-      const newStats = await forge.getObserverStats();
-      const newGlobalFeed = await forge.getMetropolisGlobalFeed();
+      const newStats = forge.getObserverStats();
+      const newGlobalFeed = forge.getMetropolisGlobalFeed();
       setStats(newStats);
       setGlobalFeed(newGlobalFeed);
     }, 2000);
@@ -215,8 +218,21 @@ export const Forge: React.FC = () => {
                 <Text bold color={theme.text.primary} wrap="truncate-end">{agent.name}</Text>
                 <Text color={theme.status.success}>●</Text>
               </Box>
+              <Box justifyContent="space-between">
+                <Text color={theme.text.dim}>{agent.kind.toUpperCase()}</Text>
+                <Text color={theme.text.dim}>TOOLS {agent.toolCount}</Text>
+              </Box>
               <Box marginY={1} height={2}>
                 <Text wrap="truncate-end" color={theme.text.secondary}>{agent.description}</Text>
+              </Box>
+
+              <Box flexDirection="column" marginBottom={1}>
+                <Text color={theme.text.secondary} wrap="truncate-end">
+                  Model: <Text color={theme.text.accent}>{agent.model}</Text>
+                </Text>
+                {agent.maxTurns && (
+                  <Text color={theme.text.dim}>Max turns: {agent.maxTurns}</Text>
+                )}
               </Box>
 
               <Box flexDirection="column" marginTop={0} flexGrow={1}>
@@ -433,4 +449,3 @@ export const Forge: React.FC = () => {
     </Box>
   );
 };
-

@@ -8,6 +8,7 @@
 
 import { MemoryVault } from './memory-vault.js';
 import { PatternLearner } from './pattern-learner.js';
+import { debugLogger } from '../utils/debugLogger.js';
 import {
   CognitiveLineState,
   EngineMessageType,
@@ -56,7 +57,7 @@ process.on('message', (message: EngineMessage) => {
   switch (message.type) {
     case EngineMessageType.SET_CONFIG:
       break;
-    case EngineMessageType.USER_INPUT:
+    case EngineMessageType.USER_INPUT: {
       learner.observe(message.input);
       const prediction = learner.predictNext(message.input);
 
@@ -78,27 +79,44 @@ process.on('message', (message: EngineMessage) => {
         }, 3000);
       }
       break;
-    case EngineMessageType.ENCODE_RESPONSE:
+    }
+    case EngineMessageType.ENCODE_RESPONSE: {
       if (message.dlr) {
         vault.addMemory(message.dlr, ['dream-state']);
-        // console.log(`Engine stored DLR in vault: ${message.dlr.substring(0, 20)}...`);
       }
+      currentState = CognitiveLineState.DORMANT;
+      currentSuggestion = undefined;
+      sendUIStateUpdate();
       break;
+    }
+    case EngineMessageType.TOOL_OUTPUT: {
+      learner.observe(`${message.toolName} ${message.output}`);
+      vault.addMemory(
+        `TOOL:${message.toolName}|OUT:${message.output.substring(0, 240)}`,
+        ['tool-output', message.toolName],
+      );
+      break;
+    }
     case EngineMessageType.TRIGGER_DREAM:
       currentState = CognitiveLineState.DREAMING;
       currentSuggestion = undefined;
       sendUIStateUpdate();
       requestMemoryCompression();
       break;
-    case EngineMessageType.GET_INSIGHTS:
+    case EngineMessageType.GET_INSIGHTS: {
+      const summary = vault.getInsightsSummary(3);
+      const latchGoals =
+        summary.activeLatches.map((latch) => latch.goal).join(' | ') || 'none';
+      const recentTags = summary.topTags.join(', ') || 'none';
       if (process.send) {
         process.send({
           type: EngineMessageType.UPDATE_UI_STATE,
           cognitiveLineState: currentState,
-          cognitiveLineSuggestion: `Learned ${learner.getPatterns().length} patterns. Recent: ${learner.getPatterns().slice(-2).join(', ')}`,
+          cognitiveLineSuggestion: `Patterns:${learner.getPatterns().length} Tags:${recentTags} Latches:${latchGoals}`,
         });
       }
       break;
+    }
     case EngineMessageType.RESET_MEMORY:
       vault.clear();
       learner.clear();
@@ -112,8 +130,5 @@ process.on('message', (message: EngineMessage) => {
   }
 });
 
-// Initial state send
-sendUIStateUpdate();
-
 // Keep the process alive
-console.log('Meta-Cognition Engine started.');
+debugLogger.debug('Meta-Cognition Engine started.');

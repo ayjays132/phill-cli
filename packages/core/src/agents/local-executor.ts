@@ -54,6 +54,10 @@ import { getModelConfigAlias } from './registry.js';
 import { getVersion } from '../utils/version.js';
 import { getToolCallContext } from '../utils/toolCallContext.js';
 import { scheduleAgentTools } from './agent-scheduler.js';
+import {
+  getAgentExecutionContext,
+  runWithAgentExecutionContext,
+} from './agentExecutionContext.js';
 
 /** A callback function to report on agent activity. */
 export type ActivityCallback = (activity: SubagentActivityEvent) => void;
@@ -120,15 +124,21 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
     const allAgentNames = new Set(
       runtimeContext.getAgentRegistry().getAllAgentNames(),
     );
+    const currentAgentStack = getAgentExecutionContext()?.agentStack ?? [];
 
     const registerToolByName = (toolName: string) => {
-      // Check if the tool is a subagent to prevent recursion.
-      // We do not allow agents to call other agents.
+      // Allow swarm-style delegation to other agents, but never allow an
+      // agent to call itself or re-enter an ancestor agent in the current
+      // execution chain.
       if (allAgentNames.has(toolName)) {
-        debugLogger.warn(
-          `[LocalAgentExecutor] Skipping subagent tool '${toolName}' for agent '${definition.name}' to prevent recursion.`,
-        );
-        return;
+        const wouldCycle =
+          toolName === definition.name || currentAgentStack.includes(toolName);
+        if (wouldCycle) {
+          debugLogger.warn(
+            `[LocalAgentExecutor] Skipping subagent tool '${toolName}' for agent '${definition.name}' to prevent recursive delegation.`,
+          );
+          return;
+        }
       }
 
       // If the tool is referenced by name, retrieve it from the parent
@@ -425,200 +435,208 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
    * @returns A promise that resolves to the agent's final output.
    */
   async run(inputs: AgentInputs, signal: AbortSignal): Promise<OutputObject> {
-    const startTime = Date.now();
-    let turnCounter = 0;
-    let terminateReason: AgentTerminateMode = AgentTerminateMode.ERROR;
-    let finalResult: string | null = null;
+    const currentStack = getAgentExecutionContext()?.agentStack ?? [];
+    return runWithAgentExecutionContext(
+      {
+        agentStack: [...currentStack, this.definition.name],
+      },
+      async () => {
+        const startTime = Date.now();
+        let turnCounter = 0;
+        let terminateReason: AgentTerminateMode = AgentTerminateMode.ERROR;
+        let finalResult: string | null = null;
 
-    const { maxTimeMinutes } = this.definition.runConfig;
-    const timeoutController = new AbortController();
-    const timeoutId = setTimeout(
-      () => timeoutController.abort(new Error('Agent timed out.')),
-      maxTimeMinutes * 60 * 1000,
-    );
-
-    // Combine the external signal with the internal timeout signal.
-    const combinedSignal = AbortSignal.any([signal, timeoutController.signal]);
-
-    logAgentStart(
-      this.runtimeContext,
-      new AgentStartEvent(this.agentId, this.definition.name),
-    );
-
-    let chat: PhillChat | undefined;
-    let tools: FunctionDeclaration[] | undefined;
-    try {
-      // Inject standard runtime context into inputs
-      const augmentedInputs = {
-        ...inputs,
-        cliVersion: await getVersion(),
-        activeModel: this.runtimeContext.getActiveModel(),
-        today: new Date().toLocaleDateString(),
-      };
-
-      tools = this.prepareToolsList();
-      chat = await this.createChatObject(augmentedInputs, tools);
-      const query = this.definition.promptConfig.query
-        ? templateString(this.definition.promptConfig.query, augmentedInputs)
-        : DEFAULT_QUERY_STRING;
-      let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
-
-      while (true) {
-        // Check for termination conditions like max turns.
-        const reason = this.checkTermination(startTime, turnCounter);
-        if (reason) {
-          terminateReason = reason;
-          break;
-        }
-
-        // Check for timeout or external abort.
-        if (combinedSignal.aborted) {
-          // Determine which signal caused the abort.
-          terminateReason = timeoutController.signal.aborted
-            ? AgentTerminateMode.TIMEOUT
-            : AgentTerminateMode.ABORTED;
-          break;
-        }
-
-        const turnResult = await this.executeTurn(
-          chat,
-          currentMessage,
-          turnCounter++,
-          combinedSignal,
-          timeoutController.signal,
+        const { maxTimeMinutes } = this.definition.runConfig;
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(
+          () => timeoutController.abort(new Error('Agent timed out.')),
+          maxTimeMinutes * 60 * 1000,
         );
 
-        if (turnResult.status === 'stop') {
-          terminateReason = turnResult.terminateReason;
-          // Only set finalResult if the turn provided one (e.g., error or goal).
-          if (turnResult.finalResult) {
-            finalResult = turnResult.finalResult;
+        // Combine the external signal with the internal timeout signal.
+        const combinedSignal = AbortSignal.any([signal, timeoutController.signal]);
+
+        logAgentStart(
+          this.runtimeContext,
+          new AgentStartEvent(this.agentId, this.definition.name),
+        );
+
+        let chat: PhillChat | undefined;
+        let tools: FunctionDeclaration[] | undefined;
+        try {
+          // Inject standard runtime context into inputs
+          const augmentedInputs = {
+            ...inputs,
+            cliVersion: await getVersion(),
+            activeModel: this.runtimeContext.getActiveModel(),
+            today: new Date().toLocaleDateString(),
+          };
+
+          tools = this.prepareToolsList();
+          chat = await this.createChatObject(augmentedInputs, tools);
+          const query = this.definition.promptConfig.query
+            ? templateString(this.definition.promptConfig.query, augmentedInputs)
+            : DEFAULT_QUERY_STRING;
+          let currentMessage: Content = { role: 'user', parts: [{ text: query }] };
+
+          while (true) {
+            // Check for termination conditions like max turns.
+            const reason = this.checkTermination(startTime, turnCounter);
+            if (reason) {
+              terminateReason = reason;
+              break;
+            }
+
+            // Check for timeout or external abort.
+            if (combinedSignal.aborted) {
+              // Determine which signal caused the abort.
+              terminateReason = timeoutController.signal.aborted
+                ? AgentTerminateMode.TIMEOUT
+                : AgentTerminateMode.ABORTED;
+              break;
+            }
+
+            const turnResult = await this.executeTurn(
+              chat,
+              currentMessage,
+              turnCounter++,
+              combinedSignal,
+              timeoutController.signal,
+            );
+
+            if (turnResult.status === 'stop') {
+              terminateReason = turnResult.terminateReason;
+              // Only set finalResult if the turn provided one (e.g., error or goal).
+              if (turnResult.finalResult) {
+                finalResult = turnResult.finalResult;
+              }
+              break; // Exit the loop for *any* stop reason.
+            }
+
+            // If status is 'continue', update message for the next loop
+            currentMessage = turnResult.nextMessage;
           }
-          break; // Exit the loop for *any* stop reason.
-        }
 
-        // If status is 'continue', update message for the next loop
-        currentMessage = turnResult.nextMessage;
-      }
+          // === UNIFIED RECOVERY BLOCK ===
+          // Only attempt recovery if it's a known recoverable reason.
+          // We don't recover from GOAL (already done) or ABORTED (user cancelled).
+          if (
+            terminateReason !== AgentTerminateMode.ERROR &&
+            terminateReason !== AgentTerminateMode.ABORTED &&
+            terminateReason !== AgentTerminateMode.GOAL
+          ) {
+            const recoveryResult = await this.executeFinalWarningTurn(
+              chat,
+              turnCounter, // Use current turnCounter for the recovery attempt
+              terminateReason,
+              signal, // Pass the external signal
+            );
 
-      // === UNIFIED RECOVERY BLOCK ===
-      // Only attempt recovery if it's a known recoverable reason.
-      // We don't recover from GOAL (already done) or ABORTED (user cancelled).
-      if (
-        terminateReason !== AgentTerminateMode.ERROR &&
-        terminateReason !== AgentTerminateMode.ABORTED &&
-        terminateReason !== AgentTerminateMode.GOAL
-      ) {
-        const recoveryResult = await this.executeFinalWarningTurn(
-          chat,
-          turnCounter, // Use current turnCounter for the recovery attempt
-          terminateReason,
-          signal, // Pass the external signal
-        );
+            if (recoveryResult !== null) {
+              // Recovery Succeeded
+              terminateReason = AgentTerminateMode.GOAL;
+              finalResult = recoveryResult;
+            } else {
+              // Recovery Failed. Set the final error message based on the *original* reason.
+              if (terminateReason === AgentTerminateMode.TIMEOUT) {
+                finalResult = `Agent timed out after ${this.definition.runConfig.maxTimeMinutes} minutes.`;
+                this.emitActivity('ERROR', {
+                  error: finalResult,
+                  context: 'timeout',
+                });
+              } else if (terminateReason === AgentTerminateMode.MAX_TURNS) {
+                finalResult = `Agent reached max turns limit (${this.definition.runConfig.maxTurns}).`;
+                this.emitActivity('ERROR', {
+                  error: finalResult,
+                  context: 'max_turns',
+                });
+              } else if (
+                terminateReason === AgentTerminateMode.ERROR_NO_COMPLETE_TASK_CALL
+              ) {
+                // The finalResult was already set by executeTurn, but we re-emit just in case.
+                finalResult =
+                  finalResult ||
+                  `Agent stopped calling tools but did not call '${TASK_COMPLETE_TOOL_NAME}'.`;
+                this.emitActivity('ERROR', {
+                  error: finalResult,
+                  context: 'protocol_violation',
+                });
+              }
+            }
+          }
 
-        if (recoveryResult !== null) {
-          // Recovery Succeeded
-          terminateReason = AgentTerminateMode.GOAL;
-          finalResult = recoveryResult;
-        } else {
-          // Recovery Failed. Set the final error message based on the *original* reason.
-          if (terminateReason === AgentTerminateMode.TIMEOUT) {
+          // === FINAL RETURN LOGIC ===
+          if (terminateReason === AgentTerminateMode.GOAL) {
+            return {
+              result: finalResult || 'Task completed.',
+              terminate_reason: terminateReason,
+            };
+          }
+
+          return {
+            result:
+              finalResult || 'Agent execution was terminated before completion.',
+            terminate_reason: terminateReason,
+          };
+        } catch (error) {
+          // Check if the error is an AbortError caused by our internal timeout.
+          if (
+            error instanceof Error &&
+            error.name === 'AbortError' &&
+            timeoutController.signal.aborted &&
+            !signal.aborted // Ensure the external signal was not the cause
+          ) {
+            terminateReason = AgentTerminateMode.TIMEOUT;
+
+            // Also use the unified recovery logic here
+            if (chat && tools) {
+              const recoveryResult = await this.executeFinalWarningTurn(
+                chat,
+                turnCounter, // Use current turnCounter
+                AgentTerminateMode.TIMEOUT,
+                signal,
+              );
+
+              if (recoveryResult !== null) {
+                // Recovery Succeeded
+                terminateReason = AgentTerminateMode.GOAL;
+                finalResult = recoveryResult;
+                return {
+                  result: finalResult,
+                  terminate_reason: terminateReason,
+                };
+              }
+            }
+
+            // Recovery failed or wasn't possible
             finalResult = `Agent timed out after ${this.definition.runConfig.maxTimeMinutes} minutes.`;
             this.emitActivity('ERROR', {
               error: finalResult,
               context: 'timeout',
             });
-          } else if (terminateReason === AgentTerminateMode.MAX_TURNS) {
-            finalResult = `Agent reached max turns limit (${this.definition.runConfig.maxTurns}).`;
-            this.emitActivity('ERROR', {
-              error: finalResult,
-              context: 'max_turns',
-            });
-          } else if (
-            terminateReason === AgentTerminateMode.ERROR_NO_COMPLETE_TASK_CALL
-          ) {
-            // The finalResult was already set by executeTurn, but we re-emit just in case.
-            finalResult =
-              finalResult ||
-              `Agent stopped calling tools but did not call '${TASK_COMPLETE_TOOL_NAME}'.`;
-            this.emitActivity('ERROR', {
-              error: finalResult,
-              context: 'protocol_violation',
-            });
-          }
-        }
-      }
-
-      // === FINAL RETURN LOGIC ===
-      if (terminateReason === AgentTerminateMode.GOAL) {
-        return {
-          result: finalResult || 'Task completed.',
-          terminate_reason: terminateReason,
-        };
-      }
-
-      return {
-        result:
-          finalResult || 'Agent execution was terminated before completion.',
-        terminate_reason: terminateReason,
-      };
-    } catch (error) {
-      // Check if the error is an AbortError caused by our internal timeout.
-      if (
-        error instanceof Error &&
-        error.name === 'AbortError' &&
-        timeoutController.signal.aborted &&
-        !signal.aborted // Ensure the external signal was not the cause
-      ) {
-        terminateReason = AgentTerminateMode.TIMEOUT;
-
-        // Also use the unified recovery logic here
-        if (chat && tools) {
-          const recoveryResult = await this.executeFinalWarningTurn(
-            chat,
-            turnCounter, // Use current turnCounter
-            AgentTerminateMode.TIMEOUT,
-            signal,
-          );
-
-          if (recoveryResult !== null) {
-            // Recovery Succeeded
-            terminateReason = AgentTerminateMode.GOAL;
-            finalResult = recoveryResult;
             return {
               result: finalResult,
               terminate_reason: terminateReason,
             };
           }
+
+          this.emitActivity('ERROR', { error: String(error) });
+          throw error; // Re-throw other errors or external aborts.
+        } finally {
+          clearTimeout(timeoutId);
+          logAgentFinish(
+            this.runtimeContext,
+            new AgentFinishEvent(
+              this.agentId,
+              this.definition.name,
+              Date.now() - startTime,
+              turnCounter,
+              terminateReason,
+            ),
+          );
         }
-
-        // Recovery failed or wasn't possible
-        finalResult = `Agent timed out after ${this.definition.runConfig.maxTimeMinutes} minutes.`;
-        this.emitActivity('ERROR', {
-          error: finalResult,
-          context: 'timeout',
-        });
-        return {
-          result: finalResult,
-          terminate_reason: terminateReason,
-        };
-      }
-
-      this.emitActivity('ERROR', { error: String(error) });
-      throw error; // Re-throw other errors or external aborts.
-    } finally {
-      clearTimeout(timeoutId);
-      logAgentFinish(
-        this.runtimeContext,
-        new AgentFinishEvent(
-          this.agentId,
-          this.definition.name,
-          Date.now() - startTime,
-          turnCounter,
-          terminateReason,
-        ),
-      );
-    }
+      },
+    );
   }
 
   private async tryCompressChat(
@@ -1218,4 +1236,3 @@ Important Rules:
     }
   }
 }
-

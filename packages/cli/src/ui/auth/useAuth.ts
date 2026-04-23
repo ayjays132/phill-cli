@@ -45,6 +45,7 @@ export const useAuthCommand = (
     authType === AuthType.OPENAI ||
     authType === AuthType.ANTHROPIC ||
     authType === AuthType.GROQ ||
+    authType === AuthType.XAI ||
     authType === AuthType.CUSTOM_API;
 
   const hasApiKeyConfigured = (
@@ -63,6 +64,7 @@ export const useAuthCommand = (
       case AuthType.HUGGINGFACE:
         return (
           hasNonEmpty(process.env['HUGGINGFACE_API_KEY']) ||
+          hasNonEmpty(process.env['HF_TOKEN']) ||
           hasNonEmpty(loadedSettings.merged.huggingFace?.apiKey)
         );
       case AuthType.OPENAI:
@@ -78,7 +80,14 @@ export const useAuthCommand = (
       case AuthType.GROQ:
         return (
           hasNonEmpty(process.env['GROQ_API_KEY']) ||
+          hasNonEmpty(process.env['PHILL_GROQ_API_KEY']) ||
           hasNonEmpty(loadedSettings.merged.groq?.apiKey)
+        );
+      case AuthType.XAI:
+        return (
+          hasNonEmpty(process.env['XAI_API_KEY']) ||
+          hasNonEmpty(process.env['GROK_API_KEY']) ||
+          hasNonEmpty(loadedSettings.merged.xai?.apiKey)
         );
       case AuthType.CUSTOM_API:
         return (
@@ -218,4 +227,3 @@ export const useAuthCommand = (
     reloadApiKey,
   };
 };
-

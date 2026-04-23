@@ -14,12 +14,12 @@ import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_FLASH_MODEL,
   DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_3_PRO_MODEL_ID,
   PREVIEW_PHILL_FLASH_MODEL,
   PREVIEW_PHILL_MODEL,
-  PREVIEW_PHILL_3_PRO_MODEL_ID as PREVIEW_PHILL_MODEL_ID,
-  PREVIEW_PHILL_3_FLASH_MODEL_ID as PREVIEW_PHILL_FLASH_MODEL_ID,
   STABLE_PHILL_2_5_PRO,
   STABLE_PHILL_2_5_FLASH,
+  STABLE_PHILL_2_5_FLASH_LITE,
   PREVIEW_PHILL_3_1_MODEL_ID,
   PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
   PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
@@ -69,34 +69,45 @@ const DEFAULT_STATE: ModelPolicyStateMap = {
 
 const DEFAULT_CHAIN: ModelPolicyChain = [
   definePolicy({ model: DEFAULT_PHILL_MODEL, actions: SILENT_ACTIONS }),
-  definePolicy({ model: DEFAULT_PHILL_FLASH_MODEL, isLastResort: true }),
-];
-
-const PREVIEW_CHAIN: ModelPolicyChain = [
-  definePolicy({ model: PREVIEW_PHILL_MODEL, actions: SILENT_ACTIONS }),
-  definePolicy({ model: PREVIEW_PHILL_MODEL_ID, actions: SILENT_ACTIONS }),
-  definePolicy({ model: PREVIEW_PHILL_FLASH_MODEL, actions: SILENT_ACTIONS }),
+  definePolicy({ model: DEFAULT_PHILL_FLASH_MODEL, actions: SILENT_ACTIONS }),
   definePolicy({
-    model: PREVIEW_PHILL_FLASH_MODEL_ID,
+    model: DEFAULT_PHILL_FLASH_LITE_MODEL,
     isLastResort: true,
+    actions: SILENT_ACTIONS,
   }),
 ];
 
-const GEMINI_3_1_CHAIN: ModelPolicyChain = [
-  // 1. Primary High-Performance (3.1 Pro)
+const PREVIEW_CHAIN: ModelPolicyChain = [
   definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
-  // 2. Ultra-Fast Agentic Fallback (3.1 Flash)
   definePolicy({
     model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
     actions: SILENT_ACTIONS,
   }),
-  // 3. Cost-Optimized / High-Availability Fallback (3.1 Flash-Lite)
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+    isLastResort: true,
+    actions: SILENT_ACTIONS,
+  }),
+];
+
+const GEMINI_3_1_CHAIN: ModelPolicyChain = [
+  definePolicy({ model: PREVIEW_PHILL_3_PRO_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
+    actions: SILENT_ACTIONS,
+  }),
   definePolicy({
     model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
     actions: SILENT_ACTIONS,
   }),
-  // 4. Last Resort (Absolute Stability - 2.5 Flash)
-  definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
+  definePolicy({ model: STABLE_PHILL_2_5_PRO, actions: SILENT_ACTIONS }),
+  definePolicy({ model: STABLE_PHILL_2_5_FLASH, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: STABLE_PHILL_2_5_FLASH_LITE,
+    isLastResort: true,
+    actions: SILENT_ACTIONS,
+  }),
 ];
 
 const GEMINI_3_PLUS_3_1_CHAIN: ModelPolicyChain = [
@@ -119,7 +130,12 @@ const GEMINI_3_PLUS_3_1_CHAIN: ModelPolicyChain = [
   }),
 
   // 4. Stable Last Resort (2.5 Flash)
-  definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
+  definePolicy({ model: STABLE_PHILL_2_5_PRO, actions: SILENT_ACTIONS }),
+  definePolicy({ model: STABLE_PHILL_2_5_FLASH, actions: SILENT_ACTIONS }),
+  definePolicy({
+    model: STABLE_PHILL_2_5_FLASH_LITE,
+    isLastResort: true,
+  }),
 ];
 
 const FLASH_LITE_CHAIN: ModelPolicyChain = [
@@ -139,32 +155,15 @@ const FLASH_LITE_CHAIN: ModelPolicyChain = [
 ];
 
 const GEMINI_3_CHAIN: ModelPolicyChain = [
-  // Gemini 3 family: preview and 3.1 variants first, then stable 2.5 fallbacks.
-  definePolicy({ model: PREVIEW_PHILL_MODEL_ID, actions: SILENT_ACTIONS }),
-  definePolicy({
-    model: PREVIEW_PHILL_FLASH_MODEL_ID,
-    actions: SILENT_ACTIONS,
-  }),
-  definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
-  definePolicy({
-    model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
-    actions: SILENT_ACTIONS,
-  }),
+  // Legacy "auto-gemini-3" should map to the latest practical Gemini 3.x text ladder,
+  // not the deprecated Gemini 3 Pro Preview that shut down on March 9, 2026.
+  definePolicy({ model: PREVIEW_PHILL_MODEL, actions: SILENT_ACTIONS }),
+  definePolicy({ model: PREVIEW_PHILL_FLASH_MODEL, actions: SILENT_ACTIONS }),
   definePolicy({
     model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+    isLastResort: true,
     actions: SILENT_ACTIONS,
   }),
-  definePolicy({ model: PREVIEW_PHILL_MODEL_ID, actions: SILENT_ACTIONS }),
-  definePolicy({
-    model: PREVIEW_PHILL_FLASH_MODEL_ID,
-    actions: SILENT_ACTIONS,
-  }),
-  definePolicy({
-    model: PREVIEW_PHILL_3_DEEP_THINK_MODEL_AUTO,
-    actions: SILENT_ACTIONS,
-  }),
-  definePolicy({ model: STABLE_PHILL_2_5_PRO, actions: SILENT_ACTIONS }),
-  definePolicy({ model: STABLE_PHILL_2_5_FLASH, isLastResort: true }),
 ];
 
 /**

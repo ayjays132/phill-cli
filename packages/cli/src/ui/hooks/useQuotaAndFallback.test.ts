@@ -22,7 +22,6 @@ import {
   UserTierId,
   AuthType,
   TerminalQuotaError,
-  makeFakeConfig,
   type GoogleApiError,
   RetryableQuotaError,
   PREVIEW_PHILL_MODEL,
@@ -30,6 +29,7 @@ import {
   DEFAULT_PHILL_MODEL,
   DEFAULT_PHILL_FLASH_MODEL,
 } from 'phill-cli-core';
+import { makeFakeConfig } from 'phill-cli-core/src/test-utils/config.js';
 import { useQuotaAndFallback } from './useQuotaAndFallback.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';
 import { MessageType } from '../types.js';
@@ -697,5 +697,4 @@ To disable gemini-3-pro-preview, disable "Preview features" in /settings.`,
     });
   });
 });
-
 

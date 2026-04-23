@@ -5,9 +5,9 @@
  */
 
 import {
-  CountTokensResponse,
   GenerateContentResponse,
   type GenerateContentParameters,
+  type CountTokensResponse,
   type CountTokensParameters,
   type EmbedContentResponse,
   type EmbedContentParameters,
@@ -18,10 +18,25 @@ import type { ContentGenerator } from './contentGenerator.js';
 import type { Config } from '../config/config.js';
 import { toContents } from '../code_assist/converter.js';
 import { runLocalTextGenerationWithTransformers } from './localTransformersFallback.js';
+import { createProviderHttpError } from './providerHttpError.js';
 
 interface HuggingFaceMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+}
+
+interface TextPartLike {
+  text?: string;
+}
+
+interface ToolFunctionDeclarationLike {
+  name?: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface ToolDefinitionLike {
+  functionDeclarations?: ToolFunctionDeclarationLike[];
 }
 
 interface HuggingFaceChatRequest {
@@ -128,7 +143,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
 
   async generateContent(
     request: GenerateContentParameters,
-    userPromptId: string,
+    _userPromptId: string,
   ): Promise<GenerateContentResponse> {
     const messages = this.convertToHuggingFaceMessages(request);
     const model = request.model || this.model;
@@ -165,7 +180,11 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
         return this.generateWithLocalTransformers(messages, model, request);
       }
       const errorText = await response.text();
-      throw new Error(this.formatApiError(response.statusText, errorText));
+      throw createProviderHttpError(
+        'HuggingFace API error',
+        response,
+        this.formatApiError(response.statusText, errorText),
+      );
     }
 
     const data = (await response.json()) as HuggingFaceChatResponse;
@@ -195,7 +214,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
 
   async generateContentStream(
     request: GenerateContentParameters,
-    userPromptId: string,
+    _userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const messages = this.convertToHuggingFaceMessages(request);
     const model = request.model || this.model;
@@ -238,7 +257,11 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
         })();
       }
       const errorText = await response.text();
-      throw new Error(this.formatApiError(response.statusText, errorText));
+      throw createProviderHttpError(
+        'HuggingFace API error',
+        response,
+        this.formatApiError(response.statusText, errorText),
+      );
     }
 
     if (!response.body) {
@@ -247,7 +270,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const self = this;
+    const mapFinishReason = this.mapFinishReason.bind(this);
 
     return (async function* () {
       let buffer = '';
@@ -280,14 +303,14 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
                       role: 'model',
                     },
                     finishReason: chunk.choices[0].finish_reason
-                      ? self.mapFinishReason(chunk.choices[0].finish_reason)
+                      ? mapFinishReason(chunk.choices[0].finish_reason)
                       : undefined,
                     index: 0,
                   },
                 ];
                 yield result;
               }
-            } catch (e) {
+            } catch {
               // Skip invalid JSON
               continue;
             }
@@ -338,7 +361,11 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
-      throw new Error(this.formatApiError(response.statusText, errorText));
+      throw createProviderHttpError(
+        'HuggingFace embeddings API error',
+        response,
+        this.formatApiError(response.statusText, errorText),
+      );
     }
 
     const data = (await response.json()) as number[] | number[][];
@@ -367,15 +394,15 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
       let toolDescriptions = '';
       if (hasTools) {
         toolDescriptions += 'Tools available:\n';
-        toolDescriptions += (request.config!.tools as any[])
-          .map((tool: any) => {
+        toolDescriptions += (request.config!.tools as ToolDefinitionLike[])
+          .map((tool) => {
             const declarations = Array.isArray(tool.functionDeclarations)
               ? tool.functionDeclarations
               : [];
             if (declarations.length === 0) return '';
             return declarations
               .map(
-                (funcDecl: any) =>
+                (funcDecl) =>
                   `- ${funcDecl.name}: ${funcDecl.description}\n  Parameters: ${JSON.stringify(funcDecl.parameters)}`,
               )
               .join('\n');
@@ -404,7 +431,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     if (request.config?.systemInstruction) {
       const sysInst = request.config.systemInstruction as Content;
       const systemText = sysInst.parts
-        ?.map((p: any) => p.text)
+        ?.map((p) => (p as TextPartLike).text)
         .filter(Boolean)
         .join('\n');
       if (systemText) {
@@ -419,7 +446,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
     const contents = toContents(request.contents);
     for (const content of contents) {
       const text = content.parts
-        ?.map((p: any) => p.text)
+        ?.map((p) => (p as TextPartLike).text)
         .filter(Boolean)
         .join('\n');
       if (text) {
@@ -453,17 +480,17 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
       normalized.startsWith('<html');
 
     if (isHtml) {
-      return `HuggingFace API error: ${statusText} - Received HTML instead of JSON. Check HUGGINGFACE_API_KEY and endpoint (use https://router.huggingface.co).`;
+      return `${statusText} - Received HTML instead of JSON. Check HUGGINGFACE_API_KEY and endpoint (use https://router.huggingface.co).`;
     }
 
-    return `HuggingFace API error: ${statusText} - ${errorText}`;
+    return normalized ? `${statusText} - ${normalized}` : statusText;
   }
 
   private async callChatEndpoint({
     request,
     model,
     headers,
-    stream,
+    stream: _stream,
   }: {
     request: HuggingFaceChatRequest;
     model: string;
@@ -542,7 +569,7 @@ export class HuggingFaceContentGenerator implements ContentGenerator {
   }
 
   private async isModelUnavailable(response: Response): Promise<boolean> {
-    if (response.status !== 400) {
+    if (response.status !== 400 && response.status !== 404 && response.status !== 422) {
       return false;
     }
     try {

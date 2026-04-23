@@ -61,9 +61,41 @@ interface DeviceAuthorizationResponse {
 }
 
 interface CodexAuthFile {
+  auth_mode?: string;
+  last_refresh?: string;
   tokens?: {
+    id_token?: string;
     access_token?: string;
+    refresh_token?: string;
+    account_id?: string;
   };
+}
+
+function getJwtExpiryEpochSeconds(token: string | undefined): number | undefined {
+  if (!token) {
+    return undefined;
+  }
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return undefined;
+  }
+  try {
+    const payload = JSON.parse(
+      Buffer.from(parts[1], 'base64url').toString('utf8'),
+    ) as { exp?: number };
+    return typeof payload.exp === 'number' ? payload.exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isJwtTokenFresh(token: string | undefined): boolean {
+  const exp = getJwtExpiryEpochSeconds(token);
+  if (!exp) {
+    return false;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  return exp > now + TOKEN_EXPIRY_SKEW_SECONDS;
 }
 
 async function parseJsonResponse<T>(response: Response, context: string): Promise<T> {
@@ -104,32 +136,39 @@ function getCodexAuthStoragePath(): string {
   return path.join(os.homedir(), '.codex', 'auth.json');
 }
 
-async function readCodexAccessToken(): Promise<string | undefined> {
+async function readCodexAuthFile(): Promise<CodexAuthFile | null> {
   try {
     const raw = await fs.readFile(getCodexAuthStoragePath(), 'utf8');
-    const parsed = JSON.parse(raw) as CodexAuthFile;
-    return parsed.tokens?.access_token;
+    return JSON.parse(raw) as CodexAuthFile;
   } catch {
-    return undefined;
+    return null;
   }
 }
 
 async function getCodexAccessTokenFallback(
   allowInteractiveLogin: boolean,
 ): Promise<string | undefined> {
+  const existing = await readCodexAuthFile();
+  if (
+    existing?.auth_mode === 'chatgpt' &&
+    isJwtTokenFresh(existing.tokens?.access_token)
+  ) {
+    return existing.tokens?.access_token;
+  }
+
   try {
     await execFileAsync('codex', ['login', 'status'], { maxBuffer: 1024 * 1024 });
   } catch {
     // Not logged in (or status unavailable) is not fatal; continue to interactive flow.
   }
 
-  let token = await readCodexAccessToken();
-  if (token) {
+  let token = (await readCodexAuthFile())?.tokens?.access_token;
+  if (isJwtTokenFresh(token)) {
     return token;
   }
 
   if (!allowInteractiveLogin) {
-    return undefined;
+    return token;
   }
 
   try {
@@ -148,7 +187,7 @@ async function getCodexAccessTokenFallback(
   } catch {
     // If login command failed or user cancelled, return whatever token may exist.
   }
-  token = await readCodexAccessToken();
+  token = (await readCodexAuthFile())?.tokens?.access_token;
   return token;
 }
 
@@ -488,6 +527,11 @@ export async function getOpenAIBrowserAccessToken(
   allowInteractiveLogin: boolean,
   preferBrowserLaunch: boolean,
 ): Promise<string | undefined> {
+  const codexToken = await getCodexAccessTokenFallback(allowInteractiveLogin);
+  if (codexToken) {
+    return codexToken;
+  }
+
   let stored = await loadStoredTokens();
   if (isAccessTokenValid(stored)) {
     return stored?.access_token;
