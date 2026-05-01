@@ -52,7 +52,7 @@ export class PromptProvider {
       config.getActiveModel(),
       config.getPreviewFeatures(),
       false,
-      config.getHasAccessToPreviewModel(),
+      config.getHasAccessToPreviewModel?.() ?? true,
       config,
     );
     const isPhill3 = isPreviewModel(desiredModel);

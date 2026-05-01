@@ -12,9 +12,14 @@ import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const PHILL_DIR = '.phill';
+export const GEMINI_DIR = PHILL_DIR;
 export const MEMORY_DIR = '.phill/memory';
 export const PHILL_CONFIG_DIR = '.phill/config';
 export const GOOGLE_ACCOUNTS_FILENAME = 'google_accounts.json';
+
+export function normalizePath(filePath: string): string {
+  return path.normalize(filePath).toLowerCase();
+}
 
 /**
  * Special characters that need to be escaped in file paths for shell compatibility.

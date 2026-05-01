@@ -134,6 +134,11 @@ their corresponding top-level category object in your `settings.json` file.
     request" errors.
   - **Default:** `false`
 
+- **`general.retryOnRateLimit`** (boolean):
+  - **Description:** Automatically retry rate-limited requests every 2 minutes
+    while quota dialog is active.
+  - **Default:** `true`
+
 - **`general.debugKeystrokeLogging`** (boolean):
   - **Description:** Enable debug logging of keystrokes to the console.
   - **Default:** `false`
@@ -155,6 +160,20 @@ their corresponding top-level category object in your `settings.json` file.
 - **`general.sessionRetention.minRetention`** (string):
   - **Description:** Minimum retention period (safety limit, defaults to "1d")
   - **Default:** `"1d"`
+
+- **`general.heartbeat.enabled`** (boolean):
+  - **Description:** Enable periodic background continuation prompts while idle.
+  - **Default:** `false`
+
+- **`general.heartbeat.intervalSeconds`** (number):
+  - **Description:** Interval in seconds between heartbeat continuation prompts
+    (minimum 10).
+  - **Default:** `300`
+
+- **`general.heartbeat.prompt`** (string):
+  - **Description:** Prompt text sent by heartbeat when it fires (for example:
+    "continue").
+  - **Default:** `"continue"`
 
 #### `output`
 
@@ -244,6 +263,16 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** Show the model name in the chat for each model turn.
   - **Default:** `false`
 
+- **`ui.cognitiveEngine.enabled`** (boolean):
+  - **Description:** Enable the background meta-cognition engine and UI overlay.
+  - **Default:** `true`
+  - **Requires restart:** Yes
+
+- **`ui.cognitiveEngine.idleThresholdSeconds`** (number):
+  - **Description:** Time in seconds before the engine enters "Dreaming" mode.
+  - **Default:** `15`
+  - **Requires restart:** Yes
+
 - **`ui.useAlternateBuffer`** (boolean):
   - **Description:** Use an alternate screen buffer for the UI, preserving shell
     history.
@@ -292,6 +321,176 @@ their corresponding top-level category object in your `settings.json` file.
 - **`ui.voice.inputDevice`** (string):
   - **Description:** The microphone to use for voice input.
   - **Default:** `"default"`
+
+- **`ui.voice.outputDevice`** (string):
+  - **Description:** The speaker/output device to use for voice playback.
+  - **Default:** `"default"`
+
+- **`ui.voice.captureOutputLoopback`** (boolean):
+  - **Description:** Capture speaker output back into voice input path for full
+    duplex conversational audio setups.
+  - **Default:** `false`
+
+- **`ui.voice.noiseSuppression`** (boolean):
+  - **Description:** Enable real-time background noise suppression for
+    microphone capture.
+  - **Default:** `true`
+
+- **`ui.voice.noiseSuppressionLevel`** (enum):
+  - **Description:** Strength of real-time noise suppression filtering.
+  - **Default:** `"standard"`
+  - **Values:** `"light"`, `"standard"`, `"aggressive"`
+
+- **`ui.voice.autoGainControl`** (boolean):
+  - **Description:** Enable automatic gain leveling so quieter voices remain
+    intelligible.
+  - **Default:** `true`
+
+- **`ui.voice.highpassFilter`** (boolean):
+  - **Description:** Reduce low-frequency rumble and HVAC hum from microphone
+    capture.
+  - **Default:** `true`
+
+- **`ui.voice.voiceIsolationMode`** (enum):
+  - **Description:** Speech-focused cleanup profile. Aggressive removes more
+    background noise but can color voice tone.
+  - **Default:** `"standard"`
+  - **Values:** `"off"`, `"standard"`, `"aggressive"`
+
+- **`ui.voice.waiterEnabled`** (boolean):
+  - **Description:** Enable persistent voice waiter tool so model can
+    wait/listen/respond naturally in voice mode.
+  - **Default:** `true`
+
+- **`ui.voice.realtimeConversation`** (boolean):
+  - **Description:** Keep a continuous listen/respond loop while voice mode is
+    active.
+  - **Default:** `true`
+
+- **`ui.voice.minUserSilenceMs`** (number):
+  - **Description:** Minimum silence window before finalizing speech for
+    submission.
+  - **Default:** `450`
+
+- **`ui.voice.responseDelayMs`** (number):
+  - **Description:** Small delay before sending finalized transcript to model.
+  - **Default:** `120`
+
+- **`ui.voice.preferredGender`** (enum):
+  - **Description:** Preferred TTS persona. Auto uses agent identity values
+    first.
+  - **Default:** `"auto"`
+  - **Values:** `"auto"`, `"female"`, `"male"`, `"neutral"`
+
+- **`ui.voice.preferredStyle`** (string):
+  - **Description:** Optional TTS speaking style (e.g. calm, cheerful,
+    empathetic).
+  - **Default:** `""`
+
+- **`ui.voice.ttsProvider`** (enum):
+  - **Description:** Select TTS backend. Pocket is local fallback-friendly. If
+    setup was skipped, run /voice setup anytime.
+  - **Default:** `"auto"`
+  - **Values:** `"auto"`, `"pocket"`, `"gemini"`, `"openai"`, `"elevenlabs"`,
+    `"system"`
+
+- **`ui.voice.preferAuthTtsProvider`** (boolean):
+  - **Description:** If enabled, Gemini/OpenAI auth can be prioritized over
+    legacy Pocket selection while still keeping Pocket fallback.
+  - **Default:** `true`
+
+- **`ui.voice.geminiApiKey`** (string):
+  - **Description:** Optional voice-only Gemini API key override for TTS. If
+    empty, existing auth/global Gemini keys are used.
+  - **Default:** `""`
+
+- **`ui.voice.geminiVoiceName`** (string):
+  - **Description:** Optional Gemini TTS voice override (e.g. Kore, Puck,
+    Charon).
+  - **Default:** `""`
+
+- **`ui.voice.geminiTtsModel`** (string):
+  - **Description:** Optional Gemini TTS model override.
+  - **Default:** `"gemini-2.5-flash-preview-tts"`
+
+- **`ui.voice.openAiApiKey`** (string):
+  - **Description:** Optional voice-only OpenAI API key override for TTS. If
+    empty, existing OpenAI API key settings are used.
+  - **Default:** `""`
+
+- **`ui.voice.openAiVoice`** (string):
+  - **Description:** Optional OpenAI TTS voice name override (this is not an API
+    key). Configure API key separately via auth/settings (OPENAI_API_KEY).
+  - **Default:** `""`
+
+- **`ui.voice.openAiTtsModel`** (string):
+  - **Description:** Optional OpenAI TTS model override.
+  - **Default:** `""`
+
+- **`ui.voice.elevenLabsApiKey`** (string):
+  - **Description:** Optional voice-only ElevenLabs API key override. If empty,
+    ELEVENLABS_API_KEY env var is used.
+  - **Default:** `""`
+
+- **`ui.voice.elevenLabsVoiceId`** (string):
+  - **Description:** Default ElevenLabs voice ID for speech output (not an API
+    key). API key is ELEVENLABS_API_KEY.
+  - **Default:** `""`
+
+- **`ui.voice.elevenLabsModelId`** (string):
+  - **Description:** ElevenLabs model override (low latency recommended).
+  - **Default:** `"eleven_turbo_v2"`
+
+- **`ui.voice.elevenLabsOutputFormat`** (string):
+  - **Description:** ElevenLabs output format (for example pcm_24000,
+    mp3_44100_128).
+  - **Default:** `"pcm_24000"`
+
+- **`ui.voice.elevenLabsStability`** (number):
+  - **Description:** ElevenLabs voice setting from 0.0 to 1.0.
+  - **Default:** `0.45`
+
+- **`ui.voice.elevenLabsSimilarityBoost`** (number):
+  - **Description:** ElevenLabs similarity boost from 0.0 to 1.0.
+  - **Default:** `0.75`
+
+- **`ui.voice.elevenLabsStyle`** (number):
+  - **Description:** ElevenLabs style exaggeration from 0.0 to 1.0.
+  - **Default:** `0.2`
+
+- **`ui.voice.elevenLabsUseSpeakerBoost`** (boolean):
+  - **Description:** Enable ElevenLabs speaker boost.
+  - **Default:** `true`
+
+- **`ui.voice.huggingFaceApiKey`** (string):
+  - **Description:** Optional voice-only Hugging Face key override for Pocket
+    TTS model access. If empty, existing Hugging Face settings/env are used.
+  - **Default:** `""`
+
+- **`ui.voice.pocketVoicePreset`** (enum):
+  - **Description:** Preferred Pocket TTS preset voice (used when Pocket
+    provider is active).
+  - **Default:** `"alba"`
+  - **Values:** `"alba"`, `"aria"`, `"default"`
+
+- **`ui.voice.pocketReferenceAudio`** (string):
+  - **Description:** Reference file for Pocket voice cloning. Defaults to
+    voice_preview_aria.mp3 if present.
+  - **Default:** `"Voices/voice_preview_aria.mp3"`
+
+- **`ui.voice.pocketModelId`** (string):
+  - **Description:** Hugging Face model ID used by Pocket TTS via
+    Transformers.js.
+  - **Default:** `"kyutai/pocket-tts"`
+
+- **`ui.voice.pocketModelDir`** (string):
+  - **Description:** Optional local model cache directory for Pocket TTS. Leave
+    empty to use the default model cache path. Download/setup with /voice setup.
+  - **Default:** `""`
+
+- **`ui.voice.pocketCommand`** (string):
+  - **Description:** Executable name/path for Pocket TTS CLI.
+  - **Default:** `"pocket-tts"`
 
 - **`ui.voice.vadThreshold`** (number):
   - **Description:** Voice Activity Detection threshold (RMS amplitude 0-32768).
@@ -353,6 +552,23 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** Model name to use.
   - **Default:** `"llama3"`
   - **Requires restart:** Yes
+
+#### `signal`
+
+- **`signal.enabled`** (boolean):
+  - **Description:** Enable the background daemon for receiving Signal messages.
+  - **Default:** `false`
+  - **Requires restart:** Yes
+
+- **`signal.account`** (string):
+  - **Description:** Your Signal phone number (e.g. +123456789).
+  - **Default:** `""`
+  - **Requires restart:** Yes
+
+- **`signal.trustedNumbers`** (array):
+  - **Description:** List of phone numbers allowed to send remote commands to
+    this Phill CLI.
+  - **Default:** `[]`
 
 #### `huggingFace`
 
@@ -418,6 +634,22 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `"llama-3.3-70b-versatile"`
   - **Requires restart:** Yes
 
+#### `xai`
+
+- **`xai.endpoint`** (string):
+  - **Description:** xAI OpenAI-compatible endpoint.
+  - **Default:** `"https://api.x.ai/v1"`
+  - **Requires restart:** Yes
+
+- **`xai.apiKey`** (string):
+  - **Description:** xAI API key.
+  - **Default:** `undefined`
+
+- **`xai.model`** (string):
+  - **Description:** Grok model name to use.
+  - **Default:** `"grok-4-20"`
+  - **Requires restart:** Yes
+
 #### `customApi`
 
 - **`customApi.endpoint`** (string):
@@ -478,54 +710,128 @@ their corresponding top-level category object in your `settings.json` file.
           }
         }
       },
-      "chat-base-2.5": {
-        "extends": "chat-base",
-        "modelConfig": {
-          "generateContentConfig": {
-            "thinkingConfig": {
-              "thinkingBudget": 8192
-            }
-          }
-        }
-      },
       "chat-base-3": {
         "extends": "chat-base",
         "modelConfig": {
           "generateContentConfig": {
             "thinkingConfig": {
-              "thinkingLevel": "HIGH"
+              "thinkingBudget": 16384
             }
           }
         }
       },
-      "gemini-3-pro-preview": {
+      "gemini-3.1-pro": {
         "extends": "chat-base-3",
         "modelConfig": {
-          "model": "gemini-3-pro-preview"
+          "model": "gemini-3.1-pro-preview"
         }
       },
-      "gemini-3-flash-preview": {
+      "gemini-3.1-flash": {
         "extends": "chat-base-3",
         "modelConfig": {
           "model": "gemini-3-flash-preview"
         }
       },
-      "gemini-2.5-pro": {
-        "extends": "chat-base-2.5",
+      "gemini-3.1-flash-lite": {
+        "extends": "chat-base-3",
         "modelConfig": {
-          "model": "gemini-2.5-pro"
+          "model": "gemini-3.1-flash-lite-preview"
         }
       },
-      "gemini-2.5-flash": {
-        "extends": "chat-base-2.5",
+      "gemini-3.1-flash-image": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-3.1-flash-image-preview",
+          "generateContentConfig": {
+            "temperature": 1
+          }
+        }
+      },
+      "gemini-3-pro": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3-pro-preview"
+        }
+      },
+      "gemini-3-flash": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3-flash-preview"
+        }
+      },
+      "gemini-3-pro-image": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-3-pro-image-preview",
+          "generateContentConfig": {
+            "temperature": 1
+          }
+        }
+      },
+      "gemini-2-pro": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      },
+      "gemini-2-pro-preview": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      },
+      "gemini-2-flash": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3-flash-preview"
+        }
+      },
+      "gemini-2-flash-preview": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3-flash-preview"
+        }
+      },
+      "gemini-flash-latest": {
+        "extends": "chat-base",
         "modelConfig": {
           "model": "gemini-2.5-flash"
         }
       },
-      "gemini-2.5-flash-lite": {
-        "extends": "chat-base-2.5",
+      "gemini-1.5-pro": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-2.5-pro"
+        }
+      },
+      "gemini-1.5-flash": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
+      },
+      "gemini-1.5-flash-lite": {
+        "extends": "chat-base-3",
         "modelConfig": {
           "model": "gemini-2.5-flash-lite"
+        }
+      },
+      "gemini-1.5-flash-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
+      },
+      "gemini-2-flash-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
+      },
+      "gemini-2-pro-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-pro"
         }
       },
       "gemini-2.5-flash-base": {
@@ -534,15 +840,30 @@ their corresponding top-level category object in your `settings.json` file.
           "model": "gemini-2.5-flash"
         }
       },
+      "gemini-2.5-pro-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-pro"
+        }
+      },
+      "gemini-3.1-flash-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-3-flash-preview"
+        }
+      },
+      "gemini-3.1-pro-base": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      },
       "classifier": {
         "extends": "base",
         "modelConfig": {
           "model": "gemini-2.5-flash-lite",
           "generateContentConfig": {
-            "maxOutputTokens": 1024,
-            "thinkingConfig": {
-              "thinkingBudget": 512
-            }
+            "maxOutputTokens": 1024
           }
         }
       },
@@ -552,22 +873,14 @@ their corresponding top-level category object in your `settings.json` file.
           "model": "gemini-2.5-flash-lite",
           "generateContentConfig": {
             "temperature": 0.3,
-            "maxOutputTokens": 16000,
-            "thinkingConfig": {
-              "thinkingBudget": 0
-            }
+            "maxOutputTokens": 16000
           }
         }
       },
       "edit-corrector": {
         "extends": "base",
         "modelConfig": {
-          "model": "gemini-2.5-flash-lite",
-          "generateContentConfig": {
-            "thinkingConfig": {
-              "thinkingBudget": 0
-            }
-          }
+          "model": "gemini-2.5-flash-lite"
         }
       },
       "summarizer-default": {
@@ -589,7 +902,7 @@ their corresponding top-level category object in your `settings.json` file.
         }
       },
       "web-search": {
-        "extends": "gemini-2.5-flash-base",
+        "extends": "gemini-2-flash-base",
         "modelConfig": {
           "generateContentConfig": {
             "tools": [
@@ -601,7 +914,7 @@ their corresponding top-level category object in your `settings.json` file.
         }
       },
       "web-fetch": {
-        "extends": "gemini-2.5-flash-base",
+        "extends": "gemini-2-flash-base",
         "modelConfig": {
           "generateContentConfig": {
             "tools": [
@@ -613,12 +926,14 @@ their corresponding top-level category object in your `settings.json` file.
         }
       },
       "web-fetch-fallback": {
-        "extends": "gemini-2.5-flash-base",
+        "extends": "gemini-2-flash-base",
         "modelConfig": {}
       },
       "loop-detection": {
-        "extends": "gemini-2.5-flash-base",
-        "modelConfig": {}
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
       },
       "loop-detection-double-check": {
         "extends": "base",
@@ -627,41 +942,50 @@ their corresponding top-level category object in your `settings.json` file.
         }
       },
       "llm-edit-fixer": {
-        "extends": "gemini-2.5-flash-base",
-        "modelConfig": {}
-      },
-      "next-speaker-checker": {
-        "extends": "gemini-2.5-flash-base",
-        "modelConfig": {}
-      },
-      "chat-compression-3-pro": {
-        "modelConfig": {
-          "model": "gemini-3-pro-preview"
-        }
-      },
-      "chat-compression-3-flash": {
-        "modelConfig": {
-          "model": "gemini-3-flash-preview"
-        }
-      },
-      "chat-compression-2.5-pro": {
-        "modelConfig": {
-          "model": "gemini-2.5-pro"
-        }
-      },
-      "chat-compression-2.5-flash": {
+        "extends": "base",
         "modelConfig": {
           "model": "gemini-2.5-flash"
         }
       },
-      "chat-compression-2.5-flash-lite": {
+      "next-speaker-checker": {
+        "extends": "base",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
+      },
+      "chat-compression-pro": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-2.5-pro"
+        }
+      },
+      "chat-compression-flash": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-2.5-flash"
+        }
+      },
+      "chat-compression-flash-lite": {
+        "extends": "chat-base-3",
         "modelConfig": {
           "model": "gemini-2.5-flash-lite"
         }
       },
+      "chat-compression-pro-preview": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3.1-pro-preview"
+        }
+      },
+      "chat-compression-flash-preview": {
+        "extends": "chat-base-3",
+        "modelConfig": {
+          "model": "gemini-3-flash-preview"
+        }
+      },
       "chat-compression-default": {
         "modelConfig": {
-          "model": "gemini-2.5-pro"
+          "model": "gemini-2.5-flash-lite"
         }
       }
     }
@@ -873,6 +1197,23 @@ their corresponding top-level category object in your `settings.json` file.
   - **Description:** A list of MCP servers to exclude.
   - **Default:** `undefined`
   - **Requires restart:** Yes
+
+#### `webSearch`
+
+- **`webSearch.deepResearchByDefault`** (boolean):
+  - **Description:** Perform autonomous deep research synthesis by default for
+    every search.
+  - **Default:** `false`
+
+- **`webSearch.includeIdeContext`** (boolean):
+  - **Description:** Automatically include selected IDE code as context for
+    search queries.
+  - **Default:** `true`
+
+- **`webSearch.maxDeepResearchSources`** (number):
+  - **Description:** Maximum number of top results to fetch and synthesize
+    during deep research.
+  - **Default:** `3`
 
 #### `useWriteTodos`
 

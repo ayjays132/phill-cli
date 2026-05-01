@@ -34,10 +34,10 @@ export class OverrideStrategy implements RoutingStrategy {
     // Return the overridden model name.
     return {
       model: resolveModel(
-        overrideModel, 
+        overrideModel,
         config.getPreviewFeatures(),
         false,
-        config.getHasAccessToPreviewModel(),
+        config.getHasAccessToPreviewModel?.() ?? true,
         config,
       ),
       metadata: {

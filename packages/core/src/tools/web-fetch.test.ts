@@ -51,7 +51,8 @@ vi.mock('../utils/fetch.js', async (importOriginal) => {
   };
 });
 
-vi.mock('node:crypto', () => ({
+vi.mock('node:crypto', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:crypto')>()),
   randomUUID: vi.fn(),
 }));
 

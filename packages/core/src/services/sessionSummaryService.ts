@@ -173,11 +173,13 @@ export class SessionSummaryService {
         cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, '');
 
         // Self-Correction Reflexion: evaluate if the intent was met and what lessons were learned
-        this.evaluateOutcomeAndLearn(cleanedSummary, conversationText).catch(
-          (e) => {
-            debugLogger.debug(`[Reflexion] Evaluation failed: ${e}`);
-          },
-        );
+        setTimeout(() => {
+          this.evaluateOutcomeAndLearn(cleanedSummary, conversationText).catch(
+            (e) => {
+              debugLogger.debug(`[Reflexion] Evaluation failed: ${e}`);
+            },
+          );
+        }, 0);
 
         debugLogger.debug(`[SessionSummary] Generated: "${cleanedSummary}"`);
         return cleanedSummary;

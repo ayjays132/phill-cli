@@ -96,22 +96,23 @@ available combinations.
 
 #### App Controls
 
-| Action                                                                                                | Keys                                                            |
-| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Toggle detailed error information.                                                                    | `F12`                                                           |
-| Toggle the full TODO list.                                                                            | `Alt + T`                                                       |
-| Show IDE context details.                                                                             | `Ctrl + G`                                                      |
-| Toggle Markdown rendering.                                                                            | `Alt + M`                                                       |
-| Toggle copy mode when in alternate buffer mode.                                                       | `Ctrl + S`                                                      |
-| Toggle YOLO (auto-approval) mode for tool calls.                                                      | `Ctrl + Y`                                                      |
-| Cycle through approval modes: default (prompt), auto_edit (auto-approve edits), and plan (read-only). | `Shift + Tab`                                                   |
-| Expand a height-constrained response to show additional lines when not in alternate buffer mode.      | `Ctrl + O`<br />`Ctrl + S`                                      |
-| Focus the shell input from the phill input.                                                           | `Tab (no Shift)`                                                |
-| Focus the Phill input from the shell input.                                                           | `Tab`                                                           |
-| Clear the terminal screen and redraw the UI.                                                          | `Ctrl + L`                                                      |
-| Restart the application.                                                                              | `R`                                                             |
-| Toggle voice input mode.                                                                              | `Ctrl + T`                                                      |
-| Toggle text-to-speech output.                                                                         | `Shift + Alt + T`<br />`Alt + Ctrl + T`<br />`Shift + Ctrl + T` |
+| Action                                                                                                | Keys                       |
+| ----------------------------------------------------------------------------------------------------- | -------------------------- |
+| Toggle detailed error information.                                                                    | `F12`                      |
+| Toggle the full TODO list.                                                                            | `Alt + T (no Ctrl)`        |
+| Show IDE context details.                                                                             | `Alt + G`                  |
+| Toggle Markdown rendering.                                                                            | `Alt + M`                  |
+| Toggle copy mode when in alternate buffer mode.                                                       | `Ctrl + S`                 |
+| Toggle YOLO (auto-approval) mode for tool calls.                                                      | `Ctrl + Y`                 |
+| Cycle through approval modes: default (prompt), auto_edit (auto-approve edits), and plan (read-only). | `Shift + Tab`              |
+| Expand a height-constrained response to show additional lines when not in alternate buffer mode.      | `Ctrl + O`<br />`Ctrl + S` |
+| Focus the shell input from the phill input.                                                           | `Tab (no Shift)`           |
+| Focus the Phill input from the shell input.                                                           | `Tab`                      |
+| Clear the terminal screen and redraw the UI.                                                          | `Ctrl + L`                 |
+| Restart the application.                                                                              | `R`                        |
+| Toggle voice input mode.                                                                              | `Ctrl + T (no Alt)`        |
+| Toggle text-to-speech output.                                                                         | `Ctrl + G`                 |
+| Toggle speech-to-text input.                                                                          | `Ctrl + E`                 |
 
 <!-- KEYBINDINGS-AUTOGEN:END -->
 

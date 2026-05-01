@@ -245,17 +245,24 @@ export class ChatRecordingService {
         }
       });
 
+      if (!this.conversationFile) return;
+
       // Semantic Indexing for Semantic Sieve
       if (message.type === 'user' || message.type === 'phill') {
         const contentStr = partListUnionToString(message.content);
-        if (contentStr.trim().length > 10) {
-          const vectorService = VectorService.getInstance(this.config.getContentGenerator());
+        if (
+          contentStr.trim().length > 10 &&
+          typeof this.config.getContentGenerator === 'function'
+        ) {
+          const vectorService = VectorService.getInstance(
+            this.config.getContentGenerator(),
+          );
           // Fire and forget indexing to avoid blocking the main chat loop
           void vectorService.addDocument(contentStr, {
             type: 'chat_history',
             role: message.type,
             sessionId: this.sessionId,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
       }

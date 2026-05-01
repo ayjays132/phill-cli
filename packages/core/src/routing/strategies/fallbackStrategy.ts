@@ -27,7 +27,7 @@ export class FallbackStrategy implements RoutingStrategy {
       requestedModel,
       config.getPreviewFeatures(),
       false,
-      config.getHasAccessToPreviewModel(),
+      config.getHasAccessToPreviewModel?.() ?? true,
       config,
     );
     const service = config.getModelAvailabilityService();

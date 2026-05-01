@@ -102,3 +102,7 @@ hardcoded_paths*.txt
 .phill-clipboard/
 .eslintcache
 singularity_nexus/.next/
+
+.claude/
+
+.claude/

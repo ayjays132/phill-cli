@@ -39,6 +39,16 @@ export const DEFAULT_CORE_POLICIES_DIR = path.join(__dirname, 'policies');
 export const DEFAULT_POLICY_TIER = 1;
 export const USER_POLICY_TIER = 2;
 export const ADMIN_POLICY_TIER = 3;
+export const WORKSPACE_POLICY_TIER = 2;
+
+const READ_ONLY_TOOL_NAMES = [
+  'glob',
+  'search_file_content',
+  'list_directory',
+  'read_file',
+  'google_web_search',
+  'SubagentInvocation',
+];
 
 /**
  * Gets the list of directories to search for policy files, in order of increasing priority
@@ -272,6 +282,56 @@ export async function createPolicyEngineConfig(
         });
       }
     }
+  }
+
+  // Legacy/global auto-accept allows read-only tools without granting write
+  // tools. Explicit excludes above keep a higher priority and still win.
+  if (settings.tools?.autoAccept) {
+    for (const tool of READ_ONLY_TOOL_NAMES) {
+      rules.push({
+        toolName: tool,
+        decision: PolicyDecision.ALLOW,
+        priority: 1.05,
+        source: 'Settings (Read-only Auto Accept)',
+      });
+    }
+  }
+
+  if (approvalMode === 'autoEdit') {
+    for (const tool of ['replace', 'write_file']) {
+      rules.push({
+        toolName: tool,
+        decision: PolicyDecision.ALLOW,
+        priority: 1.015,
+        source: 'Default (Auto Edit)',
+      });
+    }
+  }
+
+  if (approvalMode === 'plan') {
+    for (const tool of READ_ONLY_TOOL_NAMES) {
+      rules.push({
+        toolName: tool,
+        decision: PolicyDecision.ALLOW,
+        priority: 1.05,
+        source: 'Default (Plan Read-only)',
+      });
+    }
+
+    rules.push({
+      toolName: 'write_file',
+      decision: PolicyDecision.ALLOW,
+      priority: 1.05,
+      argsPattern:
+        /"file_path":"[^"]+\/\.phill\/tmp\/[a-f0-9]{64}\/plans\/[a-zA-Z0-9_-]+\.md"/,
+      source: 'Default (Plan File Write)',
+    });
+
+    rules.push({
+      decision: PolicyDecision.DENY,
+      priority: 1.02,
+      source: 'Default (Plan Deny)',
+    });
   }
 
   // MCP servers that are trusted in the settings.

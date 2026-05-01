@@ -8,7 +8,11 @@ import { debugLogger } from '../utils/debugLogger.js';
 
 export type ModelId = string;
 
-type TerminalUnavailabilityReason = 'quota' | 'capacity' | 'access_denied' | 'not_found';
+type TerminalUnavailabilityReason =
+  | 'quota'
+  | 'capacity'
+  | 'access_denied'
+  | 'not_found';
 export type TurnUnavailabilityReason = 'retry_once_per_turn';
 
 export type UnavailabilityReason =
@@ -16,13 +20,17 @@ export type UnavailabilityReason =
   | TurnUnavailabilityReason
   | 'unknown';
 
-export type ModelHealthStatus = 'healthy' | 'cool_off' | 'sticky_retry';
+export type ModelHealthStatus =
+  | 'healthy'
+  | 'cool_off'
+  | 'sticky_retry'
+  | 'terminal';
 
 type HealthState =
   | { status: 'healthy' }
-  | { 
-      status: 'cool_off'; 
-      reason: TerminalUnavailabilityReason; 
+  | {
+      status: 'cool_off';
+      reason: TerminalUnavailabilityReason;
       expiry: number; // Timestamp when model becomes healthy again
     }
   | {
@@ -49,14 +57,20 @@ export class ModelAvailabilityService {
   private readonly health = new Map<ModelId, HealthState>();
   private readonly DEFAULT_COOL_OFF_MS = 5 * 60 * 1000; // 5 minutes default recovery
 
-  markTerminal(model: ModelId, reason: TerminalUnavailabilityReason, coolOffMs?: number) {
+  markTerminal(
+    model: ModelId,
+    reason: TerminalUnavailabilityReason,
+    coolOffMs?: number,
+  ) {
     const expiry = Date.now() + (coolOffMs ?? this.DEFAULT_COOL_OFF_MS);
     this.setState(model, {
       status: 'cool_off',
       reason,
       expiry,
     });
-    debugLogger.debug(`[ModelAvailability] Sidelining ${model} for ${reason}. Recovers at ${new Date(expiry).toLocaleTimeString()}.`);
+    debugLogger.debug(
+      `[ModelAvailability] Sidelining ${model} for ${reason}. Recovers at ${new Date(expiry).toLocaleTimeString()}.`,
+    );
   }
 
   markHealthy(model: ModelId) {

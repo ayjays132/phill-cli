@@ -14,6 +14,9 @@ import {
 import {
   DEFAULT_THINKING_BUDGET,
   DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_MODEL_AUTO,
   PREVIEW_PHILL_FLASH_MODEL,
   isPreviewModel,
   ThinkingLevel,
@@ -53,7 +56,13 @@ export const CodebaseInvestigatorAgent = (
 ): LocalAgentDefinition<typeof CodebaseInvestigationReportSchema> => {
   // Use Preview Flash model if the main model is any of the preview models.
   // If the main model is not a preview model, use the default pro model.
-  const model = isPreviewModel(config.getModel())
+  const configuredModel = config.getModel();
+  const usesPreviewModel =
+    isPreviewModel(configuredModel) ||
+    configuredModel === PREVIEW_PHILL_MODEL_AUTO ||
+    configuredModel === PREVIEW_PHILL_3_1_MODEL_AUTO ||
+    configuredModel === PREVIEW_PHILL_3_PLUS_3_1_MODEL_AUTO;
+  const model = usesPreviewModel
     ? PREVIEW_PHILL_FLASH_MODEL
     : DEFAULT_PHILL_MODEL;
 
@@ -185,4 +194,3 @@ When you are finished, you **MUST** call the \`complete_task\` tool. The \`repor
     },
   };
 };
-

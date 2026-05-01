@@ -260,6 +260,7 @@ export interface PolicySettings {
     allowed?: string[];
   };
   tools?: {
+    autoAccept?: boolean;
     exclude?: string[];
     allowed?: string[];
   };

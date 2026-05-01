@@ -126,6 +126,7 @@ describe('getEnvironmentContext', () => {
     expect(context).toContain('Mock Environment Memory');
     expect(getFolderStructure).toHaveBeenCalledWith('/test/dir', {
       fileService: undefined,
+      maxItems: 60,
     });
   });
 

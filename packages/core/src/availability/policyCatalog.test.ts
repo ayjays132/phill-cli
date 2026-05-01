@@ -33,7 +33,6 @@ describe('policyCatalog', () => {
     expect(chain.map((policy) => policy.model)).toEqual([
       DEFAULT_PHILL_MODEL,
       DEFAULT_PHILL_FLASH_MODEL,
-      DEFAULT_PHILL_FLASH_LITE_MODEL,
     ]);
     expect(chain.at(-1)?.isLastResort).toBe(true);
   });
@@ -62,10 +61,9 @@ describe('policyCatalog', () => {
       autoMode: PREVIEW_PHILL_MODEL_AUTO,
     });
 
-    expect(chain.slice(0, 3).map((policy) => policy.model)).toEqual([
+    expect(chain.map((policy) => policy.model)).toEqual([
       PREVIEW_PHILL_MODEL,
       PREVIEW_PHILL_FLASH_MODEL,
-      PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
     ]);
     expect(chain).not.toContainEqual(
       expect.objectContaining({ model: 'gemini-3-pro-preview' }),
@@ -78,7 +76,6 @@ describe('policyCatalog', () => {
     expect(chain.map((policy) => policy.model)).toEqual([
       PREVIEW_PHILL_MODEL,
       PREVIEW_PHILL_FLASH_MODEL,
-      PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
     ]);
   });
 

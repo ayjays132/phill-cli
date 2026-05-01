@@ -19,9 +19,15 @@ import {
 } from '../availability/policyHelpers.js';
 import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
+  DEFAULT_PHILL_FLASH_MODEL,
   DEFAULT_PHILL_MODEL,
+  PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+  PREVIEW_PHILL_FLASH_MODEL,
+  PREVIEW_PHILL_MODEL,
   isAutoModel,
 } from '../config/models.js';
+import type { ModelPolicy } from '../availability/modelPolicy.js';
+import { createDefaultPolicy } from '../availability/policyCatalog.js';
 
 const UPGRADE_URL_PAGE = 'https://goo.gle/set-up-gemini-code-assist';
 
@@ -34,16 +40,28 @@ export async function handleFallback(
   if (
     authType !== AuthType.LOGIN_WITH_GOOGLE &&
     authType !== AuthType.USE_PHILL &&
-    authType !== AuthType.USE_VERTEX_AI
+    authType !== AuthType.USE_VERTEX_AI &&
+    authType !== AuthType.COMPUTE_ADC
   ) {
     return null;
   }
 
   const chain = resolvePolicyChain(config);
-  const { failedPolicy, candidates } = buildFallbackPolicyContext(
+  let { failedPolicy, candidates } = buildFallbackPolicyContext(
     chain,
     failedModel,
   );
+
+  if (!candidates.length) {
+    const wrappedChain = resolvePolicyChain(config, undefined, true);
+    const wrappedContext = buildFallbackPolicyContext(
+      wrappedChain,
+      failedModel,
+      true,
+    );
+    failedPolicy = wrappedContext.failedPolicy;
+    candidates = wrappedContext.candidates;
+  }
 
   const failureKind = classifyFailureKind(error);
   const availability = config.getModelAvailabilityService();
@@ -52,18 +70,26 @@ export async function handleFallback(
     return { service: availability, policy: failedPolicy };
   };
 
+  const recoveryCandidates = buildRecoveryCandidates(
+    config,
+    failedModel,
+    candidates,
+  );
+
   let fallbackModel: string;
-  if (!candidates.length) {
+  if (!recoveryCandidates.length) {
     fallbackModel = failedModel;
   } else {
     const selection = availability.selectFirstAvailable(
-      candidates.map((policy) => policy.model),
+      recoveryCandidates.map((policy) => policy.model),
     );
 
-    const lastResortPolicy = candidates.find((policy) => policy.isLastResort);
+    const lastResortPolicy = recoveryCandidates.find(
+      (policy) => policy.isLastResort,
+    );
     const selectedFallbackModel =
       selection.selectedModel ?? lastResortPolicy?.model;
-    const selectedPolicy = candidates.find(
+    const selectedPolicy = recoveryCandidates.find(
       (policy) => policy.model === selectedFallbackModel,
     );
 
@@ -138,6 +164,53 @@ export async function handleFallback(
     debugLogger.error('Fallback handler failed:', handlerError);
     return null;
   }
+}
+
+function buildRecoveryCandidates(
+  config: Config,
+  failedModel: string,
+  candidates: ModelPolicy[],
+): ModelPolicy[] {
+  const byModel = new Map<string, ModelPolicy>();
+  const addPolicy = (policy: ModelPolicy) => {
+    if (policy.model !== failedModel && !byModel.has(policy.model)) {
+      byModel.set(policy.model, policy);
+    }
+  };
+
+  candidates.forEach(addPolicy);
+
+  if (byModel.size === 0) {
+    const wrappedChain = resolvePolicyChain(config, undefined, true);
+    const wrappedContext = buildFallbackPolicyContext(
+      wrappedChain,
+      failedModel,
+      true,
+    );
+    wrappedContext.candidates.forEach(addPolicy);
+  }
+
+  if (byModel.size === 0) {
+    // Some model aliases or externally supplied model IDs are not present in the
+    // active policy chain. Keep a final known-good ladder so recovery never
+    // offers the exact route that just failed when another route exists.
+    [
+      PREVIEW_PHILL_MODEL,
+      PREVIEW_PHILL_FLASH_MODEL,
+      PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+      DEFAULT_PHILL_MODEL,
+      DEFAULT_PHILL_FLASH_MODEL,
+      DEFAULT_PHILL_FLASH_LITE_MODEL,
+    ].forEach((model) =>
+      addPolicy(
+        createDefaultPolicy(model, {
+          isLastResort: model === DEFAULT_PHILL_FLASH_LITE_MODEL,
+        }),
+      ),
+    );
+  }
+
+  return [...byModel.values()];
 }
 
 async function handleUpgrade() {

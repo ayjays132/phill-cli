@@ -228,9 +228,43 @@ describe('Ollama Internet Tools Integration', () => {
     );
     
     let finalOutput = '';
+    const toolResponses = [];
     for await (const event of response) {
       if (event.type === StreamEventType.CHUNK) {
-        finalOutput += event.value.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const parts = event.value.candidates?.[0]?.content?.parts ?? [];
+        finalOutput += parts.map((part) => part.text ?? '').join('');
+        for (const part of parts) {
+          if (part.functionCall) {
+            const tool = toolRegistry.getTool(part.functionCall.name);
+            const result = await tool
+              ?.build((part.functionCall.args ?? {}) as Record<string, unknown>)
+              .execute(new AbortController().signal);
+            toolResponses.push({
+              functionResponse: {
+                name: part.functionCall.name,
+                response: result,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    if (toolResponses.length > 0) {
+      chat.addHistory({ role: 'user', parts: toolResponses });
+      const finalResponse = await chat.sendMessageStream(
+        { model: 'llama3.1' },
+        [{ text: 'Use the tool result to answer.' }],
+        'test-prompt-final',
+        new AbortController().signal,
+      );
+
+      finalOutput = '';
+      for await (const event of finalResponse) {
+        if (event.type === StreamEventType.CHUNK) {
+          const parts = event.value.candidates?.[0]?.content?.parts ?? [];
+          finalOutput += parts.map((part) => part.text ?? '').join('');
+        }
       }
     }
 

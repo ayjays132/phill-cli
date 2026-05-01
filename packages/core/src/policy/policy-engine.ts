@@ -117,6 +117,13 @@ export class PolicyEngine {
     return this.approvalMode;
   }
 
+  getExcludedTools(): string[] {
+    return this.rules
+      .filter((rule) => rule.decision === PolicyDecision.DENY && rule.toolName)
+      .map((rule) => rule.toolName!)
+      .filter((toolName, index, all) => all.indexOf(toolName) === index);
+  }
+
   private shouldDowngradeForRedirection(
     command: string,
     allowRedirection?: boolean,

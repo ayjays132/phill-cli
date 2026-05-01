@@ -21,6 +21,7 @@ import { createAvailabilityServiceMock } from '../availability/testUtils.js';
 import { AuthType } from '../core/contentGenerator.js';
 import {
   DEFAULT_PHILL_FLASH_MODEL,
+  DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_MODEL,
   DEFAULT_PHILL_MODEL_AUTO,
   PREVIEW_PHILL_FLASH_MODEL,
@@ -58,7 +59,7 @@ vi.mock('../utils/debugLogger.js', () => ({
 const MOCK_PRO_MODEL = DEFAULT_PHILL_MODEL;
 const FALLBACK_MODEL = DEFAULT_PHILL_FLASH_MODEL;
 const AUTH_OAUTH = AuthType.LOGIN_WITH_GOOGLE;
-const AUTH_API_KEY = AuthType.USE_PHILL;
+const AUTH_UNSUPPORTED = AuthType.OPENAI;
 
 const createMockConfig = (overrides: Partial<Config> = {}): Config =>
   ({
@@ -133,7 +134,7 @@ describe('handleFallback', () => {
       const result = await handleFallback(
         policyConfig,
         MOCK_PRO_MODEL,
-        AUTH_API_KEY,
+        AUTH_UNSUPPORTED,
       );
       expect(result).toBeNull();
       expect(policyHandler).not.toHaveBeenCalled();
@@ -160,14 +161,17 @@ describe('handleFallback', () => {
       availability.selectFirstAvailable = vi
         .fn()
         .mockReturnValue({ selectedModel: null, skipped: [] });
-      policyHandler.mockResolvedValue('retry_once');
 
-      await handleFallback(policyConfig, MOCK_PRO_MODEL, AUTH_OAUTH);
-
-      expect(policyHandler).toHaveBeenCalledWith(
+      const result = await handleFallback(
+        policyConfig,
         MOCK_PRO_MODEL,
+        AUTH_OAUTH,
+      );
+
+      expect(result).toBe(true);
+      expect(policyHandler).not.toHaveBeenCalled();
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(
         DEFAULT_PHILL_FLASH_MODEL,
-        undefined,
       );
     });
 
@@ -208,8 +212,7 @@ describe('handleFallback', () => {
       }
     });
 
-    it('does not wrap around to upgrade candidates if the current model was selected at the end (e.g. by router)', async () => {
-      // Last-resort failure (Flash) in [Preview, Pro, Flash] checks Preview then Pro (all upstream).
+    it('wraps from the last-resort model when auto routing would otherwise dead-end', async () => {
       vi.mocked(policyConfig.getPreviewFeatures).mockReturnValue(true);
       vi.mocked(policyConfig.getModel).mockReturnValue(
         DEFAULT_PHILL_MODEL_AUTO,
@@ -223,12 +226,51 @@ describe('handleFallback', () => {
 
       await handleFallback(policyConfig, DEFAULT_PHILL_FLASH_MODEL, AUTH_OAUTH);
 
-      expect(availability.selectFirstAvailable).not.toHaveBeenCalled();
-      expect(policyHandler).toHaveBeenCalledWith(
-        DEFAULT_PHILL_FLASH_MODEL,
-        DEFAULT_PHILL_FLASH_MODEL,
-        undefined,
-      );
+      expect(availability.selectFirstAvailable).toHaveBeenCalledWith([
+        MOCK_PRO_MODEL,
+      ]);
+      expect(policyHandler).not.toHaveBeenCalled();
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(MOCK_PRO_MODEL);
+    });
+
+    it('does not offer the failed model as the next route when no policy chain matches', async () => {
+      const singleModelChain = [
+        createDefaultPolicy(DEFAULT_PHILL_FLASH_LITE_MODEL),
+      ];
+      const chainSpy = vi
+        .spyOn(policyHelpers, 'resolvePolicyChain')
+        .mockReturnValue(singleModelChain);
+
+      availability.selectFirstAvailable = vi.fn().mockReturnValue({
+        selectedModel: DEFAULT_PHILL_FLASH_MODEL,
+        skipped: [{ model: DEFAULT_PHILL_MODEL, reason: 'capacity' }],
+      });
+      policyHandler.mockResolvedValue('retry_once');
+
+      try {
+        const result = await handleFallback(
+          policyConfig,
+          DEFAULT_PHILL_FLASH_LITE_MODEL,
+          AUTH_OAUTH,
+          new Error('rate limit'),
+        );
+
+        expect(result).toBe(true);
+        expect(availability.selectFirstAvailable).toHaveBeenCalledWith([
+          PREVIEW_PHILL_MODEL,
+          PREVIEW_PHILL_FLASH_MODEL,
+          'gemini-3.1-flash-lite-preview',
+          DEFAULT_PHILL_MODEL,
+          DEFAULT_PHILL_FLASH_MODEL,
+        ]);
+        expect(policyHandler).toHaveBeenCalledWith(
+          DEFAULT_PHILL_FLASH_LITE_MODEL,
+          DEFAULT_PHILL_FLASH_MODEL,
+          expect.any(Error),
+        );
+      } finally {
+        chainSpy.mockRestore();
+      }
     });
 
     it('successfully follows expected availability response for Preview Chain', async () => {
@@ -255,7 +297,9 @@ describe('handleFallback', () => {
       expect(availability.selectFirstAvailable).toHaveBeenCalledWith([
         PREVIEW_PHILL_FLASH_MODEL,
         'gemini-3.1-flash-lite-preview',
+        'gemini-2.5-pro',
         'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
       ]);
     });
 
@@ -304,22 +348,21 @@ describe('handleFallback', () => {
         mockGoogleApiError,
         5,
       );
-      policyHandler.mockResolvedValue('retry_always');
       vi.mocked(policyConfig.getModel).mockReturnValue(
         DEFAULT_PHILL_MODEL_AUTO,
       );
 
-      await handleFallback(
+      const result = await handleFallback(
         policyConfig,
         MOCK_PRO_MODEL,
         AUTH_OAUTH,
         terminalError,
       );
 
-      expect(policyHandler).toHaveBeenCalledWith(
-        MOCK_PRO_MODEL,
+      expect(result).toBe(true);
+      expect(policyHandler).not.toHaveBeenCalled();
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(
         DEFAULT_PHILL_FLASH_MODEL,
-        terminalError,
       );
     });
 
@@ -334,30 +377,29 @@ describe('handleFallback', () => {
         mockGoogleApiError,
         1000,
       );
-      policyHandler.mockResolvedValue('retry_once');
       vi.mocked(policyConfig.getModel).mockReturnValue(
         DEFAULT_PHILL_MODEL_AUTO,
       );
 
-      await handleFallback(
+      const result = await handleFallback(
         policyConfig,
         MOCK_PRO_MODEL,
         AUTH_OAUTH,
         retryableError,
       );
 
-      expect(policyHandler).toHaveBeenCalledWith(
-        MOCK_PRO_MODEL,
+      expect(result).toBe(true);
+      expect(policyHandler).not.toHaveBeenCalled();
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(
         DEFAULT_PHILL_FLASH_MODEL,
-        retryableError,
       );
     });
 
-    it('Call the handler with fallback model same as the failed model when the failed model is the last-resort policy', async () => {
-      // Ensure short-circuit when wrapping to an unavailable upstream model.
-      availability.selectFirstAvailable = vi
-        .fn()
-        .mockReturnValue({ selectedModel: null, skipped: [] });
+    it('wraps the auto chain when the failed model is the last-resort policy', async () => {
+      availability.selectFirstAvailable = vi.fn().mockReturnValue({
+        selectedModel: DEFAULT_PHILL_MODEL,
+        skipped: [],
+      });
       vi.mocked(policyConfig.getModel).mockReturnValue(
         DEFAULT_PHILL_MODEL_AUTO,
       );
@@ -371,10 +413,12 @@ describe('handleFallback', () => {
       policyHandler.mockResolvedValue('retry_once');
 
       expect(result).not.toBeNull();
-      expect(policyHandler).toHaveBeenCalledWith(
-        DEFAULT_PHILL_FLASH_MODEL,
-        DEFAULT_PHILL_FLASH_MODEL,
-        undefined,
+      expect(availability.selectFirstAvailable).toHaveBeenCalledWith([
+        DEFAULT_PHILL_MODEL,
+      ]);
+      expect(policyHandler).not.toHaveBeenCalled();
+      expect(policyConfig.setActiveModel).toHaveBeenCalledWith(
+        DEFAULT_PHILL_MODEL,
       );
     });
 

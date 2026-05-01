@@ -38,8 +38,8 @@ export class ContextManager {
     this.markAsLoaded(result.files.map((f) => f.path));
     
     // Speculatively preload these files into the FS cache
-    const fsService = this.config.getFileSystemService();
-    if (fsService.preloadTextFile) {
+    const fsService = this.config.getFileSystemService?.();
+    if (fsService?.preloadTextFile) {
       result.files.forEach(f => fsService.preloadTextFile!(f.path));
     }
 
@@ -58,8 +58,8 @@ export class ContextManager {
     this.markAsLoaded(result.files.map((f) => f.path));
 
     // Speculatively preload these files into the FS cache
-    const fsService = this.config.getFileSystemService();
-    if (fsService.preloadTextFile) {
+    const fsService = this.config.getFileSystemService?.();
+    if (fsService?.preloadTextFile) {
       result.files.forEach(f => fsService.preloadTextFile!(f.path));
     }
 
@@ -96,8 +96,8 @@ export class ContextManager {
     this.markAsLoaded(result.files.map((f) => f.path));
 
     // Speculatively preload these files into the FS cache
-    const fsService = this.config.getFileSystemService();
-    if (fsService.preloadTextFile) {
+    const fsService = this.config.getFileSystemService?.();
+    if (fsService?.preloadTextFile) {
       result.files.forEach(f => fsService.preloadTextFile!(f.path));
     }
 

@@ -23,6 +23,8 @@ import {
   makeChatCompressionEvent,
   type PhillChat,
   PreCompressTrigger,
+  PREVIEW_PHILL_3_FLASH_MODEL_ID,
+  PREVIEW_PHILL_3_PRO_MODEL_ID,
   PREVIEW_PHILL_FLASH_MODEL,
   PREVIEW_PHILL_MODEL,
   saveTruncatedToolOutput,
@@ -105,8 +107,10 @@ export function findCompressSplitPoint(
 export function modelStringToModelConfigAlias(model: string): string {
   switch (model) {
     case PREVIEW_PHILL_MODEL:
+    case PREVIEW_PHILL_3_PRO_MODEL_ID:
       return 'chat-compression-pro-preview';
     case PREVIEW_PHILL_FLASH_MODEL:
+    case PREVIEW_PHILL_3_FLASH_MODEL_ID:
       return 'chat-compression-flash-preview';
     case DEFAULT_PHILL_MODEL:
       return 'chat-compression-pro';
@@ -433,4 +437,3 @@ export class ChatCompressionService {
     }
   }
 }
-

@@ -205,10 +205,10 @@ Phill is not built around a single hard-coded model path.
 
 Examples that exist in the default model configuration include:
 
-- `auto-gemini-3`
-- `auto-gemini-3.1`
-- `auto-gemini-3.1-stable`
-- `auto-gemini-2.5`
+- `auto-gemini-3` for the Gemini CLI-style preview auto ladder
+- `auto-gemini-3.1` for Phill's extended preview ladder
+- `auto-gemini-2.5` for the Gemini CLI-style stable auto ladder and default Google/Gemini auth selection
+- `auto-gemini-3.1-stable` as a legacy compatibility alias for older saved configs
 - `flash`
 - `web-search`
 - `web-fetch`
@@ -219,6 +219,8 @@ The runtime includes:
 - Alias-based model resolution
 - Silent retry and fallback transitions between related model families
 - Dedicated search/fetch model profiles
+- Cross-provider token usage capture when Gemini, OpenAI-compatible providers,
+  Anthropic, Hugging Face, or Ollama report counts
 - Provider-specific content generators for Ollama, OpenAI-compatible APIs,
   Anthropic, Hugging Face, and Gemini/Vertex-backed paths
 

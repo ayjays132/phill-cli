@@ -63,8 +63,6 @@ import {
   applyModelSelection,
   createAvailabilityContextProvider,
 } from '../availability/policyHelpers.js';
-import { executeToolWithHooks } from './coreToolHookTriggers.js';
-import { ToolErrorType } from '../tools/tool-error.js';
 import { coreEvents } from '../utils/events.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import { TTCEngine } from './ttcEngine.js';
@@ -358,8 +356,12 @@ export class PhillChat {
       .setBasePrompt(this.systemInstruction || '')
       .setConcepts(await conceptMapper.retrieveFoundationalConcepts(userMessageStr))
       .setWisdom(await ttcEngine.getGuidingContext(userMessageStr, this.config))
-      .setEthics(guard.getEthicalScaffolding())
-      .setVisualTrace(VisualLatentService.getInstance().getVisualTrace());
+      .setEthics(guard.getEthicalScaffolding());
+
+    const visualTrace = VisualLatentService.getInstance().getVisualTrace();
+    if (visualTrace && !visualTrace.includes('TRACE:EMPTY')) {
+      promptBuilder.setVisualTrace(visualTrace);
+    }
 
     const tempSystemInstruction = promptBuilder.build();
 
@@ -399,231 +401,135 @@ export class PhillChat {
       this: PhillChat,
       turnSystemInstruction: string,
     ): AsyncGenerator<StreamEvent, void, void> {
-      let agentTurn = 0;
-      const maxAgentTurns = 10;
-      let currentRequestContents = requestContents;
-
       try {
-        while (agentTurn < maxAgentTurns) {
-          agentTurn++;
-          let turnHasToolCall = false;
-          const turnModelParts: Part[] = [];
-          let lastError: unknown = new Error('Request failed after all retries.');
+        let lastError: unknown = new Error('Request failed after all retries.');
 
-          const maxAttempts = INVALID_CONTENT_RETRY_OPTIONS.maxAttempts;
+        const maxAttempts = INVALID_CONTENT_RETRY_OPTIONS.maxAttempts;
 
-          for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            let isConnectionPhase = true;
-            try {
-              if (attempt > 0) {
-                yield { type: StreamEventType.RETRY };
-              }
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          let isConnectionPhase = true;
+          try {
+            if (attempt > 0) {
+              yield { type: StreamEventType.RETRY };
+            }
 
-                const currentConfigKey =
-                  attempt > 0
-                    ? { ...normalizedModelConfigKey, isRetry: true }
-                    : normalizedModelConfigKey;
+            const currentConfigKey =
+              attempt > 0
+                ? { ...normalizedModelConfigKey, isRetry: true }
+                : normalizedModelConfigKey;
 
-              isConnectionPhase = true;
-              const stream = await this.makeApiCallAndProcessStream(
-                currentConfigKey,
-                currentRequestContents,
-                prompt_id,
-                signal,
-                turnSystemInstruction,
-              );
-              isConnectionPhase = false;
+            isConnectionPhase = true;
+            const stream = await this.makeApiCallAndProcessStream(
+              currentConfigKey,
+              requestContents,
+              prompt_id,
+              signal,
+              turnSystemInstruction,
+            );
+            isConnectionPhase = false;
 
-              for await (const chunk of stream) {
-                yield { type: StreamEventType.CHUNK, value: chunk };
-                const content = chunk.candidates?.[0]?.content;
-                if (content?.parts) {
-                  const filteredParts = content.parts.filter((p) => !p.thought);
-                  turnModelParts.push(...filteredParts);
-                  if (filteredParts.some((p) => p.functionCall)) {
-                    turnHasToolCall = true;
-                  }
-                }
-              }
+            for await (const chunk of stream) {
+              yield { type: StreamEventType.CHUNK, value: chunk };
+            }
 
-              lastError = null;
-              break;
-            } catch (error) {
-              if (error instanceof AgentExecutionStoppedError) {
+            lastError = null;
+            break;
+          } catch (error) {
+            if (error instanceof AgentExecutionStoppedError) {
+              yield {
+                type: StreamEventType.AGENT_EXECUTION_STOPPED,
+                reason: error.reason,
+              };
+              return;
+            }
+
+            if (error instanceof AgentExecutionBlockedError) {
+              yield {
+                type: StreamEventType.AGENT_EXECUTION_BLOCKED,
+                reason: error.reason,
+              };
+              if (error.syntheticResponse) {
                 yield {
-                  type: StreamEventType.AGENT_EXECUTION_STOPPED,
-                  reason: error.reason,
+                  type: StreamEventType.CHUNK,
+                  value: error.syntheticResponse,
                 };
-                return;
               }
+              return;
+            }
 
-              if (error instanceof AgentExecutionBlockedError) {
-                yield {
-                  type: StreamEventType.AGENT_EXECUTION_BLOCKED,
-                  reason: error.reason,
-                };
-                if (error.syntheticResponse) {
-                  yield {
-                    type: StreamEventType.CHUNK,
-                    value: error.syntheticResponse,
-                  };
-                }
-                return;
-              }
+            lastError = error;
 
-              lastError = error;
+            if (isConnectionPhase) {
+              const classifiedError = classifyGoogleError(error);
+              const status = getErrorStatus(classifiedError);
 
-              if (isConnectionPhase) {
-                const classifiedError = classifyGoogleError(error);
-                const status = getErrorStatus(classifiedError);
+              if (status === 404 || status === 403 || status === 429) {
+                const reason =
+                  status === 404
+                    ? 'not_found'
+                    : status === 403
+                      ? 'access_denied'
+                      : 'quota';
+                const failingModel = this.config.getActiveModel();
+                this.config
+                  .getModelAvailabilityService()
+                  .markTerminal(failingModel, reason);
 
-                if (status === 404 || status === 403 || status === 429) {
-                  const reason =
-                    status === 404
-                      ? 'not_found'
-                      : status === 403
-                        ? 'access_denied'
-                        : 'quota';
-                  const failingModel = this.config.getActiveModel();
-                  this.config
-                    .getModelAvailabilityService()
-                    .markTerminal(failingModel, reason);
-
-                  if (attempt < 10) {
-                    continue;
-                  }
-                }
-                throw classifiedError;
-              }
-              const isContentError = error instanceof InvalidStreamError;
-              const isRetryable = isRetryableError(
-                error,
-                this.config.getRetryFetchErrors(),
-              );
-
-              if (
-                (isContentError && isPhill2Model(model)) ||
-                (isRetryable && !signal.aborted)
-              ) {
-                if (attempt < maxAttempts - 1) {
-                  const delayMs = INVALID_CONTENT_RETRY_OPTIONS.initialDelayMs;
-                  const retryType = isContentError
-                    ? error.type
-                    : 'NETWORK_ERROR';
-
-                  logContentRetry(
-                    this.config,
-                    new ContentRetryEvent(attempt, retryType, delayMs, model),
-                  );
-                  coreEvents.emitRetryAttempt({
-                    attempt: attempt + 1,
-                    maxAttempts,
-                    delayMs: delayMs * (attempt + 1),
-                    error:
-                      error instanceof Error ? error.message : String(error),
-                    model,
-                  });
-                  await new Promise((res) =>
-                    setTimeout(res, delayMs * (attempt + 1)),
-                  );
+                if (attempt < 10) {
                   continue;
                 }
               }
-              break;
+              throw classifiedError;
             }
-          }
+            const isContentError = error instanceof InvalidStreamError;
+            const isRetryable = isRetryableError(
+              error,
+              this.config.getRetryFetchErrors(),
+            );
 
-          if (lastError) {
             if (
-              lastError instanceof InvalidStreamError &&
-              isPhill2Model(model)
+              (isContentError && isPhill2Model(model)) ||
+              (isRetryable && !signal.aborted)
             ) {
-              logContentRetryFailure(
-                this.config,
-                new ContentRetryFailureEvent(maxAttempts, lastError.type, model),
-              );
-            }
-            throw lastError;
-          }
+              if (attempt < maxAttempts - 1) {
+                const delayMs = INVALID_CONTENT_RETRY_OPTIONS.initialDelayMs;
+                const retryType = isContentError
+                  ? error.type
+                  : 'NETWORK_ERROR';
 
-          // Commit turn to history
-          if (turnModelParts.length > 0) {
-            this.history.push({ role: 'model', parts: turnModelParts });
-            const registry = this.config.getToolRegistry();
-
-            if (turnHasToolCall) {
-              const toolCalls = turnModelParts
-                .filter((p) => p.functionCall)
-                .map((p) => p.functionCall!);
-
-              const toolResults: Part[] = [];
-              for (const call of toolCalls) {
-                const toolName = call.name ?? 'unknown_tool';
-                const tool = registry.getTool(toolName);
-                if (!tool) {
-                  toolResults.push({
-                    functionResponse: {
-                      name: toolName,
-                      response: {
-                        llmContent: `Error: Tool "${toolName}" is not registered.`,
-                        returnDisplay: `Tool "${toolName}" is not registered.`,
-                        error: {
-                          type: ToolErrorType.TOOL_NOT_REGISTERED,
-                          message: `Tool "${toolName}" is not registered.`,
-                        },
-                      },
-                    },
-                  });
-                  continue;
-                }
-
-                let result: Record<string, unknown>;
-                try {
-                  const invocation = tool.build(
-                    (call.args ?? {}) as Record<string, unknown>,
-                  );
-                  const toolResult = await executeToolWithHooks(
-                    invocation,
-                    toolName,
-                    signal,
-                    tool,
-                    undefined,
-                    undefined,
-                    undefined,
-                    this.config,
-                  );
-                  result = { ...toolResult };
-                } catch (error) {
-                  const message =
-                    error instanceof Error ? error.message : String(error);
-                  result = {
-                    llmContent: `Error: Invalid parameters provided. Reason: ${message}`,
-                    returnDisplay: message,
-                    error: {
-                      type: ToolErrorType.INVALID_TOOL_PARAMS,
-                      message,
-                    },
-                  };
-                }
-                toolResults.push({
-                  functionResponse: {
-                    name: toolName,
-                    response: result,
-                  },
+                logContentRetry(
+                  this.config,
+                  new ContentRetryEvent(attempt, retryType, delayMs, model),
+                );
+                coreEvents.emitRetryAttempt({
+                  attempt: attempt + 1,
+                  maxAttempts,
+                  delayMs: delayMs * (attempt + 1),
+                  error:
+                    error instanceof Error ? error.message : String(error),
+                  model,
                 });
+                await new Promise((res) =>
+                  setTimeout(res, delayMs * (attempt + 1)),
+                );
+                continue;
               }
-
-              this.history.push({ role: 'user', parts: toolResults });
-              currentRequestContents = this.getHistory(true);
-              // Loop back for next model turn
-            } else {
-              // Final answer reached
-              break;
             }
-          } else {
-            // Empty response (should be handled by InvalidStreamError, but as fallback break)
             break;
           }
+        }
+
+        if (lastError) {
+          if (
+            lastError instanceof InvalidStreamError &&
+            isPhill2Model(model)
+          ) {
+            logContentRetryFailure(
+              this.config,
+              new ContentRetryFailureEvent(maxAttempts, lastError.type, model),
+            );
+          }
+          throw lastError;
         }
       } finally {
         streamDoneResolver!();
@@ -669,7 +575,7 @@ export class PhillChat {
         lastModelToUse,
         this.config.getPreviewFeatures(),
         false,
-        this.config.getHasAccessToPreviewModel(),
+        this.config.getHasAccessToPreviewModel?.() ?? true,
         this.config,
       );
 
@@ -680,7 +586,7 @@ export class PhillChat {
           this.config.getActiveModel(),
           this.config.getPreviewFeatures(),
           false,
-          this.config.getHasAccessToPreviewModel(),
+          this.config.getHasAccessToPreviewModel?.() ?? true,
           this.config,
         );
       }
@@ -773,8 +679,25 @@ export class PhillChat {
       lastConfig = config;
       lastContentsToUse = contentsToUse;
 
+      if (config.thinkingConfig) {
+        if (isPhill3Model(modelToUse)) {
+          config.thinkingConfig.thinkingBudget = undefined;
+        } else {
+          config.thinkingConfig.thinkingLevel = undefined;
+        }
+      }
+
       // Strip thinkingConfig if the model does not support it.
-      if (config.thinkingConfig && !supportsThinking(modelToUse)) {
+      const modelConfigService = this.config.modelConfigService;
+      const explicitModelDefinition =
+        typeof modelConfigService?.getModelDefinition === 'function'
+          ? modelConfigService.getModelDefinition(modelToUse)
+          : undefined;
+      if (
+        config.thinkingConfig &&
+        explicitModelDefinition &&
+        !supportsThinking(modelToUse, this.config)
+      ) {
         debugLogger.debug(
           `[PhillChat] Stripping thinkingConfig for model ${modelToUse} as it is not supported.`,
         );

@@ -519,6 +519,14 @@ export async function fileExists(filePath: string): Promise<boolean> {
 const MAX_TRUNCATED_LINE_WIDTH = 1000;
 const MAX_TRUNCATED_CHARS = 4000;
 
+function truncateWideLines(lines: string[]): string[] {
+  return lines.map((line) =>
+    line.length > MAX_TRUNCATED_LINE_WIDTH
+      ? `${line.substring(0, MAX_TRUNCATED_LINE_WIDTH)}... [WIDTH TRUNCATED]`
+      : line,
+  );
+}
+
 /**
  * Formats a truncated message for tool output, handling multi-line and single-line (elephant) cases.
  */
@@ -532,20 +540,15 @@ export function formatTruncatedToolOutput(
 
   if (totalPhysicalLines > truncateLines) {
     // Surgical DLR Truncation: Keep top context, summarize middle, keep bottom.
-    const TOP_KEEP = 10;
-    const BOTTOM_KEEP = truncateLines - TOP_KEEP;
+    const TOP_KEEP = Math.min(10, Math.ceil(truncateLines / 2));
+    const BOTTOM_KEEP = Math.max(0, truncateLines - TOP_KEEP);
     
     const topLines = physicalLines.slice(0, TOP_KEEP);
-    const bottomLines = physicalLines.slice(-BOTTOM_KEEP);
-    
-    const processLines = (lines: string[]) => lines.map(l => 
-      l.length > MAX_TRUNCATED_LINE_WIDTH 
-        ? l.substring(0, MAX_TRUNCATED_LINE_WIDTH) + '... [WIDTH TRUNCATED]' 
-        : l
-    );
+    const bottomLines =
+      BOTTOM_KEEP > 0 ? physicalLines.slice(-BOTTOM_KEEP) : [];
 
-    const formattedTop = processLines(topLines).join('\n');
-    const formattedBottom = processLines(bottomLines).join('\n');
+    const formattedTop = truncateWideLines(topLines).join('\n');
+    const formattedBottom = truncateWideLines(bottomLines).join('\n');
     const skippedCount = totalPhysicalLines - truncateLines;
 
     return `Output too large (${totalPhysicalLines} lines). For full output see: ${outputFile}
@@ -566,6 +569,16 @@ ${formattedBottom}
 ... [TRUNCATED] ...
 ...${end}`.trim();
     }
+
+    const widthTruncatedLines = truncateWideLines(physicalLines);
+    if (widthTruncatedLines.some((line, index) => line !== physicalLines[index])) {
+      return `Output too large (${contentStr.length.toLocaleString()} chars). For full output see: ${outputFile}
+
+--- [START OF OUTPUT] ---
+${widthTruncatedLines.join('\n')}
+--- [END OF OUTPUT] ---`.trim();
+    }
+
     return contentStr;
   }
 }

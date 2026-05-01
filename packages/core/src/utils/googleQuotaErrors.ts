@@ -201,6 +201,15 @@ function classifyValidationRequiredError(
  * @returns A classified error or the original `unknown` error.
  */
 export function classifyGoogleError(error: unknown): unknown {
+  if (
+    error instanceof TerminalQuotaError ||
+    error instanceof RetryableQuotaError ||
+    error instanceof ValidationRequiredError ||
+    error instanceof ModelNotFoundError
+  ) {
+    return error;
+  }
+
   const googleApiError = parseGoogleApiError(error);
   const status = googleApiError?.code ?? getErrorStatus(error);
 
@@ -301,10 +310,13 @@ export function classifyGoogleError(error: unknown): unknown {
       ];
       if (validDomains.includes(errorInfo.domain)) {
         const parsedDelay =
-          extractRetryDelaySeconds(googleApiError.message) ??
           (retryInfo?.retryDelay
             ? parseDurationInSeconds(retryInfo.retryDelay) ?? undefined
-            : undefined);
+            : undefined) ??
+          extractRetryDelaySeconds(
+            errorInfo.metadata?.['quotaResetDelay'] ??
+              googleApiError.message,
+          );
         if (errorInfo.reason === 'RATE_LIMIT_EXCEEDED') {
           return new RetryableQuotaError(
             `${googleApiError.message}`,

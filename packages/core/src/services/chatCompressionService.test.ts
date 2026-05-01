@@ -116,16 +116,16 @@ describe('modelStringToModelConfigAlias', () => {
 
   it('should handle valid names', () => {
     expect(modelStringToModelConfigAlias('gemini-3-pro-preview')).toBe(
-      'chat-compression-3-pro',
+      'chat-compression-pro-preview',
     );
     expect(modelStringToModelConfigAlias('gemini-2.5-pro')).toBe(
-      'chat-compression-2.5-pro',
+      'chat-compression-pro',
     );
     expect(modelStringToModelConfigAlias('gemini-2.5-flash')).toBe(
-      'chat-compression-2.5-flash',
+      'chat-compression-flash',
     );
     expect(modelStringToModelConfigAlias('gemini-2.5-flash-lite')).toBe(
-      'chat-compression-2.5-flash-lite',
+      'chat-compression-flash-lite',
     );
   });
 });
@@ -517,7 +517,7 @@ describe('ChatCompressionService', () => {
       const keptHistory = result.newHistory!.slice(2); // After summary and 'Got it'
       const truncatedPart = keptHistory[1].parts![0].functionResponse;
       expect(truncatedPart?.response?.['output']).toContain(
-        'Output too large.',
+        'Output too large',
       );
 
       // Verify a file was actually created
@@ -590,8 +590,10 @@ describe('ChatCompressionService', () => {
       const content = truncatedPart?.response?.['output'] as string;
 
       expect(content).toContain(
-        'Output too large. Showing the last 4,000 characters of the output.',
+        'Output too large',
       );
+      expect(content).toContain('For full output see:');
+      expect(content).toContain('[TRUNCATED]');
       // It's a single line, so NO [LINE WIDTH TRUNCATED]
     });
 
@@ -654,8 +656,10 @@ describe('ChatCompressionService', () => {
       const content = truncatedPart?.response?.['output'] as string;
 
       expect(content).toContain(
-        'Output too large. Showing the last 4,000 characters of the output.',
+        'Output too large',
       );
+      expect(content).toContain('For full output see:');
+      expect(content).toContain('[TRUNCATED]');
     });
 
     it('should fallback to original content and still update budget if truncation fails', async () => {
@@ -787,7 +791,7 @@ describe('ChatCompressionService', () => {
       );
       const preservedPart = preservedToolTurn!.parts![0].functionResponse;
       expect(preservedPart?.response?.['output']).toContain(
-        'Output too large.',
+        'Output too large',
       );
     });
 
@@ -834,7 +838,7 @@ describe('ChatCompressionService', () => {
         historySentToSummarizer[0].parts![0].functionResponse;
       // Should be truncated because original > 1M tokens
       expect(summarizerGrepResponse?.response?.['output']).toContain(
-        'Output too large.',
+        'Output too large',
       );
     });
   });

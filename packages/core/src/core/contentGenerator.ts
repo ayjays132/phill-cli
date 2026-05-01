@@ -56,7 +56,9 @@ export interface ContentGenerator {
 export enum AuthType {
   LOGIN_WITH_GOOGLE = 'oauth-personal',
   USE_PHILL = 'phill-api-key',
+  USE_GEMINI = 'phill-api-key',
   USE_VERTEX_AI = 'vertex-ai',
+  GATEWAY = 'gateway',
   LEGACY_CLOUD_SHELL = 'cloud-shell',
   COMPUTE_ADC = 'compute-default-credentials',
   OLLAMA = 'ollama',
@@ -120,7 +122,11 @@ export async function createContentGeneratorConfig(
   authType: AuthType | undefined,
 ): Promise<ContentGeneratorConfig> {
   const phillApiKey =
-    process.env['PHILL_API_KEY'] || (await loadApiKey()) || undefined;
+    process.env['PHILL_API_KEY'] ||
+    process.env['GEMINI_API_KEY'] ||
+    process.env['GOOGLE_API_KEY'] ||
+    (await loadApiKey()) ||
+    undefined;
   const googleApiKey = process.env['GOOGLE_API_KEY'] || undefined;
   const googleCloudProject =
     process.env['GOOGLE_CLOUD_PROJECT'] ||
@@ -169,11 +175,28 @@ export async function createContentGeneratorConfig(
     contentGeneratorConfig.ollama = {
       endpoint: ollamaEndpoint,
       model: ollamaModel,
-      num_ctx: config.ollama?.num_ctx ? Number(config.ollama.num_ctx) : (process.env['OLLAMA_NUM_CTX'] ? Number(process.env['OLLAMA_NUM_CTX']) : 8192),
-      num_gpu: config.ollama?.num_gpu ? Number(config.ollama.num_gpu) : (process.env['OLLAMA_NUM_GPU'] ? Number(process.env['OLLAMA_NUM_GPU']) : undefined),
-      low_vram: config.ollama?.low_vram ?? (process.env['OLLAMA_LOW_VRAM'] === 'true' || undefined),
-      concurrency_limit: config.ollama?.concurrency_limit ? Number(config.ollama.concurrency_limit) : (process.env['OLLAMA_CONCURRENCY_LIMIT'] ? Number(process.env['OLLAMA_CONCURRENCY_LIMIT']) : 1),
-      keep_alive: config.ollama?.keep_alive || process.env['OLLAMA_KEEP_ALIVE'] || undefined,
+      num_ctx: config.ollama?.num_ctx
+        ? Number(config.ollama.num_ctx)
+        : process.env['OLLAMA_NUM_CTX']
+          ? Number(process.env['OLLAMA_NUM_CTX'])
+          : 8192,
+      num_gpu: config.ollama?.num_gpu
+        ? Number(config.ollama.num_gpu)
+        : process.env['OLLAMA_NUM_GPU']
+          ? Number(process.env['OLLAMA_NUM_GPU'])
+          : undefined,
+      low_vram:
+        config.ollama?.low_vram ??
+        (process.env['OLLAMA_LOW_VRAM'] === 'true' || undefined),
+      concurrency_limit: config.ollama?.concurrency_limit
+        ? Number(config.ollama.concurrency_limit)
+        : process.env['OLLAMA_CONCURRENCY_LIMIT']
+          ? Number(process.env['OLLAMA_CONCURRENCY_LIMIT'])
+          : 1,
+      keep_alive:
+        config.ollama?.keep_alive ||
+        process.env['OLLAMA_KEEP_ALIVE'] ||
+        undefined,
     };
 
     return contentGeneratorConfig;
@@ -226,10 +249,7 @@ export async function createContentGeneratorConfig(
         config.openAI?.endpoint ||
         process.env['OPENAI_ENDPOINT'] ||
         'https://api.openai.com/v1',
-      apiKey:
-        authType === AuthType.OPENAI_BROWSER
-          ? openAiToken
-          : openAiApiKey,
+      apiKey: authType === AuthType.OPENAI_BROWSER ? openAiToken : openAiApiKey,
       model: config.openAI?.model || process.env['OPENAI_MODEL'] || 'gpt-5.4',
     };
     return contentGeneratorConfig;

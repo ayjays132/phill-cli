@@ -1548,9 +1548,9 @@ describe('startInteractiveUI', () => {
 
     // Verify all startup tasks were called
     expect(getVersion).toHaveBeenCalledTimes(1);
-    expect(registerCleanup).toHaveBeenCalledTimes(3);
+    expect(registerCleanup).toHaveBeenCalledTimes(5);
 
-    // Verify cleanup handler is registered with unmount function
+    // Verify cleanup handlers are registered for startup-owned resources.
     const cleanupFn = vi.mocked(registerCleanup).mock.calls[0][0];
     expect(typeof cleanupFn).toBe('function');
 
@@ -1629,4 +1629,3 @@ describe('startInteractiveUI', () => {
     writeSpy.mockRestore();
   });
 });
-

@@ -18,6 +18,7 @@ vi.mock('./settings.js', () => ({
 describe('validateAuthMethod', () => {
   beforeEach(() => {
     vi.stubEnv('PHILL_API_KEY', undefined);
+    vi.stubEnv('GEMINI_API_KEY', undefined);
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', undefined);
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', undefined);
     vi.stubEnv('GOOGLE_API_KEY', undefined);
@@ -47,12 +48,24 @@ describe('validateAuthMethod', () => {
       expected: null,
     },
     {
+      description: 'should return null for USE_PHILL if GEMINI_API_KEY is set',
+      authType: AuthType.USE_PHILL,
+      envs: { GEMINI_API_KEY: 'test-key' },
+      expected: null,
+    },
+    {
+      description: 'should return null for USE_PHILL if GOOGLE_API_KEY is set',
+      authType: AuthType.USE_PHILL,
+      envs: { GOOGLE_API_KEY: 'test-key' },
+      expected: null,
+    },
+    {
       description:
-        'should return an error message for USE_PHILL if PHILL_API_KEY is not set',
+        'should return an error message for USE_PHILL if no API key is set',
       authType: AuthType.USE_PHILL,
       envs: {},
       expected:
-        'When using Phill API, you must specify the PHILL_API_KEY environment variable.\n' +
+        'When using Phill API, you must specify one of: PHILL_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY.\n' +
         'Update your environment and try again (no reload needed if using .env)!',
     },
     {
@@ -97,4 +110,3 @@ describe('validateAuthMethod', () => {
     expect(validateAuthMethod(authType)).toBe(expected);
   });
 });
-

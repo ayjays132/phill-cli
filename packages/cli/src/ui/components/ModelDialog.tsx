@@ -13,9 +13,8 @@ import { readdir } from 'node:fs/promises';
 import {
   AuthType,
   PREVIEW_PHILL_MODEL,
+  PREVIEW_PHILL_MODEL_AUTO,
   PREVIEW_PHILL_FLASH_MODEL,
-  PREVIEW_PHILL_3_1_MODEL_ID,
-  PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
   PREVIEW_PHILL_3_1_MODEL_AUTO,
   DEFAULT_PHILL_MODEL,
   DEFAULT_PHILL_FLASH_MODEL,
@@ -43,6 +42,8 @@ interface ProviderOption {
   key: string;
   description?: string;
 }
+
+const LEGACY_GEMINI_STABLE_AUTO = 'auto-gemini-3.1-stable';
 
 function getProviderRecommendedModels(authType: AuthType | undefined): string[] {
   switch (authType) {
@@ -466,6 +467,16 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     };
   }, [authType, config, isGeminiAuth, preferredModel]);
 
+  const normalizedPreferredModel = useMemo(() => {
+    if (preferredModel === PREVIEW_PHILL_3_1_MODEL_AUTO) {
+      return PREVIEW_PHILL_MODEL_AUTO;
+    }
+    if (preferredModel === LEGACY_GEMINI_STABLE_AUTO) {
+      return DEFAULT_PHILL_MODEL_AUTO;
+    }
+    return preferredModel;
+  }, [preferredModel]);
+
   const manualModelSelected = useMemo(() => {
     const manualModels = [
       DEFAULT_PHILL_MODEL,
@@ -473,14 +484,12 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       DEFAULT_PHILL_FLASH_LITE_MODEL,
       PREVIEW_PHILL_MODEL,
       PREVIEW_PHILL_FLASH_MODEL,
-      PREVIEW_PHILL_3_1_MODEL_ID,
-      PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
     ];
-    if (manualModels.includes(preferredModel)) {
-      return preferredModel;
+    if (manualModels.includes(normalizedPreferredModel)) {
+      return normalizedPreferredModel;
     }
     return '';
-  }, [preferredModel]);
+  }, [normalizedPreferredModel]);
 
   useKeypress(
     (key) => {
@@ -516,18 +525,22 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
     }
 
     const list = [
-      {
-        value: PREVIEW_PHILL_3_1_MODEL_AUTO,
-        title: getDisplayString(PREVIEW_PHILL_3_1_MODEL_AUTO),
-        description:
-          'Adaptive auto mode (preview tier): cycles across gemini-3.1-pro-preview, gemini-3-flash-preview, and gemini-3.1-flash-lite-preview with family-preserving fallback under transient limits.',
-        key: PREVIEW_PHILL_3_1_MODEL_AUTO,
-      },
+      ...(shouldShowPreviewModels
+        ? [
+            {
+              value: PREVIEW_PHILL_MODEL_AUTO,
+              title: getDisplayString(PREVIEW_PHILL_MODEL_AUTO),
+              description:
+                'Let Gemini decide the best model for the task: gemini-3.1-pro-preview, gemini-3-flash-preview.',
+              key: PREVIEW_PHILL_MODEL_AUTO,
+            },
+          ]
+        : []),
       {
         value: DEFAULT_PHILL_MODEL_AUTO,
         title: getDisplayString(DEFAULT_PHILL_MODEL_AUTO),
         description:
-          'Adaptive auto mode (stable tier): cycles across gemini-2.5-pro and gemini-2.5-flash with fast stable-family fallback under rate pressure.',
+          'Let Gemini decide the best model for the task: gemini-2.5-pro, gemini-2.5-flash.',
         key: DEFAULT_PHILL_MODEL_AUTO,
       },
       {
@@ -535,7 +548,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         title: manualModelSelected
           ? `Manual (${manualModelSelected})`
           : 'Manual',
-        description: 'Manually select a model',
+        description: 'Manually select a Gemini model',
         key: 'Manual',
       },
     ];
@@ -543,8 +556,8 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
   }, [
     isGeminiAuth,
     manualModelSelected,
-    preferredModel,
     providerOptions,
+    shouldShowPreviewModels,
   ]);
 
   const manualOptions = useMemo(() => {
@@ -560,10 +573,6 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       ? [
           PREVIEW_PHILL_MODEL,
           PREVIEW_PHILL_FLASH_MODEL,
-          PREVIEW_PHILL_3_1_MODEL_ID,
-          PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
-          'gemini-3-pro',
-          'gemini-3-flash',
         ]
       : [];
 
@@ -581,7 +590,9 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
 
   // Calculate the initial index based on the preferred model.
   const initialIndex = useMemo(() => {
-    const idx = options.findIndex((option) => option.value === preferredModel);
+    const idx = options.findIndex(
+      (option) => option.value === normalizedPreferredModel,
+    );
     if (idx !== -1) {
       return idx;
     }
@@ -590,7 +601,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       return manualIdx !== -1 ? manualIdx : 0;
     }
     return 0;
-  }, [preferredModel, options, view]);
+  }, [normalizedPreferredModel, options, view]);
 
   // Handle selection internally (Autonomous Dialog).
   const handleSelect = useCallback(

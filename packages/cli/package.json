@@ -1,6 +1,6 @@
 {
   "name": "phill-cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Phillbook Metropolis Command Line Interface",
   "license": "Apache-2.0",
   "repository": {
@@ -27,7 +27,7 @@
     "dist"
   ],
   "config": {
-    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/phill-cli/sandbox:1.2.0"
+    "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/phill-cli/sandbox:1.2.1"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.12.0",
@@ -54,7 +54,7 @@
     "lowlight": "^3.3.0",
     "mnemonist": "^0.40.3",
     "open": "^10.1.2",
-    "phill-cli-core": "1.2.0",
+    "phill-cli-core": "1.2.1",
     "prompts": "^2.4.2",
     "react": "^19.2.0",
     "read-package-up": "^11.0.0",
@@ -64,6 +64,7 @@
     "strip-ansi": "^7.1.0",
     "strip-json-comments": "^3.1.1",
     "tar": "^7.5.2",
+    "terminal-image": "^4.3.0",
     "tinygradient": "^1.1.5",
     "undici": "^7.10.0",
     "wrap-ansi": "9.0.2",

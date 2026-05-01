@@ -13,6 +13,7 @@ export default defineConfig({
     hookTimeout: 30000,
     silent: true,
     setupFiles: ['./test-setup.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/build_out/**'],
     outputFile: {
       junit: 'junit.xml',
     },

@@ -119,6 +119,8 @@ export function setPhillMdFilename(newFilename: string | string[]): void {
   }
 }
 
+export const setGeminiMdFilename = setPhillMdFilename;
+
 export function getCurrentPhillMdFilename(): string {
   if (Array.isArray(currentPhillMdFilename)) {
     return currentPhillMdFilename[0];

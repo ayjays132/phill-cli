@@ -33,7 +33,6 @@ export class VectorService {
   private documents: VectorDocument[] = [];
   private initialized = false;
   private initializing: Promise<void> | null = null;
-  private saveTimeout: NodeJS.Timeout | null = null;
   private isSaving = false;
   private pendingSave: Promise<void> | null = null;
   private activeEmbeddingModel: string = PREVIEW_PHILL_EMBEDDING_MODEL;
@@ -41,7 +40,10 @@ export class VectorService {
   private constructor(private contentGenerator: ContentGenerator) {}
 
   public static getInstance(contentGenerator: ContentGenerator): VectorService {
-    if (!VectorService.instance) {
+    if (
+      !VectorService.instance ||
+      VectorService.instance.contentGenerator !== contentGenerator
+    ) {
       VectorService.instance = new VectorService(contentGenerator);
     }
     return VectorService.instance;
@@ -71,20 +73,6 @@ export class VectorService {
     })();
 
     return this.initializing;
-  }
-
-  /**
-   * Schedules a background save. Debounced by 500ms to batch multiple additions.
-   */
-  private scheduleSave() {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-
-    this.saveTimeout = setTimeout(() => {
-      this.saveTimeout = null;
-      this.performSave();
-    }, 500);
   }
 
   private async performSave() {
@@ -159,7 +147,7 @@ export class VectorService {
     };
 
     this.documents.push(doc);
-    this.scheduleSave();
+    await this.performSave();
 
     return id;
   }
@@ -215,4 +203,3 @@ export class VectorService {
       await this.save();
   }
 }
-

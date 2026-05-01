@@ -127,6 +127,7 @@ describe('ModelRouterService', () => {
         'Strategy reasoning',
         false,
         undefined,
+        undefined,
         false,
         undefined,
       );
@@ -153,6 +154,7 @@ describe('ModelRouterService', () => {
         'An exception occurred during routing.',
         true,
         'Strategy failed',
+        undefined,
         false,
         undefined,
       );

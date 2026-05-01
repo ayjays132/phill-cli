@@ -13,22 +13,52 @@ const DEFAULT_API_KEY_ENTRY = 'default-api-key';
 
 const storage = new HybridTokenStorage(KEYCHAIN_SERVICE_NAME);
 
+let apiKeyCache: Promise<string | null> | undefined;
+let apiKeyCacheExpiresAt = 0;
+const API_KEY_CACHE_TTL_MS = 30000;
+
+/**
+ * Resets the API key cache. Used exclusively for test isolation.
+ * @internal
+ */
+export function resetApiKeyCacheForTesting() {
+  apiKeyCache = undefined;
+  apiKeyCacheExpiresAt = 0;
+}
+
 /**
  * Load cached API key
  */
 export async function loadApiKey(): Promise<string | null> {
+  const now = Date.now();
+  if (!apiKeyCache || now >= apiKeyCacheExpiresAt) {
+    apiKeyCache = (async () => {
+      try {
+        const credentials = await storage.getCredentials(DEFAULT_API_KEY_ENTRY);
+
+        if (credentials?.token?.accessToken) {
+          return credentials.token.accessToken;
+        }
+
+        return null;
+      } catch (error: unknown) {
+        // Log other errors but don't crash, just return null so user can re-enter key
+        debugLogger.error('Failed to load API key from storage:', error);
+        return null;
+      }
+    })();
+    apiKeyCacheExpiresAt = now + API_KEY_CACHE_TTL_MS;
+  }
+
+  return apiKeyCache;
+}
+
+async function deleteStoredApiKey(): Promise<void> {
   try {
-    const credentials = await storage.getCredentials(DEFAULT_API_KEY_ENTRY);
-
-    if (credentials?.token?.accessToken) {
-      return credentials.token.accessToken;
-    }
-
-    return null;
+    await storage.deleteCredentials(DEFAULT_API_KEY_ENTRY);
   } catch (error: unknown) {
-    // Log other errors but don't crash, just return null so user can re-enter key
-    debugLogger.error('Failed to load API key from storage:', error);
-    return null;
+    // Ignore errors when deleting, as it might not exist
+    debugLogger.warn('Failed to delete API key from storage:', error);
   }
 }
 
@@ -38,13 +68,9 @@ export async function loadApiKey(): Promise<string | null> {
 export async function saveApiKey(
   apiKey: string | null | undefined,
 ): Promise<void> {
+  resetApiKeyCacheForTesting();
   if (!apiKey || apiKey.trim() === '') {
-    try {
-      await storage.deleteCredentials(DEFAULT_API_KEY_ENTRY);
-    } catch (error: unknown) {
-      // Ignore errors when deleting, as it might not exist
-      debugLogger.warn('Failed to delete API key from storage:', error);
-    }
+    await deleteStoredApiKey();
     return;
   }
 
@@ -65,6 +91,7 @@ export async function saveApiKey(
  * Clear cached API key
  */
 export async function clearApiKey(): Promise<void> {
+  resetApiKeyCacheForTesting();
   try {
     await storage.deleteCredentials(DEFAULT_API_KEY_ENTRY);
   } catch (error: unknown) {

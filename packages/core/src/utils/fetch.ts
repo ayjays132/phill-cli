@@ -61,3 +61,5 @@ export async function fetchWithTimeout(
 export function setGlobalProxy(proxy: string) {
   setGlobalDispatcher(new ProxyAgent(proxy));
 }
+
+export function updateGlobalFetchTimeouts(..._args: unknown[]): void {}

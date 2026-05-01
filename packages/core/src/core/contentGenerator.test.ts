@@ -352,6 +352,9 @@ describe('createContentGeneratorConfig', () => {
     // Reset modules to re-evaluate imports and environment variables
     vi.resetModules();
     vi.clearAllMocks();
+    vi.stubEnv('PHILL_API_KEY', '');
+    vi.stubEnv('GEMINI_API_KEY', '');
+    vi.stubEnv('GOOGLE_API_KEY', '');
   });
 
   afterEach(() => {
@@ -365,6 +368,29 @@ describe('createContentGeneratorConfig', () => {
       AuthType.USE_PHILL,
     );
     expect(config.apiKey).toBe('env-phill-key');
+    expect(config.vertexai).toBe(false);
+  });
+
+  it('should configure for Phill using GEMINI_API_KEY when PHILL_API_KEY is not set', async () => {
+    vi.stubEnv('PHILL_API_KEY', '');
+    vi.stubEnv('GEMINI_API_KEY', 'env-gemini-key');
+    const config = await createContentGeneratorConfig(
+      mockConfig,
+      AuthType.USE_PHILL,
+    );
+    expect(config.apiKey).toBe('env-gemini-key');
+    expect(config.vertexai).toBe(false);
+  });
+
+  it('should configure for Phill using GOOGLE_API_KEY when Phill and Gemini keys are not set', async () => {
+    vi.stubEnv('PHILL_API_KEY', '');
+    vi.stubEnv('GEMINI_API_KEY', '');
+    vi.stubEnv('GOOGLE_API_KEY', 'env-google-key');
+    const config = await createContentGeneratorConfig(
+      mockConfig,
+      AuthType.USE_PHILL,
+    );
+    expect(config.apiKey).toBe('env-google-key');
     expect(config.vertexai).toBe(false);
   });
 

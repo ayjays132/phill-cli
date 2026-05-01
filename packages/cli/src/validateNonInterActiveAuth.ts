@@ -24,7 +24,11 @@ function getAuthTypeFromEnv(): AuthType | undefined {
   if (process.env['GOOGLE_GENAI_USE_VERTEXAI'] === 'true') {
     return AuthType.USE_VERTEX_AI;
   }
-  if (process.env['PHILL_API_KEY']) {
+  if (
+    process.env['PHILL_API_KEY'] ||
+    process.env['GEMINI_API_KEY'] ||
+    process.env['GOOGLE_API_KEY']
+  ) {
     return AuthType.USE_PHILL;
   }
   return undefined;
@@ -48,7 +52,7 @@ export async function validateNonInteractiveAuth(
     }
 
     if (!effectiveAuthType) {
-      const message = `Please set an Auth method in your ${USER_SETTINGS_PATH} or specify one of the following environment variables before running: PHILL_API_KEY, GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_GENAI_USE_GCA`;
+      const message = `Please set an Auth method in your ${USER_SETTINGS_PATH} or specify one of the following environment variables before running: PHILL_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY, GOOGLE_GENAI_USE_VERTEXAI, GOOGLE_GENAI_USE_GCA`;
       throw new Error(message);
     }
 
@@ -76,4 +80,3 @@ export async function validateNonInteractiveAuth(
     }
   }
 }
-

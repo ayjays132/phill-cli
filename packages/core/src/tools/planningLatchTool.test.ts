@@ -81,7 +81,7 @@ describe('ContextualPlanningLatchTool', () => {
       expect(content).toContain(
         '[LATCH] [GLOBAL] Goal: Test Goal | Plan: Test Plan',
       );
-      expect(result.returnDisplay).toContain('Persisted global planning latch');
+      expect(result.returnDisplay).toContain('PLAN LATCHED');
     });
 
     it('should append a latch to an existing memory file', async () => {

@@ -109,6 +109,87 @@ describe('OllamaContentGenerator', () => {
     expect(messages[2].content).toContain('README.md');
   });
 
+  it('should map Ollama token counts into usage metadata', async () => {
+    const mockResponse = {
+      ok: true,
+      text: () => Promise.resolve(''),
+      json: () => Promise.resolve({
+        prompt_eval_count: 12,
+        eval_count: 34,
+        message: {
+          role: 'assistant',
+          content: 'Token counts are available.',
+        },
+      }),
+    };
+    (fetch as any).mockResolvedValue(mockResponse);
+
+    const request: GenerateContentParameters = {
+      model: 'gpt-oss-20b',
+      contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+    };
+
+    const response = await generator.generateContent(request, 'prompt-id');
+
+    expect(response.usageMetadata).toEqual({
+      promptTokenCount: 12,
+      candidatesTokenCount: 34,
+      totalTokenCount: 46,
+    });
+  });
+
+  it('should surface usage metadata on the final streamed chunk', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode(
+            `${JSON.stringify({
+              message: { role: 'assistant', content: 'Partial answer' },
+              done: false,
+            })}\n`,
+          ),
+        );
+        controller.enqueue(
+          encoder.encode(
+            `${JSON.stringify({
+              prompt_eval_count: 5,
+              eval_count: 7,
+              message: { role: 'assistant', content: '' },
+              done: true,
+            })}\n`,
+          ),
+        );
+        controller.close();
+      },
+    });
+
+    const mockResponse = {
+      ok: true,
+      text: () => Promise.resolve(''),
+      body: stream,
+    };
+    (fetch as any).mockResolvedValue(mockResponse);
+
+    const request: GenerateContentParameters = {
+      model: 'gpt-oss-20b',
+      contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
+    };
+
+    const chunks: any[] = [];
+    const response = await generator.generateContentStream(request, 'prompt-id');
+    for await (const chunk of response) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks[1]?.usageMetadata).toEqual({
+      promptTokenCount: 5,
+      candidatesTokenCount: 7,
+      totalTokenCount: 12,
+    });
+  });
+
   it('should timeout after 60 seconds', async () => {
     // Mock fetch to hang
     (fetch as any).mockImplementation(() => new Promise(() => {}));

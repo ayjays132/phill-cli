@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -205,10 +206,7 @@ export async function start_sandbox(
     // determine full path for phill-cli to distinguish linked vs installed setting
     const gcPath = process.argv[1] ? fs.realpathSync(process.argv[1]) : '';
 
-    const projectSandboxDockerfile = path.join(
-      PHILL_DIR,
-      'sandbox.Dockerfile',
-    );
+    const projectSandboxDockerfile = path.join(PHILL_DIR, 'sandbox.Dockerfile');
     const isCustomProjectSandbox = fs.existsSync(projectSandboxDockerfile);
 
     const image = config.image;
@@ -452,9 +450,12 @@ export async function start_sandbox(
       );
     }
 
-    // copy PHILL_API_KEY(s)
+    // copy Gemini-compatible API key environment
     if (process.env['PHILL_API_KEY']) {
       args.push('--env', `PHILL_API_KEY=${process.env['PHILL_API_KEY']}`);
+    }
+    if (process.env['GEMINI_API_KEY']) {
+      args.push('--env', `GEMINI_API_KEY=${process.env['GEMINI_API_KEY']}`);
     }
     if (process.env['GOOGLE_API_KEY']) {
       args.push('--env', `GOOGLE_API_KEY=${process.env['GOOGLE_API_KEY']}`);

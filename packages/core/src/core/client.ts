@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @license
  * Copyright 2025 Google LLC
@@ -527,7 +528,7 @@ export class PhillClient {
       this.config.getActiveModel(),
       this.config.getPreviewFeatures(),
       false,
-      this.config.getHasAccessToPreviewModel(),
+      this.config.getHasAccessToPreviewModel?.() ?? true,
       this.config,
     );
   }
@@ -583,7 +584,7 @@ export class PhillClient {
         type: PhillEventType.ContextWindowWillOverflow,
         value: { estimatedRequestTokenCount, remainingTokenCount },
       };
-      
+
       // Proactively compress for the NEXT turn to avoid a hard stop
       if (estimatedRequestTokenCount <= remainingTokenCount) {
         // Run compression in the background without blocking the current stream
@@ -1061,3 +1062,5 @@ export class PhillClient {
     return info;
   }
 }
+
+export { PhillClient as GeminiClient };

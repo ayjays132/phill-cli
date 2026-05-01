@@ -469,7 +469,13 @@ describe('oauth2', () => {
       it('should use Compute to get a client if no cached credentials exist', async () => {
         await getOauthClient(AuthType.COMPUTE_ADC, mockConfig);
 
-        expect(Compute).toHaveBeenCalledWith({});
+        expect(Compute).toHaveBeenCalledWith({
+          scopes: [
+            'https://www.googleapis.com/auth/cloud-platform',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+          ],
+        });
         expect(mockGetAccessToken).toHaveBeenCalled();
       });
 

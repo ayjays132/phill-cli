@@ -34,8 +34,8 @@ export class McpClientManager {
   private serverHashes: Map<string, string> = new Map();
   private discoveryPromises: Map<string, Promise<void>> = new Map();
   private readonly clientVersion: string;
-  private readonly toolRegistry: ToolRegistry;
-  private readonly cliConfig: Config;
+  private toolRegistry: ToolRegistry;
+  private cliConfig: Config;
   // If we have ongoing MCP client discovery, this completes once that is done.
   private discoveryPromise: Promise<void> | undefined;
   private discoveryState: MCPDiscoveryState = MCPDiscoveryState.NOT_STARTED;
@@ -48,18 +48,30 @@ export class McpClientManager {
 
   constructor(
     clientVersion: string,
-    toolRegistry: ToolRegistry,
-    cliConfig: Config,
+    toolRegistry: ToolRegistry | Config,
+    cliConfig: Config | EventEmitter,
     eventEmitter?: EventEmitter,
   ) {
     this.clientVersion = clientVersion;
-    this.toolRegistry = toolRegistry;
-    this.cliConfig = cliConfig;
-    this.eventEmitter = eventEmitter;
+    if ('isTrustedFolder' in toolRegistry) {
+      this.cliConfig = toolRegistry;
+      this.toolRegistry = undefined as unknown as ToolRegistry;
+      this.eventEmitter = cliConfig as EventEmitter;
+    } else {
+      this.toolRegistry = toolRegistry;
+      this.cliConfig = cliConfig as Config;
+      this.eventEmitter = eventEmitter;
+    }
   }
 
   getBlockedMcpServers() {
     return this.blockedMcpServers;
+  }
+
+  setMainRegistries(registries: { toolRegistry?: ToolRegistry }): void {
+    if (registries.toolRegistry) {
+      this.toolRegistry = registries.toolRegistry;
+    }
   }
 
   getClient(serverName: string): McpClient | undefined {
@@ -310,6 +322,17 @@ export class McpClientManager {
       Array.from(this.allServerConfigs.entries()).map(
         async ([name, config]) => {
           try {
+            const existingClient = this.clients.get(name);
+            if (existingClient) {
+              try {
+                await existingClient.disconnect();
+              } catch (disconnectError) {
+                debugLogger.error(
+                  `Error disconnecting client '${name}' during restart: ${getErrorMessage(disconnectError)}`,
+                );
+              }
+              this.clients.delete(name);
+            }
             await this.maybeDiscoverMcpServer(name, config);
           } catch (error) {
             debugLogger.error(
@@ -329,6 +352,17 @@ export class McpClientManager {
     const config = this.allServerConfigs.get(name);
     if (!config) {
       throw new Error(`No MCP server registered with the name "${name}"`);
+    }
+    const existingClient = this.clients.get(name);
+    if (existingClient) {
+      try {
+        await existingClient.disconnect();
+      } catch (disconnectError) {
+        debugLogger.error(
+          `Error disconnecting client '${name}' during restart: ${getErrorMessage(disconnectError)}`,
+        );
+      }
+      this.clients.delete(name);
     }
     await this.maybeDiscoverMcpServer(name, config);
     await this.cliConfig.refreshMcpContext();

@@ -26,8 +26,8 @@ import {
 } from '../utils/messageInspectors.js';
 import { debugLogger } from '../utils/debugLogger.js';
 
-const TOOL_CALL_LOOP_THRESHOLD = 4;
-const CONTENT_LOOP_THRESHOLD = 8;
+const TOOL_CALL_LOOP_THRESHOLD = 5;
+const CONTENT_LOOP_THRESHOLD = 10;
 const CONTENT_CHUNK_SIZE = 50;
 const MAX_HISTORY_LENGTH = 5000;
 
@@ -38,15 +38,14 @@ const LLM_LOOP_CHECK_HISTORY_COUNT = 15;
 
 /**
  * The number of turns that must pass in a single prompt before the LLM-based loop check is activated.
- * Lowered from 30 to 10 to catch complex cognitive loops before burning massive tokens.
  */
-const LLM_CHECK_AFTER_TURNS = 10;
+const LLM_CHECK_AFTER_TURNS = 30;
 
 /**
  * The default interval, in number of turns, at which the LLM-based loop check is performed.
  * This value is adjusted dynamically based on the LLM's confidence.
  */
-const DEFAULT_LLM_CHECK_INTERVAL = 3;
+const DEFAULT_LLM_CHECK_INTERVAL = 15;
 
 /**
  * The minimum interval for LLM-based loop checks.

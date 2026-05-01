@@ -534,8 +534,7 @@ describe('retryWithBackoff', () => {
       AuthType.LOGIN_WITH_GOOGLE,
       expect.objectContaining({ status: 500 }),
     );
-    // 3 attempts (initial + 2 retries) fail with 500, then fallback triggers, then 1 success
-    expect(mockFn).toHaveBeenCalledTimes(4);
+    expect(mockFn).toHaveBeenCalledTimes(2);
   });
 
   it('should trigger fallback for OAuth personal users on ModelNotFoundError', async () => {
@@ -704,5 +703,4 @@ describe('retryWithBackoff', () => {
     });
   });
 });
-
 

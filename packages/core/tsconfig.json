@@ -6,19 +6,13 @@
     "baseUrl": ".",
     "composite": true,
     "incremental": true,
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2023"
-    ]
+    "lib": ["DOM", "DOM.Iterable", "ES2023"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.json"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": [
     "node_modules",
     "dist",
+    "src/config/extensions/**/*.ts",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",

@@ -15,7 +15,8 @@ import { A2AClientManager } from './a2a-client-manager.js';
 import {
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   DEFAULT_PHILL_MODEL,
-  DEFAULT_THINKING_MODE,
+  DEFAULT_THINKING_BUDGET,
+  ThinkingLevel,
   PREVIEW_PHILL_FLASH_MODEL,
   PREVIEW_PHILL_MODEL,
   PREVIEW_PHILL_3_1_MODEL_AUTO,
@@ -24,7 +25,6 @@ import * as tomlLoader from './agentLoader.js';
 import { SimpleExtensionLoader } from '../utils/extensionLoader.js';
 import type { ConfigParameters } from '../config/config.js';
 import type { ToolRegistry } from '../tools/tool-registry.js';
-import { ThinkingLevel } from '@google/genai';
 import type { AcknowledgedAgentsService } from './acknowledgedAgents.js';
 
 vi.mock('./agentLoader.js', () => ({
@@ -145,7 +145,7 @@ describe('AgentRegistry', () => {
         investigatorDef?.modelConfig.generateContentConfig?.thinkingConfig,
       ).toStrictEqual({
         includeThoughts: true,
-        thinkingBudget: DEFAULT_THINKING_MODE,
+        thinkingBudget: DEFAULT_THINKING_BUDGET,
       });
     });
 
@@ -1020,4 +1020,3 @@ describe('AgentRegistry', () => {
     });
   });
 });
-

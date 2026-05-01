@@ -9,6 +9,7 @@ import {
   loadApiKey,
   saveApiKey,
   clearApiKey,
+  resetApiKeyCacheForTesting,
 } from './apiKeyCredentialStorage.js';
 
 const getCredentialsMock = vi.hoisted(() => vi.fn());
@@ -26,6 +27,7 @@ vi.mock('../mcp/token-storage/hybrid-token-storage.js', () => ({
 describe('ApiKeyCredentialStorage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetApiKeyCacheForTesting();
   });
 
   it('should load an API key', async () => {
@@ -61,6 +63,21 @@ describe('ApiKeyCredentialStorage', () => {
         }),
       }),
     );
+  });
+
+  it('should cache loaded API keys briefly', async () => {
+    getCredentialsMock.mockResolvedValue({
+      serverName: 'default-api-key',
+      token: {
+        accessToken: 'cached-key',
+        tokenType: 'ApiKey',
+      },
+      updatedAt: Date.now(),
+    });
+
+    await expect(loadApiKey()).resolves.toBe('cached-key');
+    await expect(loadApiKey()).resolves.toBe('cached-key');
+    expect(getCredentialsMock).toHaveBeenCalledTimes(1);
   });
 
   it('should clear an API key when saving empty key', async () => {

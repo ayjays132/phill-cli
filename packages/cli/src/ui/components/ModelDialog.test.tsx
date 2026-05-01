@@ -8,6 +8,7 @@ import { render } from 'ink-testing-library';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModelDialog } from './ModelDialog.js';
 import { ConfigContext } from '../contexts/ConfigContext.js';
+import { UIStateContext } from '../contexts/UIStateContext.js';
 import { KeypressProvider } from '../contexts/KeypressContext.js';
 import {
   AuthType,
@@ -16,7 +17,7 @@ import {
   DEFAULT_PHILL_FLASH_MODEL,
   DEFAULT_PHILL_FLASH_LITE_MODEL,
   PREVIEW_PHILL_MODEL,
-  PREVIEW_PHILL_3_1_MODEL_AUTO,
+  PREVIEW_PHILL_MODEL_AUTO,
 } from 'phill-cli-core';
 import type { Config, ModelSlashCommandEvent } from 'phill-cli-core';
 
@@ -29,6 +30,9 @@ vi.mock('phill-cli-core', async () => {
   const actual = await vi.importActual('phill-cli-core');
   return {
     ...actual,
+    DEFAULT_PHILL_MODEL_AUTO: 'auto-gemini-2.5',
+    PREVIEW_PHILL_MODEL_AUTO: 'auto-gemini-3',
+    LEGACY_DEFAULT_PHILL_MODEL_AUTO: 'auto-gemini-3.1-stable',
     getDisplayString: (val: string) => mockGetDisplayString(val),
     logModelSlashCommand: (config: Config, event: ModelSlashCommandEvent) =>
       mockLogModelSlashCommand(config, event),
@@ -71,8 +75,8 @@ describe('<ModelDialog />', () => {
 
     // Default implementation for getDisplayString
     mockGetDisplayString.mockImplementation((val: string) => {
-      if (val === 'auto-gemini-2(.)5') return 'Auto (Phill 2.5)';
-      if (val === 'auto-phill-3') return 'Auto (Preview)';
+      if (val === 'auto-gemini-2.5') return 'Auto (Gemini 2.5)';
+      if (val === 'auto-gemini-3') return 'Auto (Gemini 3)';
       return val;
     });
   });
@@ -80,9 +84,11 @@ describe('<ModelDialog />', () => {
   const renderComponent = (contextValue = mockConfig as Config) =>
     render(
       <KeypressProvider>
-        <ConfigContext.Provider value={contextValue}>
-          <ModelDialog onClose={mockOnClose} />
-        </ConfigContext.Provider>
+        <UIStateContext.Provider value={{ terminalWidth: 120 } as any}>
+          <ConfigContext.Provider value={contextValue}>
+            <ModelDialog onClose={mockOnClose} />
+          </ConfigContext.Provider>
+        </UIStateContext.Provider>
       </KeypressProvider>,
     );
 
@@ -93,7 +99,7 @@ describe('<ModelDialog />', () => {
     const { lastFrame } = renderComponent();
     expect(lastFrame()).toContain('Select Model');
     expect(lastFrame()).toContain('Remember model for future sessions: false');
-    expect(lastFrame()).toContain('auto-gemini-2.5');
+    expect(lastFrame()).toContain('Auto (Gemini 2.5)');
     expect(lastFrame()).toContain('Manual');
   });
 
@@ -101,7 +107,7 @@ describe('<ModelDialog />', () => {
     mockGetPreviewFeatures.mockReturnValue(true);
     mockGetHasAccessToPreviewModel.mockReturnValue(true); // Must have access
     const { lastFrame } = renderComponent();
-    expect(lastFrame()).toContain('auto-gemini-3');
+    expect(lastFrame()).toContain('Auto (Gemini 3)');
   });
 
   it('switches to "manual" view when "Manual" is selected', async () => {
@@ -125,7 +131,7 @@ describe('<ModelDialog />', () => {
   it('renders "manual" view with preview options when preview features are enabled', async () => {
     mockGetPreviewFeatures.mockReturnValue(true);
     mockGetHasAccessToPreviewModel.mockReturnValue(true); // Must have access
-    mockGetModel.mockReturnValue(PREVIEW_PHILL_3_1_MODEL_AUTO);
+    mockGetModel.mockReturnValue(PREVIEW_PHILL_MODEL_AUTO);
     const { lastFrame, stdin } = renderComponent();
 
     // Select "Manual" (index 2 because Preview Auto is first, then Auto (Phill 2.5))
@@ -243,7 +249,7 @@ describe('<ModelDialog />', () => {
       mockGetHasAccessToPreviewModel.mockReturnValue(true);
       mockGetPreviewFeatures.mockReturnValue(true);
       const { lastFrame } = renderComponent();
-      expect(lastFrame()).toContain('auto-gemini-3');
+      expect(lastFrame()).toContain('Auto (Gemini 3)');
     });
 
     it('should show "Phill 3 is now available" header if user has access but preview features disabled', () => {
@@ -270,5 +276,3 @@ describe('<ModelDialog />', () => {
     });
   });
 });
-
-

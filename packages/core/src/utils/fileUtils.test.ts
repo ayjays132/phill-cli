@@ -1097,11 +1097,12 @@ describe('fileUtils', () => {
       const formatted = formatTruncatedToolOutput(content, outputFile, 10);
 
       expect(formatted).toContain(
-        'Output too large. Showing the last 10 of 50 lines.',
+        'Output too large (50 lines). For full output see: /tmp/out.txt',
       );
-      expect(formatted).toContain('For full output see: /tmp/out.txt');
+      expect(formatted).toContain('--- [START OF OUTPUT] ---');
+      expect(formatted).toContain('... [TRUNCATED 40 LINES] ...');
       expect(formatted).toContain('line 49');
-      expect(formatted).not.toContain('line 0');
+      expect(formatted).toContain('line 0');
     });
 
     it('should truncate "elephant lines" (long single line in multi-line output)', () => {
@@ -1111,8 +1112,8 @@ describe('fileUtils', () => {
 
       const formatted = formatTruncatedToolOutput(content, outputFile, 3);
 
-      expect(formatted).toContain('(some long lines truncated)');
-      expect(formatted).toContain('... [LINE WIDTH TRUNCATED]');
+      expect(formatted).toContain('Output too large');
+      expect(formatted).toContain('... [WIDTH TRUNCATED]');
       expect(formatted.length).toBeLessThan(longLine.length);
     });
 
@@ -1123,9 +1124,9 @@ describe('fileUtils', () => {
       const formatted = formatTruncatedToolOutput(content, outputFile);
 
       expect(formatted).toContain(
-        'Output too large. Showing the last 4,000 characters',
+        'Output too large (50,000 chars). For full output see: /tmp/out.txt',
       );
-      expect(formatted.endsWith(content.slice(-4000))).toBe(true);
+      expect(formatted).toContain('... [TRUNCATED] ...');
     });
   });
 });

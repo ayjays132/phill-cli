@@ -70,6 +70,8 @@ interface OllamaChatRequest {
 interface OllamaChatResponse {
   model: string;
   created_at: string;
+  prompt_eval_count?: number;
+  eval_count?: number;
   message: {
     role: string;
     content: string;
@@ -221,6 +223,7 @@ export class OllamaContentGenerator implements ContentGenerator {
           index: 0,
         },
       ];
+      this.attachUsageMetadata(result, data);
       return result;
     } finally {
       clearTimeout(timeoutId);
@@ -268,6 +271,7 @@ export class OllamaContentGenerator implements ContentGenerator {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       const semaphoreToRelease = this.semaphore;
+      const attachUsageMetadata = this.attachUsageMetadata.bind(this);
 
       return (async function* () {
         try {
@@ -341,6 +345,7 @@ export class OllamaContentGenerator implements ContentGenerator {
                     index: 0,
                   },
                 ];
+                attachUsageMetadata(result, data);
                 yield result;
               }
             }
@@ -549,6 +554,25 @@ export class OllamaContentGenerator implements ContentGenerator {
       system: system || undefined,
       tools: ollamaTools.length > 0 ? ollamaTools : undefined,
       options: Object.keys(options).length > 0 ? options : undefined,
+    };
+  }
+
+  private attachUsageMetadata(
+    result: GenerateContentResponse,
+    data: OllamaChatResponse,
+  ): void {
+    const promptTokens = data.prompt_eval_count;
+    const outputTokens = data.eval_count;
+
+    if (promptTokens === undefined && outputTokens === undefined) {
+      return;
+    }
+
+    result.usageMetadata = {
+      promptTokenCount: promptTokens,
+      candidatesTokenCount: outputTokens,
+      totalTokenCount:
+        (promptTokens ?? 0) + (outputTokens ?? 0),
     };
   }
 

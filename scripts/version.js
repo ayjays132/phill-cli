@@ -5,7 +5,7 @@
  */
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // A script to handle versioning and ensure all related changes are in a single, atomic commit.
@@ -23,6 +23,27 @@ function writeJson(filePath, data) {
   writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
 }
 
+function setInternalDependencyVersions(packageJson, workspaceNames, version) {
+  for (const dependencyType of [
+    'dependencies',
+    'devDependencies',
+    'optionalDependencies',
+    'peerDependencies',
+  ]) {
+    const dependencies = packageJson[dependencyType];
+    if (!dependencies) {
+      continue;
+    }
+
+    for (const workspaceName of workspaceNames) {
+      const current = dependencies[workspaceName];
+      if (current && !current.startsWith('file:')) {
+        dependencies[workspaceName] = version;
+      }
+    }
+  }
+}
+
 // 1. Get the version type from the command line arguments.
 const versionType = process.argv[2];
 if (!versionType) {
@@ -31,62 +52,57 @@ if (!versionType) {
   process.exit(1);
 }
 
-// 2. Bump the version in the root and all workspace package.json files.
-run(`npm version ${versionType} --no-git-tag-version --allow-same-version`);
-
-// 3. Get all workspaces and filter out the one we don't want to version.
+// 2. Get all workspaces and filter out the one we don't want to version.
 const workspacesToExclude = [];
-let lsOutput;
-try {
-  lsOutput = JSON.parse(
-    execSync('npm ls --workspaces --json --depth=0').toString(),
-  );
-} catch (e) {
-  // `npm ls` can exit with a non-zero status code if there are issues
-  // with dependencies, but it will still produce the JSON output we need.
-  // We'll try to parse the stdout from the error object.
-  if (e.stdout) {
-    console.warn(
-      'Warning: `npm ls` exited with a non-zero status code. Attempting to proceed with the output.',
-    );
-    try {
-      lsOutput = JSON.parse(e.stdout.toString());
-    } catch (parseError) {
-      console.error(
-        'Error: Failed to parse JSON from `npm ls` output even after `npm ls` failed.',
-      );
-      console.error('npm ls stderr:', e.stderr.toString());
-      console.error('Parse error:', parseError);
-      process.exit(1);
-    }
-  } else {
-    console.error('Error: `npm ls` failed with no output.');
-    console.error(e.stderr?.toString() || e);
-    process.exit(1);
+const rootPackageJson = readJson(resolve(process.cwd(), 'package.json'));
+const workspacePackages = rootPackageJson.workspaces.flatMap((workspacePattern) => {
+  if (!workspacePattern.endsWith('/*')) {
+    const workspacePath = resolve(process.cwd(), workspacePattern);
+    return [{ path: workspacePath, packageJsonPath: resolve(workspacePath, 'package.json') }];
   }
-}
-const allWorkspaces = Object.keys(lsOutput.dependencies || {});
-const workspacesToVersion = allWorkspaces.filter(
-  (wsName) => !workspacesToExclude.includes(wsName),
+
+  const workspaceRoot = resolve(process.cwd(), workspacePattern.slice(0, -2));
+  return readdirSync(workspaceRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => resolve(workspaceRoot, entry.name))
+    .map((workspacePath) => ({
+      path: workspacePath,
+      packageJsonPath: resolve(workspacePath, 'package.json'),
+    }))
+    .filter(({ packageJsonPath }) => existsSync(packageJsonPath));
+});
+const workspacePackageJsons = workspacePackages.map((workspace) => ({
+  ...workspace,
+  packageJson: readJson(workspace.packageJsonPath),
+}));
+const workspacesToVersion = workspacePackageJsons.filter(
+  ({ packageJson }) => !workspacesToExclude.includes(packageJson.name),
 );
+const workspaceNames = workspacesToVersion.map(({ packageJson }) => packageJson.name);
 
-for (const workspaceName of workspacesToVersion) {
-  run(
-    `npm version ${versionType} --workspace ${workspaceName} --no-git-tag-version --allow-same-version`,
-  );
-}
-
-// 4. Get the new version number from the root package.json
+// 3. Bump the root package and capture the exact version npm resolves for patch/minor/major.
+run(`npm version ${versionType} --no-git-tag-version --allow-same-version`);
 const rootPackageJsonPath = resolve(process.cwd(), 'package.json');
 const newVersion = readJson(rootPackageJsonPath).version;
 
+for (const { packageJsonPath, packageJson } of workspacesToVersion) {
+  packageJson.version = newVersion;
+  setInternalDependencyVersions(packageJson, workspaceNames, newVersion);
+  writeJson(packageJsonPath, packageJson);
+  console.log(`Updated ${packageJson.name} to ${newVersion}`);
+}
+
 // 4. Update the sandboxImageUri in the root package.json
-const rootPackageJson = readJson(rootPackageJsonPath);
-if (rootPackageJson.config?.sandboxImageUri) {
-  rootPackageJson.config.sandboxImageUri =
-    rootPackageJson.config.sandboxImageUri.replace(/:.*$/, `:${newVersion}`);
+const updatedRootPackageJson = readJson(rootPackageJsonPath);
+setInternalDependencyVersions(updatedRootPackageJson, workspaceNames, newVersion);
+if (updatedRootPackageJson.config?.sandboxImageUri) {
+  updatedRootPackageJson.config.sandboxImageUri =
+    updatedRootPackageJson.config.sandboxImageUri.replace(
+      /:.*$/,
+      `:${newVersion}`,
+    );
   console.log(`Updated sandboxImageUri in root to use version ${newVersion}`);
-  writeJson(rootPackageJsonPath, rootPackageJson);
+  writeJson(rootPackageJsonPath, updatedRootPackageJson);
 }
 
 // 5. Update the sandboxImageUri in the cli package.json

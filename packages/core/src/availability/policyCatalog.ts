@@ -69,9 +69,8 @@ const DEFAULT_STATE: ModelPolicyStateMap = {
 
 const DEFAULT_CHAIN: ModelPolicyChain = [
   definePolicy({ model: DEFAULT_PHILL_MODEL, actions: SILENT_ACTIONS }),
-  definePolicy({ model: DEFAULT_PHILL_FLASH_MODEL, actions: SILENT_ACTIONS }),
   definePolicy({
-    model: DEFAULT_PHILL_FLASH_LITE_MODEL,
+    model: DEFAULT_PHILL_FLASH_MODEL,
     isLastResort: true,
     actions: SILENT_ACTIONS,
   }),
@@ -81,10 +80,6 @@ const PREVIEW_CHAIN: ModelPolicyChain = [
   definePolicy({ model: PREVIEW_PHILL_3_1_MODEL_ID, actions: SILENT_ACTIONS }),
   definePolicy({
     model: PREVIEW_PHILL_3_1_FLASH_MODEL_ID,
-    actions: SILENT_ACTIONS,
-  }),
-  definePolicy({
-    model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
     isLastResort: true,
     actions: SILENT_ACTIONS,
   }),
@@ -158,9 +153,8 @@ const GEMINI_3_CHAIN: ModelPolicyChain = [
   // Legacy "auto-gemini-3" should map to the latest practical Gemini 3.x text ladder,
   // not the deprecated Gemini 3 Pro Preview that shut down on March 9, 2026.
   definePolicy({ model: PREVIEW_PHILL_MODEL, actions: SILENT_ACTIONS }),
-  definePolicy({ model: PREVIEW_PHILL_FLASH_MODEL, actions: SILENT_ACTIONS }),
   definePolicy({
-    model: PREVIEW_PHILL_3_1_FLASH_LITE_MODEL_ID,
+    model: PREVIEW_PHILL_FLASH_MODEL,
     isLastResort: true,
     actions: SILENT_ACTIONS,
   }),
