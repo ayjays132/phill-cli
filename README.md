@@ -6,9 +6,9 @@
 ![Phill CLI screenshot](./docs/assets/phill-screenshot.png)
 
 Phill CLI is a terminal-first AI operating environment for coding, research,
-automation, and tool orchestration. It combines interactive chat, shell and
-file workflows, memory, provider routing, fallback chains, and long-running
-session support in a single CLI.
+automation, and tool orchestration. It combines interactive chat, shell and file
+workflows, memory, provider routing, fallback chains, and long-running session
+support in a single CLI.
 
 It is designed to work with both cloud providers and local model setups. If you
 want a local-first workflow, Ollama is a first-class provider. If you want a
@@ -31,6 +31,13 @@ OpenAI-compatible APIs, Anthropic, Groq, xAI, and Hugging Face.
 
 - Node.js 20 or newer
 - Windows, macOS, or Linux
+
+### Media Requirements
+
+Phill CLI comes with `ffmpeg` and `ffplay` installed automatically as
+dependencies via `ffmpeg-static` and `ffplay-static`. This ensures
+cross-platform media capabilities out of the box without requiring manual
+system-level installations.
 
 ### Install globally
 
@@ -98,8 +105,7 @@ Phill CLI currently has code paths for:
 - Custom OpenAI-compatible APIs
 
 The provider-specific config sections in the CLI settings mirror those names:
-`ollama`, `huggingFace`, `openAI`, `anthropic`, `groq`, `xai`, and
-`customApi`.
+`ollama`, `huggingFace`, `openAI`, `anthropic`, `groq`, `xai`, and `customApi`.
 
 ## Ollama And Local-First Usage
 
@@ -207,8 +213,10 @@ Examples that exist in the default model configuration include:
 
 - `auto-gemini-3` for the Gemini CLI-style preview auto ladder
 - `auto-gemini-3.1` for Phill's extended preview ladder
-- `auto-gemini-2.5` for the Gemini CLI-style stable auto ladder and default Google/Gemini auth selection
-- `auto-gemini-3.1-stable` as a legacy compatibility alias for older saved configs
+- `auto-gemini-2.5` for the Gemini CLI-style stable auto ladder and default
+  Google/Gemini auth selection
+- `auto-gemini-3.1-stable` as a legacy compatibility alias for older saved
+  configs
 - `flash`
 - `web-search`
 - `web-fetch`
@@ -242,8 +250,7 @@ This is separate from Ollama's own model residency controls. In practice:
 - `OLLAMA_KEEP_ALIVE` helps keep Ollama models warm
 - `PHILL_LOCAL_TRANSFORMERS_*` controls apply to the direct local Transformers
   fallback path
-- Telemetry also tracks cached-content token counts when a provider reports
-  them
+- Telemetry also tracks cached-content token counts when a provider reports them
 
 ## Development
 
